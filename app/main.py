@@ -1,0 +1,628 @@
+from fastapi import FastAPI, Request, Form, UploadFile, File
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from starlette.middleware.sessions import SessionMiddleware
+
+from app.config import (
+    TEMPLATES_DIR,
+    STATIC_DIR,
+    SECRET_KEY,
+    ADMIN_EMAIL,
+    REFERRAL_NEW_USER_BONUS,
+    REFERRAL_OWNER_BONUS,
+    OFFICIAL_CHANNEL_URL,
+    SUPPORT_URL,
+)
+from app.db import db
+from app.imgbb import upload_with_load_balancer
+from app.security import (
+    hash_password,
+    verify_password,
+    generate_referral_code,
+    create_session_token,
+    decode_session_token,
+    set_flash,
+    pop_flashes,
+)
+
+app = FastAPI(title="InfinityWork")
+app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, same_site="lax")
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+
+
+async def get_current_user(request: Request) -> dict | None:
+    token = request.cookies.get("iw_auth")
+    if not token:
+        return None
+    uid = decode_session_token(token)
+    if not uid:
+        return None
+    try:
+        return await db.select("users", filters={"id": uid}, single=True)
+    except Exception:
+        return None
+
+
+def base_ctx(request: Request, user: dict | None = None, active_nav: str = "") -> dict:
+    return {
+        "request": request,
+        "user": user,
+        "active_nav": active_nav,
+        "flashes": pop_flashes(request),
+        "channel_url": OFFICIAL_CHANNEL_URL,
+        "support_url": SUPPORT_URL,
+    }
+
+
+def redirect_with_flash(request: Request, url: str, message: str, category: str = "success"):
+    set_flash(request, message, category)
+    return RedirectResponse(url=url, status_code=303)
+
+
+# ---------------- PUBLIC ROUTES ----------------
+
+@app.get("/", response_class=HTMLResponse)
+async def landing(request: Request):
+    user = await get_current_user(request)
+    return templates.TemplateResponse("landing.html", base_ctx(request, user, "landing"))
+
+
+@app.get("/signup", response_class=HTMLResponse)
+async def signup_page(request: Request, ref: str = ""):
+    user = await get_current_user(request)
+    if user:
+        return RedirectResponse("/i", status_code=303)
+    ctx = base_ctx(request, None, "signup")
+    ctx["ref_code"] = ref
+    return templates.TemplateResponse("signup.html", ctx)
+
+
+@app.post("/signup")
+async def signup_submit(
+    request: Request,
+    name: str = Form(...),
+    email: str = Form(...),
+    password: str = Form(...),
+    referral_code: str = Form(""),
+    device_id: str = Form(""),
+):
+    email_clean = email.strip().lower()
+    device_clean = device_id.strip() or request.cookies.get("iw_device") or ""
+
+    if not device_clean or len(device_clean) < 8:
+        return redirect_with_flash(request, "/signup", "ডিভাইস ভেরিফিকেশন ব্যর্থ হয়েছে। অনুগ্রহ করে পুনরায় চেষ্টা করুন।", "error")
+
+    # 1 Device = 1 Account check (both device_id and cookie check)
+    if request.cookies.get("iw_registered") == "1":
+        return redirect_with_flash(request, "/signup", "এই ডিভাইস থেকে ইতিমধ্যেই একটি অ্যাকাউন্ট খোলা হয়েছে!", "error")
+
+    existing_device = await db.select("users", filters={"device_id": device_clean}, single=True)
+    if existing_device:
+        return redirect_with_flash(request, "/signup", "একটি ডিভাইসে একাধিক অ্যাকাউন্ট খোলা অনুমোদিত নয়!", "error")
+
+    existing_email = await db.select("users", filters={"email": email_clean}, single=True)
+    if existing_email:
+        return redirect_with_flash(request, "/signup", "এই ইমেইল দিয়ে আগেই অ্যাকাউন্ট তৈরি করা হয়েছে।", "error")
+
+    # Referral Logic: Referred User = 10৳, Referred By = 8৳
+    ref_input = referral_code.strip().upper()
+    initial_balance = 0.0
+    valid_referrer = None
+
+    if ref_input:
+        valid_referrer = await db.select("users", filters={"referral_code": ref_input}, single=True)
+        if not valid_referrer:
+            return redirect_with_flash(request, "/signup", "ভুল রেফারেল কোড দেওয়া হয়েছে!", "error")
+        initial_balance = REFERRAL_NEW_USER_BONUS
+
+    new_ref_code = generate_referral_code(name)
+    is_admin = email_clean == ADMIN_EMAIL
+
+    new_user = await db.insert(
+        "users",
+        {
+            "name": name.strip(),
+            "email": email_clean,
+            "password_hash": hash_password(password),
+            "referral_code": new_ref_code,
+            "referred_by": ref_input if valid_referrer else None,
+            "device_id": device_clean,
+            "balance": initial_balance,
+            "total_earned": initial_balance,
+            "is_admin": is_admin,
+        },
+    )
+
+    if valid_referrer:
+        new_ref_bal = float(valid_referrer.get("balance", 0)) + REFERRAL_OWNER_BONUS
+        new_ref_total = float(valid_referrer.get("total_earned", 0)) + REFERRAL_OWNER_BONUS
+        await db.update(
+            "users",
+            {"id": valid_referrer["id"]},
+            {"balance": new_ref_bal, "total_earned": new_ref_total},
+        )
+        await db.insert(
+            "work_logs",
+            {
+                "user_id": valid_referrer["id"],
+                "work_type": "Referral Bonus",
+                "details": f"রেফারেল বোনাস ({name.strip()})",
+                "reward": REFERRAL_OWNER_BONUS,
+            },
+        )
+
+    if initial_balance > 0 and new_user:
+        await db.insert(
+            "work_logs",
+            {
+                "user_id": new_user["id"],
+                "work_type": "Welcome Referral Bonus",
+                "details": f"রেফার কোড {ref_input} ব্যবহারের বোনাস",
+                "reward": initial_balance,
+            },
+        )
+
+    set_flash(
+        request,
+        f"অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে! {'১০৳ রেফারেল বোনাস যোগ হয়েছে।' if initial_balance > 0 else 'স্বাগতম!'}",
+        "success",
+    )
+    response = RedirectResponse("/i", status_code=303)
+    token = create_session_token(new_user["id"])
+    response.set_cookie("iw_auth", token, httponly=True, max_age=60 * 60 * 24 * 14, samesite="lax")
+    response.set_cookie("iw_device", device_clean, max_age=60 * 60 * 24 * 365 * 5, samesite="lax")
+    response.set_cookie("iw_registered", "1", max_age=60 * 60 * 24 * 365 * 5, samesite="lax")
+    return response
+
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    user = await get_current_user(request)
+    if user:
+        return RedirectResponse("/i", status_code=303)
+    return templates.TemplateResponse("login.html", base_ctx(request, None, "login"))
+
+
+@app.post("/login")
+async def login_submit(
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...),
+):
+    email_clean = email.strip().lower()
+    user = await db.select("users", filters={"email": email_clean}, single=True)
+    if not user or not verify_password(password, user["password_hash"]):
+        return redirect_with_flash(request, "/login", "ইমেইল অথবা পাসওয়ার্ড সঠিক নয়!", "error")
+
+    set_flash(request, f"স্বাগতম, {user['name']}!", "success")
+    response = RedirectResponse("/i", status_code=303)
+    response.set_cookie("iw_auth", create_session_token(user["id"]), httponly=True, max_age=60 * 60 * 24 * 14, samesite="lax")
+    return response
+
+
+@app.get("/logout")
+async def logout(request: Request):
+    set_flash(request, "সফলভাবে লগআউট সম্পন্ন হয়েছে।", "info")
+    response = RedirectResponse("/login", status_code=303)
+    response.delete_cookie("iw_auth")
+    return response
+
+
+# ---------------- AUTHENTICATED APP ROUTES ----------------
+
+@app.get("/i", response_class=HTMLResponse)
+async def app_home(request: Request):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+
+    recent_logs = await db.select("work_logs", filters={"user_id": user["id"]}, order="created_at.desc", limit=6)
+    referrals = await db.select("users", filters={"referred_by": user["referral_code"]})
+    ctx = base_ctx(request, user, "home")
+    ctx["recent_logs"] = recent_logs
+    ctx["referral_count"] = len(referrals)
+    return templates.TemplateResponse("home.html", ctx)
+
+
+@app.get("/work", response_class=HTMLResponse)
+async def work_hub(request: Request):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+    return templates.TemplateResponse("work.html", base_ctx(request, user, "work"))
+
+
+@app.get("/task", response_class=HTMLResponse)
+async def task_list(request: Request):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+
+    tasks = await db.select("tasks", filters={"is_active": "true"}, order="created_at.desc")
+    submissions = await db.select("task_submissions", filters={"user_id": user["id"]}, order="created_at.desc")
+    submitted_ids = {s["task_id"]: s["status"] for s in submissions}
+
+    ctx = base_ctx(request, user, "work")
+    ctx["tasks"] = tasks
+    ctx["submitted_ids"] = submitted_ids
+    return templates.TemplateResponse("tasks.html", ctx)
+
+
+@app.get("/task/{task_id}", response_class=HTMLResponse)
+async def task_detail(request: Request, task_id: int):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+
+    task = await db.select("tasks", filters={"id": task_id}, single=True)
+    if not task:
+        return redirect_with_flash(request, "/task", "টাস্কটি পাওয়া যায়নি!", "error")
+
+    ctx = base_ctx(request, user, "work")
+    ctx["task"] = task
+    return templates.TemplateResponse("task_detail.html", ctx)
+
+
+@app.post("/task/{task_id}/submit")
+async def task_submit(
+    request: Request,
+    task_id: int,
+    proof_note: str = Form(""),
+    proof_image: UploadFile = File(None),
+):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+
+    task = await db.select("tasks", filters={"id": task_id}, single=True)
+    if not task:
+        return redirect_with_flash(request, "/task", "টাস্কটি পাওয়া যায়নি!", "error")
+
+    image_bytes = await proof_image.read() if proof_image and proof_image.filename else None
+    img_url, is_dummy = await upload_with_load_balancer(image_bytes)
+
+    # Note: If is_dummy is True, proof_image_url stays None (no real link stored in DB)
+    await db.insert(
+        "task_submissions",
+        {
+            "user_id": user["id"],
+            "task_id": task_id,
+            "proof_note": proof_note.strip(),
+            "proof_image_url": img_url,
+            "is_dummy": is_dummy,
+            "status": "pending",
+            "reward": task["rate"],
+        },
+    )
+
+    return redirect_with_flash(request, "/task", "আপনার কাজ সফলভাবে জমা হয়েছে! ভেরিফিকেশনের পর পেমেন্ট যুক্ত হবে।", "success")
+
+
+# ---------------- SPECIALIZED WORK MODULES ----------------
+
+@app.get("/work/typing", response_class=HTMLResponse)
+async def work_typing(request: Request):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+    return templates.TemplateResponse("work_typing.html", base_ctx(request, user, "work"))
+
+
+@app.post("/work/typing")
+async def work_typing_submit(request: Request, typed_text: str = Form(...), target_text: str = Form(...)):
+    user = await get_current_user(request)
+    if not user:
+        return JSONResponse({"ok": False, "msg": "Unauthorized"}, status_code=401)
+
+    if typed_text.strip() != target_text.strip():
+        return redirect_with_flash(request, "/work/typing", "লেখাটি হুবহু মিলেনি! আবার চেষ্টা করুন।", "error")
+
+    reward = 2.50
+    await db.update(
+        "users",
+        {"id": user["id"]},
+        {"balance": float(user["balance"]) + reward, "total_earned": float(user["total_earned"]) + reward},
+    )
+    await db.insert("work_logs", {"user_id": user["id"], "work_type": "Typing Task", "details": "সফল টাইপিং সম্পন্ন", "reward": reward})
+    return redirect_with_flash(request, "/work/typing", f"অভিনন্দন! {reward}৳ আপনার ব্যালেন্সে যোগ হয়েছে।", "success")
+
+
+@app.get("/work/survey", response_class=HTMLResponse)
+async def work_survey(request: Request):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+    return templates.TemplateResponse("work_survey.html", base_ctx(request, user, "work"))
+
+
+@app.post("/work/survey")
+async def work_survey_submit(request: Request, q1: str = Form(...), q2: str = Form(...)):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে লগইন করুন।", "error")
+
+    reward = 5.00
+    await db.update(
+        "users",
+        {"id": user["id"]},
+        {"balance": float(user["balance"]) + reward, "total_earned": float(user["total_earned"]) + reward},
+    )
+    await db.insert("work_logs", {"user_id": user["id"], "work_type": "Survey", "details": f"{q1} | {q2}", "reward": reward})
+    return redirect_with_flash(request, "/work/survey", f"সার্ভে সম্পন্ন! {reward}৳ বোনাস যোগ হয়েছে।", "success")
+
+
+@app.get("/work/ai-image", response_class=HTMLResponse)
+async def work_ai_image(request: Request):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+    return templates.TemplateResponse("work_ai_image.html", base_ctx(request, user, "work"))
+
+
+@app.post("/work/ai-image")
+async def work_ai_image_submit(
+    request: Request,
+    prompt_used: str = Form(...),
+    ai_image: UploadFile = File(None),
+):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+
+    image_bytes = await ai_image.read() if ai_image and ai_image.filename else None
+    img_url, is_dummy = await upload_with_load_balancer(image_bytes)
+    await db.insert(
+        "work_logs",
+        {
+            "user_id": user["id"],
+            "work_type": "ChatGPT Image Gen",
+            "details": f"Prompt: {prompt_used[:80]} | Dummy: {is_dummy}",
+            "reward": 0.0,
+            "status": "pending",
+        },
+    )
+    return redirect_with_flash(request, "/work/ai-image", "ChatGPT জেনারেটেড ইমেজ সফলভাবে জমা হয়েছে!", "success")
+
+
+@app.get("/work/cube-game", response_class=HTMLResponse)
+async def work_cube(request: Request):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+    return templates.TemplateResponse("work_cube.html", base_ctx(request, user, "work"))
+
+
+@app.post("/work/cube-game/claim")
+async def work_cube_claim(request: Request, score: int = Form(...)):
+    user = await get_current_user(request)
+    if not user:
+        return JSONResponse({"ok": False, "message": "লগইন প্রয়োজন"}, status_code=401)
+    if score < 64:
+        return JSONResponse({"ok": False, "message": "রিওয়ার্ড পেতে কমপক্ষে ৬৪ স্কোর করতে হবে!"}, status_code=400)
+
+    reward = min(round(score / 100, 2), 10.0)
+    await db.update(
+        "users",
+        {"id": user["id"]},
+        {"balance": float(user["balance"]) + reward, "total_earned": float(user["total_earned"]) + reward},
+    )
+    await db.insert("work_logs", {"user_id": user["id"], "work_type": "2,4,8 Cube Game", "details": f"Score: {score}", "reward": reward})
+    return JSONResponse({"ok": True, "reward": reward, "message": f"দারুণ! {reward}৳ ব্যালেন্সে যোগ হয়েছে।"})
+
+
+@app.get("/work/tiktok-sell", response_class=HTMLResponse)
+async def work_tiktok(request: Request):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+    return templates.TemplateResponse("work_tiktok.html", base_ctx(request, user, "work"))
+
+
+@app.post("/work/tiktok-sell")
+async def work_tiktok_submit(
+    request: Request,
+    username: str = Form(...),
+    followers: int = Form(...),
+    asking_price: float = Form(...),
+    contact_tg: str = Form(...),
+):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+
+    await db.insert(
+        "work_logs",
+        {
+            "user_id": user["id"],
+            "work_type": "TikTok Account Sell",
+            "details": f"@{username} | {followers} followers | {asking_price}৳ | TG: {contact_tg}",
+            "reward": 0.0,
+            "status": "pending",
+        },
+    )
+    return redirect_with_flash(request, "/work/tiktok-sell", "আপনার TikTok অ্যাকাউন্ট বিক্রয়ের আবেদন জমা হয়েছে! টিম যোগাযোগ করবে।", "success")
+
+
+# ---------------- PAYOUT & PROFILE ----------------
+
+@app.get("/payout", response_class=HTMLResponse)
+async def payout_page(request: Request):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+
+    payouts = await db.select("payouts", filters={"user_id": user["id"]}, order="created_at.desc")
+    ctx = base_ctx(request, user, "payout")
+    ctx["payouts"] = payouts
+    return templates.TemplateResponse("payout.html", ctx)
+
+
+@app.post("/payout")
+async def payout_submit(
+    request: Request,
+    method: str = Form(...),
+    account_number: str = Form(...),
+    amount: float = Form(...),
+):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+
+    current_bal = float(user.get("balance", 0))
+    if amount < 50:
+        return redirect_with_flash(request, "/payout", "সর্বনিম্ন উইথড্র ৫০৳!", "error")
+    if amount > current_bal:
+        return redirect_with_flash(request, "/payout", "আপনার অ্যাকাউন্টে পর্যাপ্ত ব্যালেন্স নেই!", "error")
+
+    await db.update("users", {"id": user["id"]}, {"balance": current_bal - amount})
+    await db.insert(
+        "payouts",
+        {
+            "user_id": user["id"],
+            "method": method,
+            "account_number": account_number.strip(),
+            "amount": amount,
+            "status": "pending",
+        },
+    )
+    return redirect_with_flash(request, "/payout", "উইথড্র রিকুয়েস্ট সফলভাবে পাঠানো হয়েছে!", "success")
+
+
+@app.get("/profile", response_class=HTMLResponse)
+async def profile_page(request: Request):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+
+    referrals = await db.select("users", filters={"referred_by": user["referral_code"]})
+    ctx = base_ctx(request, user, "profile")
+    ctx["referrals"] = referrals
+    return templates.TemplateResponse("profile.html", ctx)
+
+
+# ---------------- ADMIN PANEL ----------------
+
+@app.get("/admin", response_class=HTMLResponse)
+async def admin_panel(request: Request):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অ্যাডমিন অ্যাক্সেস অনুমোদিত নয়!", "error")
+
+    tasks = await db.select("tasks", order="created_at.desc")
+    imgbb_keys = await db.select("imgbb_keys", order="id.asc")
+    submissions = await db.select("task_submissions", order="created_at.desc", limit=30)
+    payouts = await db.select("payouts", order="created_at.desc", limit=30)
+
+    ctx = base_ctx(request, user, "admin")
+    ctx.update({"tasks": tasks, "imgbb_keys": imgbb_keys, "submissions": submissions, "payouts": payouts})
+    return templates.TemplateResponse("admin.html", ctx)
+
+
+@app.post("/admin/task/add")
+async def admin_add_task(
+    request: Request,
+    title: str = Form(...),
+    category: str = Form(...),
+    description: str = Form(...),
+    rate: float = Form(...),
+    task_link: str = Form(""),
+):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
+
+    await db.insert(
+        "tasks",
+        {
+            "title": title.strip(),
+            "category": category.strip(),
+            "description": description.strip(),
+            "rate": rate,
+            "task_link": task_link.strip(),
+            "is_active": True,
+        },
+    )
+    return redirect_with_flash(request, "/admin", "নতুন মাইক্রো টাস্ক যুক্ত হয়েছে!", "success")
+
+
+@app.post("/admin/task/{task_id}/delete")
+async def admin_delete_task(request: Request, task_id: int):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
+    await db.delete("tasks", {"id": task_id})
+    return redirect_with_flash(request, "/admin", "টাস্ক মুছে ফেলা হয়েছে।", "info")
+
+
+@app.post("/admin/imgbb/add")
+async def admin_add_imgbb(request: Request, label: str = Form(...), api_key: str = Form(...)):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
+    await db.insert("imgbb_keys", {"label": label.strip(), "api_key": api_key.strip(), "is_active": True})
+    return redirect_with_flash(request, "/admin", "ImgBB API Key লোড ব্যালেন্সারে যুক্ত হয়েছে!", "success")
+
+
+@app.post("/admin/imgbb/{key_id}/delete")
+async def admin_delete_imgbb(request: Request, key_id: int):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
+    await db.delete("imgbb_keys", {"id": key_id})
+    return redirect_with_flash(request, "/admin", "API Key ডিলিট হয়েছে।", "info")
+
+
+@app.post("/admin/submission/{sub_id}/{action}")
+async def admin_review_submission(request: Request, sub_id: int, action: str):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
+
+    sub = await db.select("task_submissions", filters={"id": sub_id}, single=True)
+    if not sub or sub["status"] != "pending":
+        return redirect_with_flash(request, "/admin", "সাবমিশনটি প্রসেস করা আছে।", "info")
+
+    if action == "approve":
+        await db.update("task_submissions", {"id": sub_id}, {"status": "approved"})
+        target_user = await db.select("users", filters={"id": sub["user_id"]}, single=True)
+        if target_user:
+            reward = float(sub["reward"])
+            await db.update(
+                "users",
+                {"id": target_user["id"]},
+                {
+                    "balance": float(target_user["balance"]) + reward,
+                    "total_earned": float(target_user["total_earned"]) + reward,
+                },
+            )
+        return redirect_with_flash(request, "/admin", "টাস্ক অ্যাপ্রুভ হয়েছে ও টাকা যোগ হয়েছে!", "success")
+    else:
+        await db.update("task_submissions", {"id": sub_id}, {"status": "rejected"})
+        return redirect_with_flash(request, "/admin", "টাস্ক রিজেক্ট করা হয়েছে।", "info")
+
+
+@app.post("/admin/payout/{payout_id}/{action}")
+async def admin_review_payout(request: Request, payout_id: int, action: str):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
+
+    p = await db.select("payouts", filters={"id": payout_id}, single=True)
+    if not p or p["status"] != "pending":
+        return redirect_with_flash(request, "/admin", "পেইমেন্ট আগেই আপডেট হয়েছে।", "info")
+
+    if action == "paid":
+        await db.update("payouts", {"id": payout_id}, {"status": "paid"})
+        return redirect_with_flash(request, "/admin", "পেইমেন্ট Paid হিসেবে মার্ক করা হয়েছে!", "success")
+    else:
+        await db.update("payouts", {"id": payout_id}, {"status": "rejected"})
+        target_user = await db.select("users", filters={"id": p["user_id"]}, single=True)
+        if target_user:
+            await db.update(
+                "users",
+                {"id": target_user["id"]},
+                {"balance": float(target_user["balance"]) + float(p["amount"])},
+            )
+        return redirect_with_flash(request, "/admin", "উইথড্র বাতিল করে ব্যালেন্স ফেরত দেওয়া হয়েছে।", "info")
