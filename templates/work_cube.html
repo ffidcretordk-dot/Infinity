@@ -1,0 +1,497 @@
+{% extends "base_app.html" %}
+{% block title %}2,4,8 Cube Game - InfinityWork{% endblock %}
+{% block content %}
+<style>
+  .cube-board-wrap {
+    touch-action: none; /* Prevents page scroll while swiping on mobile */
+    user-select: none;
+  }
+  @keyframes tilePop {
+    0% { transform: scale(0.65); opacity: 0.5; }
+    60% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes tileMerge {
+    0% { transform: scale(1); }
+    45% { transform: scale(1.18); box-shadow: 0 0 22px rgba(16, 185, 129, 0.55); }
+    100% { transform: scale(1); }
+  }
+  @keyframes floatScore {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-28px) scale(1.15); }
+  }
+  .tile-new { animation: tilePop 0.2s cubic-bezier(0.22, 1, 0.36, 1); }
+  .tile-merged { animation: tileMerge 0.24s cubic-bezier(0.22, 1, 0.36, 1); }
+  .float-score { animation: floatScore 0.75s ease-out forwards; }
+
+  /* Glossy 3D Cube Colors */
+  .tile-0    { background: rgba(255, 255, 255, 0.55); color: transparent; box-shadow: inset 0 2px 5px rgba(13, 74, 43, 0.06); }
+  .tile-2    { background: linear-gradient(145deg, #ffffff, #ecfdf5); color: #064e3b; border-bottom: 4px solid #a7f3d0; }
+  .tile-4    { background: linear-gradient(145deg, #d1fae5, #a7f3d0); color: #064e3b; border-bottom: 4px solid #6ee7b7; }
+  .tile-8    { background: linear-gradient(145deg, #34d399, #10b981); color: #ffffff; border-bottom: 4px solid #059669; }
+  .tile-16   { background: linear-gradient(145deg, #10b981, #059669); color: #ffffff; border-bottom: 4px solid #047857; }
+  .tile-32   { background: linear-gradient(145deg, #0ea5e9, #0284c7); color: #ffffff; border-bottom: 4px solid #0369a1; }
+  .tile-64   { background: linear-gradient(145deg, #6366f1, #4f46e5); color: #ffffff; border-bottom: 4px solid #4338ca; }
+  .tile-128  { background: linear-gradient(145deg, #f59e0b, #d97706); color: #ffffff; border-bottom: 4px solid #b45309; }
+  .tile-256  { background: linear-gradient(145deg, #f97316, #ea580c); color: #ffffff; border-bottom: 4px solid #c2410c; }
+  .tile-512  { background: linear-gradient(145deg, #ec4899, #db2777); color: #ffffff; border-bottom: 4px solid #be185d; }
+  .tile-1024 { background: linear-gradient(145deg, #8b5cf6, #7c3aed); color: #ffffff; border-bottom: 4px solid #6d28d9; }
+  .tile-2048 { background: linear-gradient(145deg, #064e3b, #022c22); color: #fde047; border-bottom: 4px solid #eab308; box-shadow: 0 0 20px rgba(234, 179, 8, 0.45); }
+</style>
+
+<div class="max-w-md mx-auto space-y-4">
+  <!-- Top Game Header Bar -->
+  <div class="soft-card rounded-3xl p-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-900 text-white flex items-center justify-center shadow-md">
+        <i class="fa-solid fa-cubes text-lg"></i>
+      </div>
+      <div>
+        <h1 class="font-extrabold text-base text-emerald-950 leading-tight">2, 4, 8 Cube</h1>
+        <p class="text-[11px] text-emerald-700 font-semibold">
+          <i class="fa-solid fa-hand-pointer mr-1"></i>সোয়াইপ বা অ্যারো দিয়ে খেলুন
+        </p>
+      </div>
+    </div>
+
+    <!-- Action Controls: Sound, Undo, Restart -->
+    <div class="flex items-center gap-1.5">
+      <button id="sound-btn" onclick="toggleSound()" title="Sound On/Off"
+              class="w-9 h-9 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-900 flex items-center justify-center transition">
+        <i id="sound-icon" class="fa-solid fa-volume-high text-sm"></i>
+      </button>
+      <button id="undo-btn" onclick="undoMove()" title="Undo Move"
+              class="w-9 h-9 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-900 flex items-center justify-center transition disabled:opacity-40">
+        <i class="fa-solid fa-backward-step text-sm"></i>
+      </button>
+      <button onclick="restartGame()" title="Restart Game"
+              class="w-9 h-9 rounded-xl bg-emerald-900 hover:bg-emerald-800 text-white flex items-center justify-center shadow transition">
+        <i class="fa-solid fa-rotate-left text-sm"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Score, Best Score & Live Reward HUD -->
+  <div class="grid grid-cols-3 gap-2.5">
+    <div class="soft-card rounded-2xl p-3 text-center relative overflow-visible">
+      <div class="text-[10px] font-bold uppercase text-emerald-700 flex items-center justify-center gap-1">
+        <i class="fa-solid fa-star text-amber-500"></i> স্কোর
+      </div>
+      <div id="cube-score" class="text-xl font-extrabold text-emerald-950 mt-0.5">0</div>
+      <div id="score-popup-anchor" class="absolute inset-x-0 top-0 flex justify-center pointer-events-none"></div>
+    </div>
+
+    <div class="soft-card rounded-2xl p-3 text-center">
+      <div class="text-[10px] font-bold uppercase text-emerald-700 flex items-center justify-center gap-1">
+        <i class="fa-solid fa-trophy text-amber-500"></i> বেস্ট
+      </div>
+      <div id="cube-best" class="text-xl font-extrabold text-emerald-950 mt-0.5">0</div>
+    </div>
+
+    <div class="rounded-2xl p-3 text-center bg-gradient-to-br from-emerald-800 to-emerald-950 text-white shadow-md">
+      <div class="text-[10px] font-bold uppercase text-emerald-200 flex items-center justify-center gap-1">
+        <i class="fa-solid fa-coins text-yellow-300"></i> রিওয়ার্ড
+      </div>
+      <div id="cube-reward-preview" class="text-xl font-extrabold text-yellow-300 mt-0.5">৳0.00</div>
+    </div>
+  </div>
+
+  <!-- Progress Bar toward 64 Score Unlock -->
+  <div class="soft-card rounded-2xl px-4 py-3 space-y-1.5">
+    <div class="flex items-center justify-between text-[11px] font-bold">
+      <span id="combo-badge" class="text-emerald-800 flex items-center gap-1">
+        <i class="fa-solid fa-bolt text-amber-500"></i> ক্লেইম আনলক (মিনিমাম ৬৪ স্কোর)
+      </span>
+      <span id="progress-pct" class="text-emerald-700">0%</span>
+    </div>
+    <div class="w-full h-2.5 bg-emerald-100 rounded-full overflow-hidden">
+      <div id="progress-bar" class="h-full bg-gradient-to-r from-emerald-500 to-emerald-700 rounded-full transition-all duration-300" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <!-- Main Game Board -->
+  <div class="relative soft-card rounded-3xl p-3.5 bg-gradient-to-b from-emerald-100/80 to-emerald-50/90 shadow-xl">
+    <div id="cube-board" class="cube-board-wrap grid grid-cols-4 gap-2.5 bg-emerald-900/10 p-2.5 rounded-2xl relative">
+      <!-- Tiles rendered by JS -->
+    </div>
+
+    <!-- Game Over Overlay -->
+    <div id="game-over-overlay" class="hidden absolute inset-0 rounded-3xl bg-emerald-950/75 backdrop-blur-xs flex flex-col items-center justify-center text-white p-6 text-center space-y-4 z-10">
+      <div class="w-16 h-16 rounded-full bg-white/15 flex items-center justify-center text-3xl text-yellow-300">
+        <i class="fa-solid fa-flag-checkered"></i>
+      </div>
+      <div>
+        <h2 class="text-2xl font-extrabold">গেম শেষ!</h2>
+        <p class="text-xs text-emerald-200 mt-1">আপনার মোট স্কোর: <b id="final-score-text" class="text-white">0</b></p>
+      </div>
+      <div class="flex gap-2.5 w-full max-w-xs">
+        <button onclick="restartGame()" class="flex-1 bg-white text-emerald-950 py-2.5 rounded-full font-bold text-xs shadow">
+          <i class="fa-solid fa-rotate-left mr-1"></i> আবার খেলুন
+        </button>
+        <button onclick="claimCubeReward()" class="flex-1 bg-emerald-500 hover:bg-emerald-400 text-white py-2.5 rounded-full font-bold text-xs shadow">
+          <i class="fa-solid fa-gift mr-1"></i> ক্লেইম করুন
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- On-Screen Touch D-Pad + Claim Button -->
+  <div class="soft-card rounded-3xl p-4 space-y-3">
+    <div class="flex items-center justify-center gap-2">
+      <button onclick="move('left')" class="w-14 h-12 rounded-2xl bg-emerald-50 hover:bg-emerald-100 active:scale-95 border border-emerald-200 text-emerald-900 font-bold shadow-xs transition">
+        <i class="fa-solid fa-arrow-left text-base"></i>
+      </button>
+      <div class="flex flex-col gap-2">
+        <button onclick="move('up')" class="w-14 h-11 rounded-2xl bg-emerald-50 hover:bg-emerald-100 active:scale-95 border border-emerald-200 text-emerald-900 font-bold shadow-xs transition">
+          <i class="fa-solid fa-arrow-up text-base"></i>
+        </button>
+        <button onclick="move('down')" class="w-14 h-11 rounded-2xl bg-emerald-50 hover:bg-emerald-100 active:scale-95 border border-emerald-200 text-emerald-900 font-bold shadow-xs transition">
+          <i class="fa-solid fa-arrow-down text-base"></i>
+        </button>
+      </div>
+      <button onclick="move('right')" class="w-14 h-12 rounded-2xl bg-emerald-50 hover:bg-emerald-100 active:scale-95 border border-emerald-200 text-emerald-900 font-bold shadow-xs transition">
+        <i class="fa-solid fa-arrow-right text-base"></i>
+      </button>
+    </div>
+
+    <button id="claim-btn" onclick="claimCubeReward()"
+            class="w-full py-3.5 rounded-full font-extrabold text-sm shadow-lg transition flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-700 to-emerald-900 text-white hover:opacity-95 active:scale-98">
+      <i class="fa-solid fa-gift"></i>
+      <span>রিওয়ার্ড ক্লেইম করুন</span>
+      <span id="claim-btn-amount" class="bg-white/20 px-2.5 py-0.5 rounded-full text-xs">৳0.00</span>
+    </button>
+
+    <div id="cube-msg" class="hidden rounded-2xl px-4 py-2.5 text-xs font-bold text-center"></div>
+  </div>
+</div>
+
+<script>
+// ================= WEB AUDIO SYNTHESIZER (NO EXTERNAL MP3 NEEDED) =================
+const SoundFX = (() => {
+  let ctx = null;
+  let enabled = localStorage.getItem("iw_cube_sound") !== "off";
+
+  function getCtx() {
+    if (!ctx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) ctx = new AudioCtx();
+    }
+    if (ctx && ctx.state === "suspended") ctx.resume();
+    return ctx;
+  }
+
+  function tone(freq, duration, type = "sine", vol = 0.12, slideTo = null, delay = 0) {
+    if (!enabled) return;
+    const c = getCtx();
+    if (!c) return;
+    const now = c.currentTime + delay;
+    const osc = c.createOscillator();
+    const gain = c.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, now);
+    if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, now + duration);
+
+    gain.gain.setValueAtTime(0.001, now);
+    gain.gain.exponentialRampToValueAtTime(vol, now + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+    osc.connect(gain);
+    gain.connect(c.destination);
+    osc.start(now);
+    osc.stop(now + duration + 0.02);
+  }
+
+  return {
+    isEnabled: () => enabled,
+    toggle: () => {
+      enabled = !enabled;
+      localStorage.setItem("iw_cube_sound", enabled ? "on" : "off");
+      if (enabled) tone(520, 0.08, "sine", 0.1, 780);
+      return enabled;
+    },
+    slide: () => tone(240, 0.07, "triangle", 0.08, 340),
+    bump: () => tone(130, 0.09, "sawtooth", 0.05, 95),
+    merge: (maxVal) => {
+      const pitchBoost = Math.min(Math.log2(maxVal || 4) * 55, 500);
+      tone(380 + pitchBoost, 0.12, "sine", 0.14, 580 + pitchBoost);
+      tone(570 + pitchBoost, 0.14, "triangle", 0.09, 760 + pitchBoost, 0.04);
+    },
+    claim: () => {
+      [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(f, 0.18, "triangle", 0.14, null, i * 0.07));
+    },
+    gameOver: () => {
+      [392, 349, 311, 261].forEach((f, i) => tone(f, 0.2, "sawtooth", 0.07, null, i * 0.11));
+    }
+  };
+})();
+
+function updateSoundIcon() {
+  const icon = document.getElementById("sound-icon");
+  if (!icon) return;
+  icon.className = SoundFX.isEnabled() ? "fa-solid fa-volume-high text-sm" : "fa-solid fa-volume-xmark text-sm text-red-500";
+}
+function toggleSound() {
+  SoundFX.toggle();
+  updateSoundIcon();
+}
+
+// ================= GAME STATE & LOGIC =================
+let board = Array(16).fill(0);
+let score = 0;
+let bestScore = parseInt(localStorage.getItem("iw_cube_best") || "0", 10);
+let prevState = null;
+let newIdx = -1;
+let mergedIndices = new Set();
+let comboCount = 0;
+
+function saveSnapshot() {
+  prevState = { board: [...board], score };
+  document.getElementById("undo-btn").disabled = false;
+}
+
+function undoMove() {
+  if (!prevState) return;
+  board = [...prevState.board];
+  score = prevState.score;
+  prevState = null;
+  newIdx = -1;
+  mergedIndices.clear();
+  document.getElementById("undo-btn").disabled = true;
+  document.getElementById("game-over-overlay").classList.add("hidden");
+  SoundFX.slide();
+  render();
+}
+
+function spawn() {
+  const empty = board.map((v, i) => (v === 0 ? i : -1)).filter(i => i !== -1);
+  if (!empty.length) return;
+  const pick = empty[Math.floor(Math.random() * empty.length)];
+  board[pick] = Math.random() < 0.85 ? 2 : 4;
+  newIdx = pick;
+}
+
+function showScorePopup(points) {
+  if (points <= 0) return;
+  const anchor = document.getElementById("score-popup-anchor");
+  const pop = document.createElement("span");
+  pop.className = "float-score text-xs font-extrabold text-emerald-600";
+  pop.innerText = `+${points}`;
+  anchor.appendChild(pop);
+  setTimeout(() => pop.remove(), 750);
+}
+
+function hasMovesLeft() {
+  if (board.includes(0)) return true;
+  for (let r = 0; r < 4; r++) {
+    for (let c = 0; c < 4; c++) {
+      const v = board[r * 4 + c];
+      if (c < 3 && board[r * 4 + c + 1] === v) return true;
+      if (r < 3 && board[(r + 1) * 4 + c] === v) return true;
+    }
+  }
+  return false;
+}
+
+function render() {
+  const el = document.getElementById("cube-board");
+  el.innerHTML = board.map((v, idx) => {
+    const cls = v <= 2048 ? `tile-${v}` : "tile-2048";
+    const anim = idx === newIdx ? "tile-new" : (mergedIndices.has(idx) ? "tile-merged" : "");
+    const fontSize = v >= 1024 ? "text-base" : v >= 128 ? "text-lg" : "text-xl";
+    return `<div class="h-16 sm:h-[72px] rounded-2xl flex items-center justify-center font-extrabold ${fontSize} ${cls} ${anim} shadow-sm transition-colors">
+      ${v || ""}
+    </div>`;
+  }).join("");
+
+  document.getElementById("cube-score").innerText = score;
+  if (score > bestScore) {
+    bestScore = score;
+    localStorage.setItem("iw_cube_best", String(bestScore));
+  }
+  document.getElementById("cube-best").innerText = bestScore;
+
+  // Live reward preview (matches backend: score >= 64 -> min(score/100, 10))
+  const rewardEst = score >= 64 ? Math.min(score / 100, 10) : 0;
+  document.getElementById("cube-reward-preview").innerText = `৳${rewardEst.toFixed(2)}`;
+  document.getElementById("claim-btn-amount").innerText = `৳${rewardEst.toFixed(2)}`;
+
+  const pct = Math.min(Math.round((score / 64) * 100), 100);
+  document.getElementById("progress-pct").innerText = score >= 64 ? "আনলকড ✓" : `${pct}%`;
+  document.getElementById("progress-bar").style.width = `${pct}%`;
+}
+
+function slideLine(line, indices) {
+  let nonZero = [];
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] !== 0) nonZero.push(line[i]);
+  }
+
+  let result = [];
+  let localMerges = [];
+  let gained = 0;
+  let maxMerged = 0;
+
+  for (let i = 0; i < nonZero.length; i++) {
+    if (i < nonZero.length - 1 && nonZero[i] === nonZero[i + 1]) {
+      const mergedVal = nonZero[i] * 2;
+      result.push(mergedVal);
+      gained += mergedVal;
+      if (mergedVal > maxMerged) maxMerged = mergedVal;
+      localMerges.push(result.length - 1);
+      i++;
+    } else {
+      result.push(nonZero[i]);
+    }
+  }
+  while (result.length < 4) result.push(0);
+
+  const mergedBoardIndices = localMerges.map(pos => indices[pos]);
+  return { result, gained, maxMerged, mergedBoardIndices };
+}
+
+function move(dir) {
+  const snapshot = { board: [...board], score };
+  let next = [...board];
+  let totalGained = 0;
+  let maxMerged = 0;
+  let newMergedSet = new Set();
+
+  for (let i = 0; i < 4; i++) {
+    let indices = [];
+    for (let j = 0; j < 4; j++) {
+      let idx =
+        dir === "left" ? i * 4 + j :
+        dir === "right" ? i * 4 + (3 - j) :
+        dir === "up" ? j * 4 + i :
+        (3 - j) * 4 + i;
+      indices.push(idx);
+    }
+    const line = indices.map(idx => board[idx]);
+    const { result, gained, maxMerged: mMax, mergedBoardIndices } = slideLine(line, indices);
+    totalGained += gained;
+    if (mMax > maxMerged) maxMerged = mMax;
+    mergedBoardIndices.forEach(idx => newMergedSet.add(idx));
+    indices.forEach((idx, pos) => (next[idx] = result[pos]));
+  }
+
+  if (JSON.stringify(next) === JSON.stringify(board)) {
+    SoundFX.bump();
+    return;
+  }
+
+  prevState = snapshot;
+  document.getElementById("undo-btn").disabled = false;
+
+  board = next;
+  score += totalGained;
+  mergedIndices = newMergedSet;
+
+  if (totalGained > 0) {
+    comboCount++;
+    SoundFX.merge(maxMerged);
+    showScorePopup(totalGained);
+    if (navigator.vibrate) navigator.vibrate(15);
+    if (comboCount >= 2) {
+      document.getElementById("combo-badge").innerHTML = `<i class="fa-solid fa-fire text-orange-500"></i> ${comboCount}x মার্জ স্ট্রিক!`;
+    }
+  } else {
+    comboCount = 0;
+    SoundFX.slide();
+    document.getElementById("combo-badge").innerHTML = `<i class="fa-solid fa-bolt text-amber-500"></i> ক্লেইম আনলক (মিনিমাম ৬৪ স্কোর)`;
+  }
+
+  spawn();
+  render();
+
+  if (!hasMovesLeft()) {
+    SoundFX.gameOver();
+    document.getElementById("final-score-text").innerText = score;
+    document.getElementById("game-over-overlay").classList.remove("hidden");
+  }
+}
+
+function restartGame() {
+  board = Array(16).fill(0);
+  score = 0;
+  prevState = null;
+  newIdx = -1;
+  mergedIndices.clear();
+  comboCount = 0;
+  document.getElementById("undo-btn").disabled = true;
+  document.getElementById("game-over-overlay").classList.add("hidden");
+  document.getElementById("cube-msg").classList.add("hidden");
+  spawn();
+  spawn();
+  SoundFX.slide();
+  render();
+}
+
+async function claimCubeReward() {
+  const msgBox = document.getElementById("cube-msg");
+  const btn = document.getElementById("claim-btn");
+  btn.disabled = true;
+
+  const fd = new FormData();
+  fd.append("score", score);
+
+  try {
+    const res = await fetch("/work/cube-game/claim", { method: "POST", body: fd });
+    const data = await res.json();
+    msgBox.classList.remove("hidden");
+
+    if (data.ok) {
+      SoundFX.claim();
+      if (navigator.vibrate) navigator.vibrate([30, 40, 60]);
+      msgBox.className = "rounded-2xl px-4 py-2.5 text-xs font-bold text-center bg-emerald-100 text-emerald-900 border border-emerald-300";
+      msgBox.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> ${data.message}`;
+      board = Array(16).fill(0);
+      score = 0;
+      prevState = null;
+      document.getElementById("game-over-overlay").classList.add("hidden");
+      spawn();
+      spawn();
+      render();
+    } else {
+      SoundFX.bump();
+      msgBox.className = "rounded-2xl px-4 py-2.5 text-xs font-bold text-center bg-amber-50 text-amber-900 border border-amber-200";
+      msgBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> ${data.message}`;
+    }
+  } catch (e) {
+    SoundFX.bump();
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ================= KEYBOARD & TOUCH SWIPE CONTROLS =================
+document.addEventListener("keydown", (e) => {
+  const map = { ArrowLeft: "left", a: "left", A: "left", ArrowRight: "right", d: "right", D: "right", ArrowUp: "up", w: "up", W: "up", ArrowDown: "down", s: "down", S: "down" };
+  if (map[e.key]) {
+    e.preventDefault();
+    move(map[e.key]);
+  }
+});
+
+let touchStartX = 0, touchStartY = 0;
+const boardEl = document.getElementById("cube-board");
+boardEl.addEventListener("touchstart", (e) => {
+  touchStartX = e.changedTouches[0].screenX;
+  touchStartY = e.changedTouches[0].screenY;
+}, { passive: true });
+
+boardEl.addEventListener("touchend", (e) => {
+  const dx = e.changedTouches[0].screenX - touchStartX;
+  const dy = e.changedTouches[0].screenY - touchStartY;
+  if (Math.abs(dx) < 22 && Math.abs(dy) < 22) return;
+  if (Math.abs(dx) > Math.abs(dy)) move(dx > 0 ? "right" : "left");
+  else move(dy > 0 ? "down" : "up");
+}, { passive: true });
+
+// Init
+updateSoundIcon();
+document.getElementById("undo-btn").disabled = true;
+spawn();
+spawn();
+render();
+</script>
+{% endblock %}
