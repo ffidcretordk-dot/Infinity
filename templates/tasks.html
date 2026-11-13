@@ -1,0 +1,36 @@
+{% extends "base_app.html" %}
+{% block title %}মাইক্রো টাস্ক - InfinityWork{% endblock %}
+{% block content %}
+<div class="space-y-4">
+  <div class="soft-card rounded-3xl p-5 flex items-center justify-between">
+    <div>
+      <h1 class="text-xl font-extrabold">মাইক্রো টাস্ক সমূহ</h1>
+      <p class="text-xs text-emerald-700">টাস্ক সম্পন্ন করে স্ক্রিনশট আপলোড করুন</p>
+    </div>
+    <span class="bg-emerald-100 text-emerald-900 px-3 py-1 rounded-full text-xs font-bold">{{ tasks|length }} টি কাজ</span>
+  </div>
+
+  <div class="space-y-3">
+    {% for t in tasks %}
+    <div class="soft-card rounded-3xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div class="space-y-1">
+        <span class="inline-block bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full text-[11px] font-bold">{{ t.category }}</span>
+        <h3 class="font-extrabold text-base">{{ t.title }}</h3>
+        <p class="text-xs text-emerald-800/80 line-clamp-2">{{ t.description }}</p>
+      </div>
+      <div class="flex items-center gap-3 shrink-0">
+        <div class="text-right">
+          <div class="text-lg font-extrabold text-emerald-700">৳{{ "%.2f"|format(t.rate) }}</div>
+          {% if t.id in submitted_ids %}
+          <span class="text-[11px] font-bold text-amber-700">স্ট্যাটাস: {{ submitted_ids[t.id] }}</span>
+          {% endif %}
+        </div>
+        <a href="/task/{{ t.id }}" class="bg-emerald-900 text-white px-4 py-2.5 rounded-full text-xs font-bold">বিস্তারিত →</a>
+      </div>
+    </div>
+    {% else %}
+    <div class="soft-card rounded-3xl p-8 text-center text-sm text-emerald-700">এই মুহূর্তে কোনো টাস্ক নেই।</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
