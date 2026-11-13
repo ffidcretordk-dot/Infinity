@@ -1,0 +1,45 @@
+{% extends "base_app.html" %}
+{% block title %}{{ task.title }} - InfinityWork{% endblock %}
+{% block content %}
+<div class="space-y-4">
+  <a href="/task" class="inline-flex items-center gap-1 text-xs font-bold text-emerald-800">← সকল টাস্কে ফিরে যান</a>
+
+  <div class="soft-card rounded-3xl p-6 space-y-4">
+    <div class="flex items-start justify-between gap-3">
+      <div>
+        <span class="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold">{{ task.category }}</span>
+        <h1 class="text-xl font-extrabold mt-2">{{ task.title }}</h1>
+      </div>
+      <div class="bg-emerald-900 text-white px-4 py-2 rounded-2xl font-extrabold text-base">৳{{ "%.2f"|format(task.rate) }}</div>
+    </div>
+
+    <div class="bg-emerald-50/80 border border-emerald-100 rounded-2xl p-4 text-sm text-emerald-900 whitespace-pre-line">{{ task.description }}</div>
+
+    {% if task.task_link %}
+    <a href="{{ task.task_link }}" target="_blank" rel="noopener"
+       class="inline-flex items-center gap-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-950 px-5 py-2.5 rounded-full text-xs font-bold">
+      🔗 কাজের লিংকে যান →
+    </a>
+    {% endif %}
+  </div>
+
+  <div class="soft-card rounded-3xl p-6 space-y-4">
+    <h2 class="font-extrabold text-base">কাজটি জমা দিন</h2>
+    <form action="/task/{{ task.id }}/submit" method="POST" enctype="multipart/form-data" class="space-y-4">
+      <div>
+        <label class="text-xs font-bold block mb-1">প্রমাণ নোট / ইউজারনেম</label>
+        <input type="text" name="proof_note" required placeholder="যে আইডি দিয়ে কাজ করেছেন তার নাম/নোট দিন"
+               class="w-full px-4 py-3 rounded-2xl border border-emerald-200 text-sm" />
+      </div>
+      <div>
+        <label class="text-xs font-bold block mb-1">স্ক্রিনশট আপলোড করুন</label>
+        <input type="file" name="proof_image" accept="image/*"
+               class="w-full px-3 py-2.5 rounded-2xl border border-emerald-200 text-xs bg-white" />
+      </div>
+      <button type="submit" class="w-full bg-emerald-900 hover:bg-emerald-800 text-white py-3.5 rounded-full font-bold text-sm shadow">
+        কাজ সাবমিট করুন ✓
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}
