@@ -1,0 +1,166 @@
+{% extends "base_public.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 pt-5 pb-12 space-y-12">
+  <!-- Navbar Pill -->
+  <header class="glass-card rounded-full px-5 py-3 flex items-center justify-between">
+    <a href="/" class="flex items-center gap-2.5">
+      <svg class="w-9 h-9 text-emerald-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M18.178 8c5.096 0 5.096 8 0 8-5.095 0-7.133-8-12.739-8-4.585 0-4.585 8 0 8 5.606 0 7.644-8 12.74-8z"/>
+      </svg>
+      <span class="font-extrabold text-xl text-emerald-950">Infinity Work</span>
+    </a>
+
+    <nav class="hidden md:flex items-center gap-2 text-sm font-semibold text-emerald-900">
+      <a href="/" class="bg-emerald-600/20 text-emerald-900 px-4 py-1.5 rounded-full">হোম</a>
+      <a href="/work" class="px-3 py-1.5 hover:text-emerald-700">কাজসমূহ</a>
+      <a href="#how-it-works" class="px-3 py-1.5 hover:text-emerald-700">কিভাবে কাজ করবেন</a>
+      <a href="{{ channel_url }}" target="_blank" class="px-3 py-1.5 hover:text-emerald-700">নোটিশ</a>
+      <a href="{{ support_url }}" target="_blank" class="px-3 py-1.5 hover:text-emerald-700">সাপোর্ট</a>
+    </nav>
+
+    {% if user %}
+    <a href="/i" class="btn-primary-green text-white px-5 py-2 rounded-full text-sm font-bold">ড্যাশবোর্ড →</a>
+    {% else %}
+    <a href="/login" class="btn-primary-green text-white px-5 py-2 rounded-full text-sm font-bold flex items-center gap-1.5">
+      <span>লগইন</span>
+    </a>
+    {% endif %}
+  </header>
+
+  <!-- Hero Section -->
+  <section class="grid md:grid-cols-2 gap-8 items-center pt-2">
+    <div class="space-y-5">
+      <span class="inline-flex items-center gap-2 bg-emerald-100/90 text-emerald-900 px-4 py-1.5 rounded-full text-xs font-bold">
+        ⚡ অনলাইন আয় এখন আরও সহজ!
+      </span>
+      <h1 class="text-4xl md:text-5xl font-extrabold leading-tight text-emerald-950">
+        Infinity Work <br/>
+        <span class="text-emerald-700">কাজ করুন, আয় করুন</span>
+      </h1>
+      <p class="text-emerald-800/90 text-base leading-relaxed max-w-md">
+        সহজ কিছু কাজ করে প্রতিদিন আয় করুন এবং নিজের অনলাইন ইনকাম যাত্রা শুরু করুন।
+      </p>
+      <div class="flex flex-wrap items-center gap-3 pt-1">
+        <a href="/signup" class="btn-primary-green text-white px-7 py-3.5 rounded-full font-bold text-sm flex items-center gap-2 hover:opacity-95 transition">
+          🚀 এখনই শুরু করুন →
+        </a>
+        <a href="#how-it-works" class="glass-card px-6 py-3.5 rounded-full font-bold text-sm text-emerald-900 flex items-center gap-2 hover:bg-white transition">
+          ▶ ভিডিও দেখুন
+        </a>
+      </div>
+    </div>
+
+    <!-- Hero Laptop Graphic matching reference -->
+    <div class="relative flex justify-center">
+      <div class="w-72 h-72 md:w-80 md:h-80 rounded-full bg-emerald-200/50 blur-2xl absolute -z-10"></div>
+      <div class="glass-card rounded-3xl p-6 w-full max-w-md relative">
+        <div class="bg-gradient-to-br from-emerald-800 to-emerald-950 rounded-2xl p-8 flex flex-col items-center justify-center text-white shadow-inner">
+          <svg class="w-24 h-24 text-emerald-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18.178 8c5.096 0 5.096 8 0 8-5.095 0-7.133-8-12.739-8-4.585 0-4.585 8 0 8 5.606 0 7.644-8 12.74-8z"/>
+          </svg>
+          <span class="mt-2 text-xs font-bold tracking-widest uppercase text-emerald-300">Trusted Income Platform</span>
+        </div>
+        <div class="h-3 bg-slate-200 rounded-b-xl mx-3"></div>
+        <!-- Floating badges -->
+        <div class="absolute -top-4 -right-3 w-14 h-14 rounded-2xl bg-white shadow-lg border border-emerald-100 flex items-center justify-center text-2xl font-extrabold text-emerald-700">৳</div>
+        <div class="absolute -bottom-3 -left-3 bg-white shadow-lg border border-emerald-100 rounded-2xl px-3 py-2 text-xs font-bold text-emerald-800">✓ ১০০% নিরাপদ</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats Bar -->
+  <section class="glass-card rounded-3xl p-5 grid grid-cols-2 md:grid-cols-4 gap-4 divide-y md:divide-y-0 md:divide-x divide-emerald-100">
+    <div class="flex items-center gap-3 justify-center pt-2 md:pt-0">
+      <span class="text-2xl">👥</span>
+      <div><div class="font-extrabold text-lg">50K+</div><div class="text-xs text-emerald-700">সক্রিয় ব্যবহারকারী</div></div>
+    </div>
+    <div class="flex items-center gap-3 justify-center pt-2 md:pt-0">
+      <span class="text-2xl">💰</span>
+      <div><div class="font-extrabold text-lg">৳12M+</div><div class="text-xs text-emerald-700">মোট পেমেন্ট</div></div>
+    </div>
+    <div class="flex items-center gap-3 justify-center pt-2 md:pt-0">
+      <span class="text-2xl">✅</span>
+      <div><div class="font-extrabold text-lg">100%</div><div class="text-xs text-emerald-700">নিরাপদ ও বিশ্বাসযোগ্য</div></div>
+    </div>
+    <div class="flex items-center gap-3 justify-center pt-2 md:pt-0">
+      <span class="text-2xl">🎧</span>
+      <div><div class="font-extrabold text-lg">24/7</div><div class="text-xs text-emerald-700">সাপোর্ট</div></div>
+    </div>
+  </section>
+
+  <!-- Why Infinity Work -->
+  <section class="space-y-6">
+    <h2 class="text-center text-2xl font-extrabold text-emerald-950">কেন Infinity Work?</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="glass-card rounded-3xl p-5 text-center space-y-2">
+        <div class="w-12 h-12 mx-auto rounded-full bg-emerald-100 flex items-center justify-center text-xl">🚀</div>
+        <h3 class="font-bold text-base">সহজ কাজ</h3>
+        <p class="text-xs text-emerald-800/80">খুবই সহজ ও বুঝতে সুবিধাজনক কাজ</p>
+      </div>
+      <div class="glass-card rounded-3xl p-5 text-center space-y-2">
+        <div class="w-12 h-12 mx-auto rounded-full bg-emerald-100 flex items-center justify-center text-xl">⚡</div>
+        <h3 class="font-bold text-base">দ্রুত পেমেন্ট</h3>
+        <p class="text-xs text-emerald-800/80">আপনার আয় দ্রুতই পেমেন্ট করুন</p>
+      </div>
+      <div class="glass-card rounded-3xl p-5 text-center space-y-2">
+        <div class="w-12 h-12 mx-auto rounded-full bg-emerald-100 flex items-center justify-center text-xl">🛡️</div>
+        <h3 class="font-bold text-base">নিরাপদ প্ল্যাটফর্ম</h3>
+        <p class="text-xs text-emerald-800/80">আপনার তথ্য সম্পূর্ণ নিরাপদ</p>
+      </div>
+      <div class="glass-card rounded-3xl p-5 text-center space-y-2">
+        <div class="w-12 h-12 mx-auto rounded-full bg-emerald-100 flex items-center justify-center text-xl">🤝</div>
+        <h3 class="font-bold text-base">সাপোর্ট টিম</h3>
+        <p class="text-xs text-emerald-800/80">যেকোনো সমস্যায় সাথে আছি আমরা</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section id="how-it-works" class="rounded-3xl bg-gradient-to-r from-emerald-100/80 to-emerald-50/90 border border-emerald-200/70 p-6 md:p-8 grid md:grid-cols-12 gap-6 items-center">
+    <div class="md:col-span-4 space-y-3">
+      <h2 class="text-2xl font-extrabold">কিভাবে কাজ করবেন?</h2>
+      <p class="text-sm text-emerald-800">মাত্র কয়েকটি ধাপে শুরু করুন আপনার অনলাইন আয়!</p>
+      <a href="/signup" class="inline-flex btn-primary-green text-white px-5 py-2.5 rounded-full text-xs font-bold">বিস্তারিত দেখুন →</a>
+    </div>
+    <div class="md:col-span-8 grid grid-cols-3 gap-3 text-center">
+      <div class="space-y-2">
+        <div class="w-14 h-14 mx-auto rounded-full bg-white shadow flex items-center justify-center text-xl">👤</div>
+        <div class="text-xs md:text-sm font-bold">১. রেজিস্ট্রেশন করুন</div>
+      </div>
+      <div class="space-y-2">
+        <div class="w-14 h-14 mx-auto rounded-full bg-white shadow flex items-center justify-center text-xl">✅</div>
+        <div class="text-xs md:text-sm font-bold">২. কাজ সম্পন্ন করুন</div>
+      </div>
+      <div class="space-y-2">
+        <div class="w-14 h-14 mx-auto rounded-full bg-white shadow flex items-center justify-center text-xl">👛</div>
+        <div class="text-xs md:text-sm font-bold">৩. পেমেন্ট নিন</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bottom CTA Banner -->
+  <section class="glass-card rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-4">
+    <div class="flex items-center gap-4">
+      <div class="w-16 h-16 rounded-2xl bg-emerald-100 flex items-center justify-center text-3xl">💰</div>
+      <div>
+        <h3 class="text-xl font-extrabold">আজই শুরু করুন Infinity Work-এ!</h3>
+        <p class="text-xs md:text-sm text-emerald-800/80">আপনার দক্ষতা দিয়েই গড়ুন নিজের আয়ের পথ।</p>
+      </div>
+    </div>
+    <a href="/signup" class="btn-primary-green text-white px-7 py-3 rounded-full text-sm font-bold shrink-0">এখনই জয়েন করুন →</a>
+  </section>
+
+  <!-- Footer -->
+  <footer class="pt-6 border-t border-emerald-200/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-emerald-800">
+    <div class="flex items-center gap-2 font-bold">
+      <span>∞ Infinity Work</span>
+      <span>|</span>
+      <span>© 2026 Infinity Work. All rights reserved.</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="{{ channel_url }}" target="_blank" class="px-3 py-1 rounded-full bg-emerald-100 font-bold">Telegram Channel</a>
+      <a href="{{ support_url }}" target="_blank" class="px-3 py-1 rounded-full bg-emerald-900 text-white font-bold">Support</a>
+    </div>
+  </footer>
+</div>
+{% endblock %}
