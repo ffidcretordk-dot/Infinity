@@ -1,0 +1,72 @@
+{% extends "base_app.html" %}
+{% block title %}হোম - InfinityWork{% endblock %}
+{% block content %}
+<div class="space-y-5">
+  <!-- Wallet Card -->
+  <div class="rounded-3xl bg-gradient-to-br from-emerald-800 to-emerald-950 text-white p-6 shadow-xl relative overflow-hidden">
+    <div class="flex items-start justify-between">
+      <div>
+        <p class="text-xs text-emerald-200 font-medium">স্বাগতম, {{ user.name }}</p>
+        <h2 class="text-3xl font-extrabold mt-1">৳{{ "%.2f"|format(user.balance) }}</h2>
+        <p class="text-xs text-emerald-300 mt-1">মোট আয়: ৳{{ "%.2f"|format(user.total_earned) }} • মোট রেফার: {{ referral_count }}</p>
+      </div>
+      <a href="/payout" class="bg-white text-emerald-950 px-4 py-2 rounded-full text-xs font-extrabold shadow">উইথড্র</a>
+    </div>
+  </div>
+
+  <!-- Referral Card -->
+  <div class="soft-card rounded-3xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div>
+      <h3 class="font-extrabold text-sm">বন্ধুদের রেফার করে আয় করুন!</h3>
+      <p class="text-xs text-emerald-700">প্রতি রেফারে আপনি পাবেন <b>৮৳</b> এবং আপনার বন্ধু পাবে <b>১০৳</b></p>
+    </div>
+    <div class="flex items-center gap-2">
+      <code class="bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl text-xs font-bold">{{ user.referral_code }}</code>
+      <button id="copy-ref-btn" onclick="copyText('{{ request.base_url }}signup?ref={{ user.referral_code }}', 'copy-ref-btn')"
+              class="bg-emerald-900 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold">লিংক কপি</button>
+    </div>
+  </div>
+
+  <!-- Quick Work Grid -->
+  <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+    <a href="/task" class="soft-card rounded-2xl p-4 hover:border-emerald-400 transition">
+      <div class="text-2xl mb-1">📋</div>
+      <div class="font-bold text-sm">Micro Task</div>
+      <div class="text-[11px] text-emerald-700">ছোট টাস্ক করে আয়</div>
+    </a>
+    <a href="/work/typing" class="soft-card rounded-2xl p-4 hover:border-emerald-400 transition">
+      <div class="text-2xl mb-1">⌨️</div>
+      <div class="font-bold text-sm">Typing Task</div>
+      <div class="text-[11px] text-emerald-700">লিখে আয় করুন</div>
+    </a>
+    <a href="/work/cube-game" class="soft-card rounded-2xl p-4 hover:border-emerald-400 transition">
+      <div class="text-2xl mb-1">🎲</div>
+      <div class="font-bold text-sm">2,4,8 Cube</div>
+      <div class="text-[11px] text-emerald-700">গেম খেলে আয়</div>
+    </a>
+  </div>
+
+  <!-- Recent Logs -->
+  <div class="soft-card rounded-3xl p-5 space-y-3">
+    <div class="flex items-center justify-between">
+      <h3 class="font-extrabold text-sm">সাম্প্রতিক কার্যক্রম</h3>
+      <a href="/work" class="text-xs font-bold text-emerald-700">সব কাজ →</a>
+    </div>
+    {% if recent_logs %}
+    <div class="divide-y divide-emerald-100">
+      {% for log in recent_logs %}
+      <div class="py-2.5 flex items-center justify-between text-xs">
+        <div>
+          <div class="font-bold">{{ log.work_type }}</div>
+          <div class="text-emerald-700/80">{{ log.details }}</div>
+        </div>
+        <span class="font-extrabold text-emerald-700">+৳{{ "%.2f"|format(log.reward) }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-xs text-emerald-700">এখনো কোনো কাজের হিস্টোরি নেই। Work বাটনে ক্লিক করে শুরু করুন!</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
