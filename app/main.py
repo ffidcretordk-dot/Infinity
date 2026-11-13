@@ -176,7 +176,85 @@ async def signup_submit(
     response.set_cookie("iw_registered", "1", max_age=60 * 60 * 24 * 365 * 5, samesite="lax")
     return response
 
+@app.get("/history", response_class=HTMLResponse)
+async def history_page(request: Request, status: str = "all"):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
 
+    # Fetch Micro Task Submissions + Tasks lookup + General Work Logs
+    submissions = await db.select("task_submissions", filters={"user_id": user["id"]}, order="created_at.desc")
+    all_tasks = await db.select("tasks")
+    task_map = {t["id"]: t for t in all_tasks}
+    work_logs = await db.select("work_logs", filters={"user_id": user["id"]}, order="created_at.desc")
+
+    icon_map = {
+        "Typing Task": ("⌨️", "Typing Task"),
+        "Survey": ("📝", "Survey করে আয়"),
+        "ChatGPT Image Gen": ("🎨", "ChatGPT Image Generate"),
+        "2,4,8 Cube Game": ("🎲", "গেম খেলে আয় (2,4,8 Cube)"),
+        "TikTok Account Sell": ("🎵", "TikTok Account Sell"),
+        "Referral Bonus": ("🤝", "রেফারেল বোনাস"),
+        "Welcome Referral Bonus": ("🎁", "ওয়েলকাম রেফার বোনাস"),
+    }
+
+    combined: list[dict] = []
+
+    # 1. Micro Task Submissions (<task name> | <status> | <amount>)
+    for sub in submissions:
+        task_info = task_map.get(sub["task_id"], {})
+        task_title = task_info.get("title") or f"Micro Task #{sub['task_id']}"
+        raw_status = (sub.get("status") or "pending").lower()
+        norm_status = "approved" if raw_status in ("approved", "completed") else ("rejected" if raw_status == "rejected" else "pending")
+        status_label = {"approved": "Approved", "pending": "Pending", "rejected": "Rejected"}[norm_status]
+
+        combined.append({
+            "icon": "📋",
+            "title": task_title,
+            "subtitle": f"Micro Task • {sub.get('proof_note') or 'জমা দেওয়া হয়েছে'}",
+            "amount": float(sub.get("reward") or 0),
+            "norm_status": norm_status,
+            "status_label": status_label,
+            "created_at": sub.get("created_at") or "",
+            "date": (sub.get("created_at") or "")[:16].replace("T", " "),
+        })
+
+    # 2. All Other Work Logs (Game, Typing, Survey, Referral, AI Image, TikTok)
+    for log in work_logs:
+        wtype = log.get("work_type") or "Work"
+        icon, display_title = icon_map.get(wtype, ("💼", wtype))
+        raw_status = (log.get("status") or "completed").lower()
+        norm_status = "approved" if raw_status in ("completed", "approved") else ("rejected" if raw_status == "rejected" else "pending")
+        status_label = {"approved": "Approved", "pending": "Pending", "rejected": "Rejected"}[norm_status]
+
+        combined.append({
+            "icon": icon,
+            "title": display_title,
+            "subtitle": log.get("details") or wtype,
+            "amount": float(log.get("reward") or 0),
+            "norm_status": norm_status,
+            "status_label": status_label,
+            "created_at": log.get("created_at") or "",
+            "date": (log.get("created_at") or "")[:16].replace("T", " "),
+        })
+
+    # Sort newest first
+    combined.sort(key=lambda x: x["created_at"], reverse=True)
+
+    counts = {
+        "all": len(combined),
+        "approved": sum(1 for x in combined if x["norm_status"] == "approved"),
+        "pending": sum(1 for x in combined if x["norm_status"] == "pending"),
+        "rejected": sum(1 for x in combined if x["norm_status"] == "rejected"),
+    }
+
+    status_filter = status if status in ("all", "approved", "pending", "rejected") else "all"
+    filtered = combined if status_filter == "all" else [x for x in combined if x["norm_status"] == status_filter]
+
+    ctx = base_ctx(request, user, "history")
+    ctx.update({"items": filtered, "counts": counts, "status_filter": status_filter})
+    return templates.TemplateResponse("history.html", ctx)
+    
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
     user = await get_current_user(request)
