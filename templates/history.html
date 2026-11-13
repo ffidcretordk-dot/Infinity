@@ -1,0 +1,103 @@
+{% extends "base_app.html" %}
+{% block title %}আয়ের হিস্টোরি - InfinityWork{% endblock %}
+{% block content %}
+<div class="space-y-5">
+  <!-- Header & Summary -->
+  <div class="rounded-3xl bg-gradient-to-br from-emerald-800 to-emerald-950 text-white p-6 shadow-xl">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-xl font-extrabold">📜 আয়ের বিস্তারিত হিস্টোরি</h1>
+        <p class="text-xs text-emerald-200 mt-1">আপনার প্রতিটি কাজ, গেম ও বোনাসের হিসাব</p>
+      </div>
+      <div class="text-right">
+        <div class="text-[11px] text-emerald-300">মোট আয়</div>
+        <div class="text-2xl font-extrabold">৳{{ "%.2f"|format(user.total_earned) }}</div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-emerald-700/60 text-center text-xs">
+      <div class="bg-white/10 rounded-2xl py-2 px-1">
+        <div class="text-emerald-200 text-[11px]">সফল / Approved</div>
+        <div class="font-extrabold text-sm">{{ counts.approved }} টি</div>
+      </div>
+      <div class="bg-white/10 rounded-2xl py-2 px-1">
+        <div class="text-emerald-200 text-[11px]">পেন্ডিং</div>
+        <div class="font-extrabold text-sm">{{ counts.pending }} টি</div>
+      </div>
+      <div class="bg-white/10 rounded-2xl py-2 px-1">
+        <div class="text-emerald-200 text-[11px]">বাতিল</div>
+        <div class="font-extrabold text-sm">{{ counts.rejected }} টি</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Pills -->
+  <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-bold">
+    <a href="/history?status=all"
+       class="px-4 py-2 rounded-full shrink-0 transition {% if status_filter == 'all' %}bg-emerald-900 text-white shadow{% else %}bg-white border border-emerald-200 text-emerald-900{% endif %}">
+      সব ({{ counts.all }})
+    </a>
+    <a href="/history?status=approved"
+       class="px-4 py-2 rounded-full shrink-0 transition {% if status_filter == 'approved' %}bg-emerald-900 text-white shadow{% else %}bg-white border border-emerald-200 text-emerald-900{% endif %}">
+      Approved ({{ counts.approved }})
+    </a>
+    <a href="/history?status=pending"
+       class="px-4 py-2 rounded-full shrink-0 transition {% if status_filter == 'pending' %}bg-emerald-900 text-white shadow{% else %}bg-white border border-emerald-200 text-emerald-900{% endif %}">
+      Pending ({{ counts.pending }})
+    </a>
+    <a href="/history?status=rejected"
+       class="px-4 py-2 rounded-full shrink-0 transition {% if status_filter == 'rejected' %}bg-emerald-900 text-white shadow{% else %}bg-white border border-emerald-200 text-emerald-900{% endif %}">
+      Rejected ({{ counts.rejected }})
+    </a>
+  </div>
+
+  <!-- Detailed History List -->
+  <div class="soft-card rounded-3xl p-4 sm:p-5 space-y-3">
+    {% if items %}
+    <div class="divide-y divide-emerald-100">
+      {% for item in items %}
+      <div class="py-3.5 first:pt-1 last:pb-1 flex items-center justify-between gap-3">
+        <div class="flex items-start gap-3 min-w-0">
+          <div class="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-lg shrink-0">
+            {{ item.icon }}
+          </div>
+          <div class="min-w-0">
+            <div class="font-extrabold text-sm text-emerald-950 truncate">{{ item.title }}</div>
+            <div class="text-xs text-emerald-700/90 truncate">{{ item.subtitle }}</div>
+            <div class="text-[11px] text-slate-400 mt-0.5">{{ item.date }}</div>
+          </div>
+        </div>
+
+        <div class="text-right shrink-0 space-y-1">
+          <div class="font-extrabold text-sm {% if item.norm_status == 'rejected' %}text-red-500 line-through{% elif item.norm_status == 'pending' %}text-amber-700{% else %}text-emerald-700{% endif %}">
+            +৳{{ "%.2f"|format(item.amount) }}
+          </div>
+          <div>
+            {% if item.norm_status == 'approved' %}
+            <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+              {{ item.status_label }}
+            </span>
+            {% elif item.norm_status == 'pending' %}
+            <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+              {{ item.status_label }}
+            </span>
+            {% else %}
+            <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700">
+              {{ item.status_label }}
+            </span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="py-10 text-center space-y-2">
+      <div class="text-3xl">📭</div>
+      <p class="text-sm font-bold text-emerald-900">এই ক্যাটাগরিতে কোনো হিস্টোরি পাওয়া যায়নি</p>
+      <a href="/work" class="inline-block mt-2 bg-emerald-900 text-white px-5 py-2 rounded-full text-xs font-bold">কাজ শুরু করুন →</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
