@@ -1,0 +1,51 @@
+{% extends "base_public.html" %}
+{% block title %}সাইনআপ - InfinityWork{% endblock %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center px-4 py-10">
+  <div class="glass-card rounded-3xl p-7 w-full max-w-md space-y-5">
+    <div class="text-center space-y-1">
+      <a href="/" class="inline-flex items-center gap-2 font-extrabold text-xl text-emerald-950">
+        <span class="text-emerald-700 text-2xl">∞</span> InfinityWork
+      </a>
+      <h1 class="text-2xl font-extrabold">নতুন অ্যাকাউন্ট খুলুন</h1>
+      <p class="text-xs text-emerald-700">রেফার কোড দিলে আপনি ১০৳ ও রেফারার ৮৳ বোনাস পাবেন</p>
+    </div>
+
+    <form action="/signup" method="POST" class="space-y-4">
+      <input type="hidden" name="device_id" id="device_id_input" value="" />
+
+      <div>
+        <label class="text-xs font-bold block mb-1">আপনার নাম</label>
+        <input type="text" name="name" required placeholder="যেমন: আরিফুল ইসলাম"
+               class="w-full px-4 py-3 rounded-2xl border border-emerald-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" />
+      </div>
+
+      <div>
+        <label class="text-xs font-bold block mb-1">ইমেইল</label>
+        <input type="email" name="email" required placeholder="you@example.com"
+               class="w-full px-4 py-3 rounded-2xl border border-emerald-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" />
+      </div>
+
+      <div>
+        <label class="text-xs font-bold block mb-1">পাসওয়ার্ড</label>
+        <input type="password" name="password" required minlength="6" placeholder="কমপক্ষে ৬ অক্ষর"
+               class="w-full px-4 py-3 rounded-2xl border border-emerald-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" />
+      </div>
+
+      <div>
+        <label class="text-xs font-bold block mb-1">রেফারেল কোড (অপশনাল)</label>
+        <input type="text" name="referral_code" value="{{ ref_code }}" placeholder="থাকলে কোড দিন (১০৳ বোনাস)"
+               class="w-full px-4 py-3 rounded-2xl border border-emerald-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm uppercase" />
+      </div>
+
+      <button type="submit" class="w-full btn-primary-green text-white py-3.5 rounded-full font-bold text-sm">
+        অ্যাকাউন্ট তৈরি করুন →
+      </button>
+    </form>
+
+    <p class="text-center text-xs text-emerald-800">
+      আগেই অ্যাকাউন্ট আছে? <a href="/login" class="font-bold text-emerald-700 underline">লগইন করুন</a>
+    </p>
+  </div>
+</div>
+{% endblock %}
