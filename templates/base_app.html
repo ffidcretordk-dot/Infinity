@@ -1,3 +1,4 @@
+{% include "partials/splash.html" %}
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -113,6 +114,10 @@
           <span><i class="fa-solid fa-gear w-5"></i> অ্যাডমিন প্যানেল</span><i class="fa-solid fa-chevron-right text-[10px]"></i>
         </a>
         {% endif %}
+        <button id="pwa-install-btn" onclick="installInfinityPWA()" class="hidden w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-emerald-900 text-white font-bold shadow-sm">
+          <span><i class="fa-solid fa-download w-5"></i> অ্যাপ ইন্সটল করুন</span>
+          <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded-full">PWA</span>
+        </button>
         <div class="pt-3 border-t border-emerald-100 space-y-1.5">
           <a href="{{ channel_url }}" target="_blank" class="flex items-center gap-2 px-3.5 py-2.5 rounded-xl hover:bg-emerald-50 text-emerald-700">
             <i class="fa-brands fa-telegram w-5"></i> অফিশিয়াল চ্যানেল
