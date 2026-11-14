@@ -1,5 +1,5 @@
 {% extends "base_app.html" %}
-{% block title %}2,4,8 Cube Game (Hard) - InfinityWork{% endblock %}
+{% block title %}2,4,8 Cube Game - InfinityWork{% endblock %}
 {% block content %}
 <style>
   .cube-board-wrap {
@@ -52,7 +52,6 @@
     animation: floatCellScore 0.75s ease-out forwards;
   }
 
-  /* Confetti Particle */
   @keyframes confettiDrop {
     0% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
     100% { transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(0.3); opacity: 0; }
@@ -83,19 +82,14 @@
 </style>
 
 <div class="max-w-md mx-auto space-y-3.5">
-  <!-- Header Bar with Daily 5 Min Timer & Hard Badge -->
+  <!-- Header Bar with Daily 5 Min Timer -->
   <div class="soft-card rounded-3xl p-4 flex items-center justify-between">
     <div class="flex items-center gap-2.5">
       <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-950 text-white flex items-center justify-center shadow-md">
         <i class="fa-solid fa-cubes text-lg"></i>
       </div>
       <div>
-        <div class="flex items-center gap-1.5">
-          <h1 class="font-extrabold text-base text-emerald-950">2, 4, 8 Cube</h1>
-          <span class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-extrabold uppercase">
-            <i class="fa-solid fa-fire mr-0.5"></i>Hard
-          </span>
-        </div>
+        <h1 class="font-extrabold text-base text-emerald-950 leading-tight">2, 4, 8 Cube Game</h1>
         <div class="flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 mt-0.5">
           <i class="fa-solid fa-stopwatch text-amber-600"></i>
           <span>ডেইলি সময় বাকি:</span>
@@ -121,7 +115,7 @@
     </div>
   </div>
 
-  <!-- HUD: Score, Best, Uncapped Reward -->
+  <!-- HUD: Score, Best, Live Reward (Counts from score > 0!) -->
   <div class="grid grid-cols-3 gap-2.5">
     <div class="soft-card rounded-2xl p-3 text-center">
       <div class="text-[10px] font-bold uppercase text-emerald-700 flex items-center justify-center gap-1">
@@ -139,7 +133,7 @@
 
     <div class="rounded-2xl p-3 text-center bg-gradient-to-br from-emerald-800 to-emerald-950 text-white shadow-md">
       <div class="text-[10px] font-bold uppercase text-emerald-200 flex items-center justify-center gap-1">
-        <i class="fa-solid fa-coins text-yellow-300"></i> রিওয়ার্ড (∞)
+        <i class="fa-solid fa-coins text-yellow-300"></i> রিওয়ার্ড
       </div>
       <div id="cube-reward-preview" class="text-xl font-extrabold text-yellow-300 mt-0.5">৳0.00</div>
     </div>
@@ -149,7 +143,7 @@
   <div class="soft-card rounded-2xl px-4 py-2.5 space-y-1.5">
     <div class="flex items-center justify-between text-[11px] font-bold">
       <span id="combo-badge" class="text-emerald-800 flex items-center gap-1">
-        <i class="fa-solid fa-bolt text-amber-500"></i> হার্ড মোড আনলক (মিনিমাম ১৫০ স্কোর)
+        <i class="fa-solid fa-bolt text-amber-500"></i> ক্লেইম করতে মিনিমাম ১৫০ স্কোর প্রয়োজন
       </span>
       <span id="progress-pct" class="text-emerald-700">0%</span>
     </div>
@@ -177,7 +171,7 @@
         <button onclick="restartGame()" class="flex-1 bg-white text-emerald-950 py-2.5 rounded-full font-bold text-xs shadow">
           <i class="fa-solid fa-rotate-left mr-1"></i> আবার খেলুন
         </button>
-        <button onclick="claimCubeReward()" class="flex-1 bg-emerald-500 hover:bg-emerald-400 text-white py-2.5 rounded-full font-bold text-xs shadow">
+        <button id="gameover-claim-btn" onclick="claimCubeReward()" class="flex-1 bg-emerald-500 hover:bg-emerald-400 text-white py-2.5 rounded-full font-bold text-xs shadow disabled:opacity-50">
           <i class="fa-solid fa-gift mr-1"></i> ক্লেইম করুন
         </button>
       </div>
@@ -216,9 +210,9 @@
     </div>
 
     <button id="claim-btn" onclick="claimCubeReward()"
-            class="w-full py-3.5 rounded-full font-extrabold text-sm shadow-lg transition flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-700 to-emerald-900 text-white hover:opacity-95 active:scale-95">
-      <i class="fa-solid fa-gift"></i>
-      <span>রিওয়ার্ড ক্লেইম করুন</span>
+            class="w-full py-3.5 rounded-full font-extrabold text-sm shadow-lg transition flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-700 to-emerald-900 text-white hover:opacity-95 active:scale-95 disabled:opacity-60">
+      <i id="claim-btn-icon" class="fa-solid fa-gift"></i>
+      <span id="claim-btn-text">রিওয়ার্ড ক্লেইম করুন</span>
       <span id="claim-btn-amount" class="bg-white/20 px-2.5 py-0.5 rounded-full text-xs">৳0.00</span>
     </button>
 
@@ -314,7 +308,6 @@ setInterval(() => {
   updateTimerUI();
 }, 1000);
 
-// Sync play time to server every 5 seconds
 setInterval(async () => {
   if (timerLocked || document.hidden) return;
   try {
@@ -347,7 +340,7 @@ function spawnConfetti(count = 20) {
   }
 }
 
-// ================= HARD MODE GAME LOGIC =================
+// ================= GAME LOGIC =================
 let board = Array(16).fill(0);
 let score = 0;
 let displayedScore = 0;
@@ -355,25 +348,24 @@ let bestScore = parseInt(localStorage.getItem("iw_cube_best") || "0", 10);
 let prevState = null;
 let undoLeft = 1;
 let newIndices = new Set();
-let mergedPopups = {}; // idx -> points
+let mergedPopups = {};
 let comboCount = 0;
+let isClaiming = false; // Strict double-click lock
 
 function spawnSingle() {
   const empty = board.map((v, i) => (v === 0 ? i : -1)).filter(i => i !== -1);
   if (!empty.length) return;
   const pick = empty[Math.floor(Math.random() * empty.length)];
   const roll = Math.random();
-  // Hard Mode Spawns: 55% -> 2, 35% -> 4, 10% -> 8 (when score >= 200)
   let val = roll < 0.55 ? 2 : 4;
   if (score >= 200 && roll > 0.90) val = 8;
   board[pick] = val;
   newIndices.add(pick);
 }
 
-function spawnHard() {
+function spawnNext() {
   newIndices.clear();
   spawnSingle();
-  // 18% chance of double spawn in Hard Mode if enough space
   const emptyCount = board.filter(v => v === 0).length;
   if (emptyCount >= 5 && Math.random() < 0.18) {
     spawnSingle();
@@ -381,7 +373,7 @@ function spawnHard() {
 }
 
 function undoMove() {
-  if (!prevState || undoLeft <= 0 || timerLocked) return;
+  if (!prevState || undoLeft <= 0 || timerLocked || isClaiming) return;
   board = [...prevState.board];
   score = prevState.score;
   displayedScore = score;
@@ -446,8 +438,8 @@ function render() {
   }
   document.getElementById("cube-best").innerText = bestScore;
 
-  // FIXED: Uncapped reward preview (score >= 150 -> score / 150, NO 10 cap!)
-  const rewardEst = score >= 150 ? score / 150 : 0;
+  // Live Reward counts continuously from the very first points (score 10 -> ৳0.07, etc.)
+  const rewardEst = score > 0 ? score / 150 : 0;
   document.getElementById("cube-reward-preview").innerText = `৳${rewardEst.toFixed(2)}`;
   document.getElementById("claim-btn-amount").innerText = `৳${rewardEst.toFixed(2)}`;
 
@@ -489,7 +481,7 @@ function nudgeBoard(dir) {
 }
 
 function move(dir) {
-  if (timerLocked) return;
+  if (timerLocked || isClaiming) return;
   const snapshot = { board: [...board], score };
   let next = [...board];
   let totalGained = 0;
@@ -544,10 +536,10 @@ function move(dir) {
   } else {
     comboCount = 0;
     SoundFX.slide();
-    document.getElementById("combo-badge").innerHTML = `<i class="fa-solid fa-bolt text-amber-500"></i> হার্ড মোড আনলক (মিনিমাম ১৫০ স্কোর)`;
+    document.getElementById("combo-badge").innerHTML = `<i class="fa-solid fa-bolt text-amber-500"></i> ক্লেইম করতে মিনিমাম ১৫০ স্কোর প্রয়োজন`;
   }
 
-  spawnHard();
+  spawnNext();
   render();
 
   if (!hasMovesLeft()) {
@@ -557,7 +549,7 @@ function move(dir) {
   }
 }
 
-function restartGame() {
+function restartGame(keepMsg = false) {
   if (timerLocked) return;
   board = Array(16).fill(0);
   score = 0;
@@ -570,21 +562,48 @@ function restartGame() {
   document.getElementById("undo-badge").innerText = "1";
   document.getElementById("undo-btn").disabled = true;
   document.getElementById("game-over-overlay").classList.add("hidden");
-  document.getElementById("cube-msg").classList.add("hidden");
+  if (!keepMsg) document.getElementById("cube-msg").classList.add("hidden");
   spawnSingle();
   spawnSingle();
   SoundFX.slide();
   render();
 }
 
+function setClaimButtonsState(disabled, loading = false) {
+  const mainBtn = document.getElementById("claim-btn");
+  const overBtn = document.getElementById("gameover-claim-btn");
+  const icon = document.getElementById("claim-btn-icon");
+  const text = document.getElementById("claim-btn-text");
+
+  if (mainBtn) mainBtn.disabled = disabled;
+  if (overBtn) overBtn.disabled = disabled;
+  if (icon) icon.className = loading ? "fa-solid fa-spinner fa-spin" : "fa-solid fa-gift";
+  if (text) text.innerText = loading ? "প্রসেসিং হচ্ছে..." : "রিওয়ার্ড ক্লেইম করুন";
+}
+
 async function claimCubeReward() {
-  if (timerLocked) return;
+  // Strict lock against double-click / simultaneous clicks
+  if (timerLocked || isClaiming) return;
+
   const msgBox = document.getElementById("cube-msg");
-  const btn = document.getElementById("claim-btn");
-  btn.disabled = true;
+  if (score < 150) {
+    SoundFX.bump();
+    msgBox.classList.remove("hidden");
+    msgBox.className = "rounded-2xl px-4 py-2.5 text-xs font-bold text-center bg-amber-50 text-amber-900 border border-amber-200";
+    msgBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> ক্লেইম করতে কমপক্ষে ১৫০ স্কোর করতে হবে! (বর্তমান: ${score})`;
+    return;
+  }
+
+  isClaiming = true;
+  setClaimButtonsState(true, true);
+
+  const claimScore = score;
+  // Reset score immediately before network response so a second request can never reuse it
+  score = 0;
+  displayedScore = 0;
 
   const fd = new FormData();
-  fd.append("score", score);
+  fd.append("score", claimScore);
 
   try {
     const res = await fetch("/work/cube-game/claim", { method: "POST", body: fd });
@@ -597,16 +616,27 @@ async function claimCubeReward() {
       if (navigator.vibrate) navigator.vibrate([30, 40, 60]);
       msgBox.className = "rounded-2xl px-4 py-2.5 text-xs font-bold text-center bg-emerald-100 text-emerald-900 border border-emerald-300";
       msgBox.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> ${data.message}`;
-      restartGame();
+      restartGame(true);
     } else {
+      // Restore score only if server rejected the claim
+      score = claimScore;
+      displayedScore = claimScore;
+      render();
       SoundFX.bump();
       msgBox.className = "rounded-2xl px-4 py-2.5 text-xs font-bold text-center bg-amber-50 text-amber-900 border border-amber-200";
       msgBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> ${data.message}`;
     }
   } catch (e) {
+    score = claimScore;
+    displayedScore = claimScore;
+    render();
     SoundFX.bump();
   } finally {
-    btn.disabled = false;
+    // 1.2s cooldown before unlocking buttons so rapid double-clicks are completely ignored
+    setTimeout(() => {
+      isClaiming = false;
+      setClaimButtonsState(false, false);
+    }, 1200);
   }
 }
 
