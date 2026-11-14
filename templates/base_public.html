@@ -1,3 +1,4 @@
+{% include "partials/splash.html" %}
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -5,6 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}InfinityWork - কাজ করুন, আয় করুন{% endblock %}</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#effcf4" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="InfinityWork" />
+  <link rel="apple-touch-icon" href="/pwa-icon/192.png" />
+  <link rel="icon" type="image/png" href="/pwa-icon/192.png" />
   <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     body {
