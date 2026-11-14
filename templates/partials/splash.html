@@ -1,0 +1,127 @@
+<style>
+  /* Neumorphism Gradient Splash Screen */
+  #iw-opening-screen {
+    background: linear-gradient(145deg, #e2faec 0%, #f4fdf8 52%, #d5f6e3 100%);
+    transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1), transform 0.65s cubic-bezier(0.22, 1, 0.36, 1), filter 0.65s ease;
+  }
+  #iw-opening-screen.splash-exit {
+    opacity: 0;
+    transform: scale(1.08);
+    filter: blur(8px);
+    pointer-events: none;
+  }
+  .neu-logo-card {
+    background: #ecfcf2;
+    box-shadow: 14px 14px 28px #bfe0cd, -14px -14px 28px #ffffff;
+    animation: neuScaleIn 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .neu-pill {
+    background: #ecfcf2;
+    box-shadow: 6px 6px 14px #c3e2cf, -6px -6px 14px #ffffff;
+  }
+  .neu-track {
+    background: #e3f7eb;
+    box-shadow: inset 4px 4px 8px #bedec9, inset -4px -4px 8px #ffffff;
+  }
+  @keyframes neuScaleIn {
+    0% { opacity: 0; transform: scale(0.72) translateY(16px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  @keyframes fadeSlideUp {
+    0% { opacity: 0; transform: translateY(14px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes infinityDraw {
+    0% { stroke-dashoffset: 160; }
+    100% { stroke-dashoffset: 0; }
+  }
+  .splash-fade-up-1 { animation: fadeSlideUp 0.7s 0.25s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .splash-fade-up-2 { animation: fadeSlideUp 0.7s 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .infinity-stroke {
+    stroke-dasharray: 160;
+    stroke-dashoffset: 160;
+    animation: infinityDraw 1.2s 0.15s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+</style>
+
+<div id="iw-opening-screen" class="hidden fixed inset-0 z-[9999] flex flex-col items-center justify-center px-6 text-center select-none">
+  <!-- Ambient Soft Orbs -->
+  <div class="w-72 h-72 rounded-full bg-emerald-300/25 blur-3xl absolute -top-16 -left-16 pointer-events-none"></div>
+  <div class="w-72 h-72 rounded-full bg-teal-300/20 blur-3xl absolute -bottom-16 -right-16 pointer-events-none"></div>
+
+  <div class="relative z-10 flex flex-col items-center max-w-xs w-full space-y-6">
+    <!-- Neumorphic Logo Card with Animated Infinity SVG -->
+    <div class="neu-logo-card w-28 h-28 rounded-[2rem] flex items-center justify-center">
+      <svg class="w-16 h-16 text-emerald-800 drop-shadow-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path class="infinity-stroke" d="M18.178 8c5.096 0 5.096 8 0 8-5.095 0-7.133-8-12.739-8-4.585 0-4.585 8 0 8 5.606 0 7.644-8 12.74-8z"/>
+      </svg>
+    </div>
+
+    <!-- Brand & Tagline -->
+    <div class="space-y-2 splash-fade-up-1">
+      <h1 class="text-3xl font-extrabold tracking-tight text-emerald-950">InfinityWork</h1>
+      <div class="neu-pill inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold text-emerald-800">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+        <span>কাজ করুন, আয় করুন • Trusted Income</span>
+      </div>
+    </div>
+
+    <!-- Neumorphic Loading Progress Bar -->
+    <div class="w-full space-y-2.5 splash-fade-up-2">
+      <div class="neu-track w-full h-3.5 rounded-full p-1 overflow-hidden">
+        <div id="iw-splash-bar" class="h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-800 transition-all duration-150" style="width: 0%"></div>
+      </div>
+      <div class="flex items-center justify-between text-[11px] font-bold text-emerald-800/80 px-1">
+        <span id="iw-splash-status">অ্যাপ প্রস্তুত হচ্ছে...</span>
+        <span id="iw-splash-pct" class="font-extrabold text-emerald-950">0%</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function initCustomOpeningScreen() {
+  const params = new URLSearchParams(window.location.search);
+  const isPwaLaunch = params.get("pwa") === "1" || window.matchMedia("(display-mode: standalone)").matches;
+  const alreadyShown = sessionStorage.getItem("iw_custom_splash_done") === "1";
+
+  // Show on PWA launch or first session entry to Dashboard (/i)
+  const shouldShow = (params.get("pwa") === "1") || (!alreadyShown && (isPwaLaunch || window.location.pathname === "/i"));
+  if (!shouldShow) return;
+
+  const screen = document.getElementById("iw-opening-screen");
+  const bar = document.getElementById("iw-splash-bar");
+  const pctEl = document.getElementById("iw-splash-pct");
+  const statusEl = document.getElementById("iw-splash-status");
+  if (!screen) return;
+
+  screen.classList.remove("hidden");
+  sessionStorage.setItem("iw_custom_splash_done", "1");
+
+  let pct = 0;
+  const timer = setInterval(() => {
+    pct += Math.floor(Math.random() * 11) + 6;
+    if (pct >= 100) pct = 100;
+
+    bar.style.width = `${pct}%`;
+    pctEl.innerText = `${pct}%`;
+
+    if (pct >= 35 && pct < 75) statusEl.innerText = "ড্যাশবোর্ড লোড হচ্ছে...";
+    else if (pct >= 75 && pct < 100) statusEl.innerText = "ব্যালেন্স ও কাজ যুক্ত হচ্ছে...";
+    else if (pct === 100) {
+      statusEl.innerText = "স্বাগতম! প্রবেশ করা হচ্ছে...";
+      clearInterval(timer);
+      setTimeout(() => {
+        screen.classList.add("splash-exit");
+        setTimeout(() => {
+          screen.remove();
+          // If launched at non-dashboard page with ?pwa=1 while logged in, enter Dashboard
+          if (params.get("pwa") === "1" && window.location.pathname === "/") {
+            window.location.replace("/i");
+          }
+        }, 650);
+      }, 250);
+    }
+  }, 95);
+})();
+</script>
