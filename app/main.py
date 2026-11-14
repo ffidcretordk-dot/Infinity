@@ -1,13 +1,13 @@
 import math
 import struct
 import zlib
-from fastapi.responses import Response
+from datetime import datetime, timezone, timedelta
+
 from fastapi import FastAPI, Request, Form, UploadFile, File
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
-from datetime import datetime, timezone, timedelta
 
 from app.config import (
     TEMPLATES_DIR,
@@ -36,7 +36,18 @@ app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, same_site="lax")
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
+DAILY_CUBE_LIMIT_SECONDS = 300  # 5 minutes per day
 
+LEVEL_TIERS = [
+    {"key": "beginner", "name": "Beginner", "min": 0, "next": 100, "icon": "fa-seedling"},
+    {"key": "starter", "name": "Starter", "min": 100, "next": 500, "icon": "fa-rocket"},
+    {"key": "legend", "name": "Legend", "min": 500, "next": 1500, "icon": "fa-crown"},
+    {"key": "pro", "name": "Pro Earner", "min": 1500, "next": 5000, "icon": "fa-gem"},
+    {"key": "hero", "name": "Infinity Hero", "min": 5000, "next": None, "icon": "fa-infinity"},
+]
+
+
+# ---------------- HELPERS ----------------
 
 async def get_current_user(request: Request) -> dict | None:
     token = request.cookies.get("iw_auth")
@@ -65,6 +76,39 @@ def base_ctx(request: Request, user: dict | None = None, active_nav: str = "") -
 def redirect_with_flash(request: Request, url: str, message: str, category: str = "success"):
     set_flash(request, message, category)
     return RedirectResponse(url=url, status_code=303)
+
+
+def get_bd_today_str() -> str:
+    bd_tz = timezone(timedelta(hours=6))
+    return datetime.now(bd_tz).strftime("%Y-%m-%d")
+
+
+async def sync_cube_daily_limit(user: dict) -> int:
+    today = get_bd_today_str()
+    if user.get("cube_play_date") != today:
+        await db.update(
+            "users",
+            {"id": user["id"]},
+            {"cube_play_date": today, "cube_seconds_used": 0},
+        )
+        return DAILY_CUBE_LIMIT_SECONDS
+    used = int(user.get("cube_seconds_used") or 0)
+    return max(0, DAILY_CUBE_LIMIT_SECONDS - used)
+
+
+def get_earning_level(total_earned: float) -> dict:
+    current = LEVEL_TIERS[0]
+    for tier in LEVEL_TIERS:
+        if total_earned >= tier["min"]:
+            current = tier
+    if current["next"]:
+        span = current["next"] - current["min"]
+        prog = max(0, min(100, round(((total_earned - current["min"]) / span) * 100)))
+        need = max(0.0, current["next"] - total_earned)
+    else:
+        prog = 100
+        need = 0.0
+    return {**current, "progress": prog, "need_more": need}
 
 
 # ---------------- PUBLIC ROUTES ----------------
@@ -100,7 +144,7 @@ async def signup_submit(
     if not device_clean or len(device_clean) < 8:
         return redirect_with_flash(request, "/signup", "ডিভাইস ভেরিফিকেশন ব্যর্থ হয়েছে। অনুগ্রহ করে পুনরায় চেষ্টা করুন।", "error")
 
-    # 1 Device = 1 Account check (both device_id and cookie check)
+    # 1 Device = 1 Account check
     if request.cookies.get("iw_registered") == "1":
         return redirect_with_flash(request, "/signup", "এই ডিভাইস থেকে ইতিমধ্যেই একটি অ্যাকাউন্ট খোলা হয়েছে!", "error")
 
@@ -182,85 +226,7 @@ async def signup_submit(
     response.set_cookie("iw_registered", "1", max_age=60 * 60 * 24 * 365 * 5, samesite="lax")
     return response
 
-@app.get("/history", response_class=HTMLResponse)
-async def history_page(request: Request, status: str = "all"):
-    user = await get_current_user(request)
-    if not user:
-        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
 
-    # Fetch Micro Task Submissions + Tasks lookup + General Work Logs
-    submissions = await db.select("task_submissions", filters={"user_id": user["id"]}, order="created_at.desc")
-    all_tasks = await db.select("tasks")
-    task_map = {t["id"]: t for t in all_tasks}
-    work_logs = await db.select("work_logs", filters={"user_id": user["id"]}, order="created_at.desc")
-
-    icon_map = {
-        "Typing Task": ("⌨️", "Typing Task"),
-        "Survey": ("📝", "Survey করে আয়"),
-        "ChatGPT Image Gen": ("🎨", "ChatGPT Image Generate"),
-        "2,4,8 Cube Game": ("🎲", "গেম খেলে আয় (2,4,8 Cube)"),
-        "TikTok Account Sell": ("🎵", "TikTok Account Sell"),
-        "Referral Bonus": ("🤝", "রেফারেল বোনাস"),
-        "Welcome Referral Bonus": ("🎁", "ওয়েলকাম রেফার বোনাস"),
-    }
-
-    combined: list[dict] = []
-
-    # 1. Micro Task Submissions (<task name> | <status> | <amount>)
-    for sub in submissions:
-        task_info = task_map.get(sub["task_id"], {})
-        task_title = task_info.get("title") or f"Micro Task #{sub['task_id']}"
-        raw_status = (sub.get("status") or "pending").lower()
-        norm_status = "approved" if raw_status in ("approved", "completed") else ("rejected" if raw_status == "rejected" else "pending")
-        status_label = {"approved": "Approved", "pending": "Pending", "rejected": "Rejected"}[norm_status]
-
-        combined.append({
-            "icon": "📋",
-            "title": task_title,
-            "subtitle": f"Micro Task • {sub.get('proof_note') or 'জমা দেওয়া হয়েছে'}",
-            "amount": float(sub.get("reward") or 0),
-            "norm_status": norm_status,
-            "status_label": status_label,
-            "created_at": sub.get("created_at") or "",
-            "date": (sub.get("created_at") or "")[:16].replace("T", " "),
-        })
-
-    # 2. All Other Work Logs (Game, Typing, Survey, Referral, AI Image, TikTok)
-    for log in work_logs:
-        wtype = log.get("work_type") or "Work"
-        icon, display_title = icon_map.get(wtype, ("💼", wtype))
-        raw_status = (log.get("status") or "completed").lower()
-        norm_status = "approved" if raw_status in ("completed", "approved") else ("rejected" if raw_status == "rejected" else "pending")
-        status_label = {"approved": "Approved", "pending": "Pending", "rejected": "Rejected"}[norm_status]
-
-        combined.append({
-            "icon": icon,
-            "title": display_title,
-            "subtitle": log.get("details") or wtype,
-            "amount": float(log.get("reward") or 0),
-            "norm_status": norm_status,
-            "status_label": status_label,
-            "created_at": log.get("created_at") or "",
-            "date": (log.get("created_at") or "")[:16].replace("T", " "),
-        })
-
-    # Sort newest first
-    combined.sort(key=lambda x: x["created_at"], reverse=True)
-
-    counts = {
-        "all": len(combined),
-        "approved": sum(1 for x in combined if x["norm_status"] == "approved"),
-        "pending": sum(1 for x in combined if x["norm_status"] == "pending"),
-        "rejected": sum(1 for x in combined if x["norm_status"] == "rejected"),
-    }
-
-    status_filter = status if status in ("all", "approved", "pending", "rejected") else "all"
-    filtered = combined if status_filter == "all" else [x for x in combined if x["norm_status"] == status_filter]
-
-    ctx = base_ctx(request, user, "history")
-    ctx.update({"items": filtered, "counts": counts, "status_filter": status_filter})
-    return templates.TemplateResponse("history.html", ctx)
-    
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
     user = await get_current_user(request)
@@ -367,7 +333,6 @@ async def task_submit(
     image_bytes = await proof_image.read() if proof_image and proof_image.filename else None
     img_url, is_dummy = await upload_with_load_balancer(image_bytes)
 
-    # Note: If is_dummy is True, proof_image_url stays None (no real link stored in DB)
     await db.insert(
         "task_submissions",
         {
@@ -425,7 +390,7 @@ async def work_survey(request: Request):
 async def work_survey_submit(request: Request, q1: str = Form(...), q2: str = Form(...)):
     user = await get_current_user(request)
     if not user:
-        return redirect_with_flash(request, "/login", "অনুগ্রহ করে লগইন করুন।", "error")
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
 
     reward = 5.00
     await db.update(
@@ -468,29 +433,6 @@ async def work_ai_image_submit(
         },
     )
     return redirect_with_flash(request, "/work/ai-image", "ChatGPT জেনারেটেড ইমেজ সফলভাবে জমা হয়েছে!", "success")
-
-
-DAILY_CUBE_LIMIT_SECONDS = 300  # 5 minutes per day
-
-
-def get_bd_today_str() -> str:
-    bd_tz = timezone(timedelta(hours=6))
-    return datetime.now(bd_tz).strftime("%Y-%m-%d")
-
-
-async def sync_cube_daily_limit(user: dict) -> int:
-    today = get_bd_today_str()
-    if user.get("cube_play_date") != today:
-        await db.update(
-            "users",
-            {"id": user["id"]},
-            {"cube_play_date": today, "cube_seconds_used": 0},
-        )
-        return DAILY_CUBE_LIMIT_SECONDS
-    used = int(user.get("cube_seconds_used") or 0)
-    return max(0, DAILY_CUBE_LIMIT_SECONDS - used)
-
-
 
 
 @app.get("/work/cube-game", response_class=HTMLResponse)
@@ -539,9 +481,8 @@ async def work_cube_claim(request: Request, score: int = Form(...)):
         return JSONResponse({"ok": False, "message": "আজকের ৫ মিনিটের লিমিট শেষ হয়ে গেছে! আগামীকাল আবার খেলুন।"}, status_code=403)
 
     if score < 150:
-        return JSONResponse({"ok": False, "message": "হার্ড মোডে রিওয়ার্ড পেতে কমপক্ষে ১৫০ স্কোর করতে হবে!"}, status_code=400)
+        return JSONResponse({"ok": False, "message": "রিওয়ার্ড পেতে কমপক্ষে ১৫০ স্কোর করতে হবে!"}, status_code=400)
 
-    # FIXED: No 10৳ upper cap! Counts past 10৳, 20৳, 50৳+ unlimitedly
     reward = round(score / 150, 2)
 
     await db.update(
@@ -557,12 +498,13 @@ async def work_cube_claim(request: Request, score: int = Form(...)):
         {
             "user_id": user["id"],
             "work_type": "2,4,8 Cube Game",
-            "details": f"Hard Mode Score: {score}",
+            "details": f"Score: {score}",
             "reward": reward,
         },
     )
     return JSONResponse({"ok": True, "reward": reward, "message": f"দারুণ! ৳{reward:.2f} আপনার ব্যালেন্সে যোগ হয়েছে।"})
-    
+
+
 @app.get("/work/tiktok-sell", response_class=HTMLResponse)
 async def work_tiktok(request: Request):
     user = await get_current_user(request)
@@ -596,7 +538,83 @@ async def work_tiktok_submit(
     return redirect_with_flash(request, "/work/tiktok-sell", "আপনার TikTok অ্যাকাউন্ট বিক্রয়ের আবেদন জমা হয়েছে! টিম যোগাযোগ করবে।", "success")
 
 
-# ---------------- PAYOUT & PROFILE ----------------
+# ---------------- HISTORY, PAYOUT & PROFILE ----------------
+
+@app.get("/history", response_class=HTMLResponse)
+async def history_page(request: Request, status: str = "all"):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+
+    submissions = await db.select("task_submissions", filters={"user_id": user["id"]}, order="created_at.desc")
+    all_tasks = await db.select("tasks")
+    task_map = {t["id"]: t for t in all_tasks}
+    work_logs = await db.select("work_logs", filters={"user_id": user["id"]}, order="created_at.desc")
+
+    icon_map = {
+        "Typing Task": ("⌨️", "Typing Task"),
+        "Survey": ("📝", "Survey করে আয়"),
+        "ChatGPT Image Gen": ("🎨", "ChatGPT Image Generate"),
+        "2,4,8 Cube Game": ("🎲", "গেম খেলে আয় (2,4,8 Cube)"),
+        "TikTok Account Sell": ("🎵", "TikTok Account Sell"),
+        "Referral Bonus": ("🤝", "রেফারেল বোনাস"),
+        "Welcome Referral Bonus": ("🎁", "ওয়েলকাম রেফার বোনাস"),
+    }
+
+    combined: list[dict] = []
+
+    for sub in submissions:
+        task_info = task_map.get(sub["task_id"], {})
+        task_title = task_info.get("title") or f"Micro Task #{sub['task_id']}"
+        raw_status = (sub.get("status") or "pending").lower()
+        norm_status = "approved" if raw_status in ("approved", "completed") else ("rejected" if raw_status == "rejected" else "pending")
+        status_label = {"approved": "Approved", "pending": "Pending", "rejected": "Rejected"}[norm_status]
+
+        combined.append({
+            "icon": "📋",
+            "title": task_title,
+            "subtitle": f"Micro Task • {sub.get('proof_note') or 'জমা দেওয়া হয়েছে'}",
+            "amount": float(sub.get("reward") or 0),
+            "norm_status": norm_status,
+            "status_label": status_label,
+            "created_at": sub.get("created_at") or "",
+            "date": (sub.get("created_at") or "")[:16].replace("T", " "),
+        })
+
+    for log in work_logs:
+        wtype = log.get("work_type") or "Work"
+        icon, display_title = icon_map.get(wtype, ("💼", wtype))
+        raw_status = (log.get("status") or "completed").lower()
+        norm_status = "approved" if raw_status in ("completed", "approved") else ("rejected" if raw_status == "rejected" else "pending")
+        status_label = {"approved": "Approved", "pending": "Pending", "rejected": "Rejected"}[norm_status]
+
+        combined.append({
+            "icon": icon,
+            "title": display_title,
+            "subtitle": log.get("details") or wtype,
+            "amount": float(log.get("reward") or 0),
+            "norm_status": norm_status,
+            "status_label": status_label,
+            "created_at": log.get("created_at") or "",
+            "date": (log.get("created_at") or "")[:16].replace("T", " "),
+        })
+
+    combined.sort(key=lambda x: x["created_at"], reverse=True)
+
+    counts = {
+        "all": len(combined),
+        "approved": sum(1 for x in combined if x["norm_status"] == "approved"),
+        "pending": sum(1 for x in combined if x["norm_status"] == "pending"),
+        "rejected": sum(1 for x in combined if x["norm_status"] == "rejected"),
+    }
+
+    status_filter = status if status in ("all", "approved", "pending", "rejected") else "all"
+    filtered = combined if status_filter == "all" else [x for x in combined if x["norm_status"] == status_filter]
+
+    ctx = base_ctx(request, user, "history")
+    ctx.update({"items": filtered, "counts": counts, "status_filter": status_filter})
+    return templates.TemplateResponse("history.html", ctx)
+
 
 @app.get("/payout", response_class=HTMLResponse)
 async def payout_page(request: Request):
@@ -641,30 +659,6 @@ async def payout_submit(
     return redirect_with_flash(request, "/payout", "উইথড্র রিকুয়েস্ট সফলভাবে পাঠানো হয়েছে!", "success")
 
 
-LEVEL_TIERS = [
-    {"key": "beginner", "name": "Beginner", "min": 0, "next": 100, "icon": "fa-seedling"},
-    {"key": "starter", "name": "Starter", "min": 100, "next": 500, "icon": "fa-rocket"},
-    {"key": "legend", "name": "Legend", "min": 500, "next": 1500, "icon": "fa-crown"},
-    {"key": "pro", "name": "Pro Earner", "min": 1500, "next": 5000, "icon": "fa-gem"},
-    {"key": "hero", "name": "Infinity Hero", "min": 5000, "next": None, "icon": "fa-infinity"},
-]
-
-
-def get_earning_level(total_earned: float) -> dict:
-    current = LEVEL_TIERS[0]
-    for tier in LEVEL_TIERS:
-        if total_earned >= tier["min"]:
-            current = tier
-    if current["next"]:
-        span = current["next"] - current["min"]
-        prog = max(0, min(100, round(((total_earned - current["min"]) / span) * 100)))
-        need = max(0.0, current["next"] - total_earned)
-    else:
-        prog = 100
-        need = 0.0
-    return {**current, "progress": prog, "need_more": need}
-
-
 @app.get("/profile", response_class=HTMLResponse)
 async def profile_page(request: Request):
     user = await get_current_user(request)
@@ -699,7 +693,8 @@ async def profile_avatar_upload(request: Request, avatar: UploadFile = File(...)
         return redirect_with_flash(request, "/profile", "প্রোফাইল ছবি সফলভাবে আপডেট হয়েছে!", "success")
 
     return redirect_with_flash(request, "/profile", "ছবি আপলোডের জন্য ImgBB API Key সক্রিয় নেই।", "info")
-    
+
+
 # ---------------- ADMIN PANEL ----------------
 
 @app.get("/admin", response_class=HTMLResponse)
@@ -801,134 +796,6 @@ async def admin_review_submission(request: Request, sub_id: int, action: str):
         return redirect_with_flash(request, "/admin", "টাস্ক রিজেক্ট করা হয়েছে।", "info")
 
 
-_PWA_ICON_CACHE: dict[int, bytes] = {}
-
-
-def _generate_infinity_png(size: int) -> bytes:
-    if size in _PWA_ICON_CACHE:
-        return _PWA_ICON_CACHE[size]
-
-    # Fast O(1)-per-pixel PNG generator with emerald gradient + crisp white Infinity (∞)
-    cx, cy = size / 2.0, size / 2.0
-    ring_offset = size * 0.165
-    ring_r = size * 0.165
-    stroke = size * 0.055
-
-    raw_rows = bytearray()
-    for y in range(size):
-        raw_rows.append(0)  # PNG filter type 0
-        t_grad = y / max(1, size - 1)
-        bg_r = int(22 * (1 - t_grad) + 11 * t_grad)
-        bg_g = int(130 * (1 - t_grad) + 74 * t_grad)
-        bg_b = int(75 * (1 - t_grad) + 43 * t_grad)
-
-        dy = y - cy
-        for x in range(size):
-            dx_l = x - (cx - ring_offset)
-            dx_r = x - (cx + ring_offset)
-            d_l = abs(math.hypot(dx_l, dy) - ring_r)
-            d_r = abs(math.hypot(dx_r, dy) - ring_r)
-            d = min(d_l, d_r)
-
-            if d <= stroke:
-                alpha = 1.0
-            elif d <= stroke + 1.5:
-                alpha = max(0.0, 1.0 - (d - stroke) / 1.5)
-            else:
-                alpha = 0.0
-
-            r = int(bg_r * (1 - alpha) + 255 * alpha)
-            g = int(bg_g * (1 - alpha) + 255 * alpha)
-            b = int(bg_b * (1 - alpha) + 255 * alpha)
-            raw_rows.extend((r, g, b, 255))
-
-    def chunk(tag: bytes, data: bytes) -> bytes:
-        return struct.pack("!I", len(data)) + tag + data + struct.pack("!I", zlib.crc32(tag + data) & 0xFFFFFFFF)
-
-    ihdr = struct.pack("!IIBBBBB", size, size, 8, 6, 0, 0, 0)
-    png_bytes = (
-        b"\x89PNG\r\n\x1a\n"
-        + chunk(b"IHDR", ihdr)
-        + chunk(b"IDAT", zlib.compress(bytes(raw_rows), 6))
-        + chunk(b"IEND", b"")
-    )
-    _PWA_ICON_CACHE[size] = png_bytes
-    return png_bytes
-
-
-@app.get("/pwa-icon/{size}.png")
-async def pwa_icon(size: int):
-    valid_size = 512 if size >= 512 else 192
-    return Response(
-        content=_generate_infinity_png(valid_size),
-        media_type="image/png",
-        headers={"Cache-Control": "public, max-age=86400"},
-    )
-
-
-@app.get("/manifest.json")
-async def pwa_manifest():
-    manifest = {
-        "name": "InfinityWork - কাজ করুন, আয় করুন",
-        "short_name": "InfinityWork",
-        "description": "Trusted Online Micro Task & Earning Platform",
-        "start_url": "/i?pwa=1",
-        "scope": "/",
-        "display": "standalone",
-        "orientation": "portrait",
-        "theme_color": "#effcf4",
-        "background_color": "#effcf4",
-        "icons": [
-            {"src": "/pwa-icon/192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
-            {"src": "/pwa-icon/512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"},
-        ],
-    }
-    return JSONResponse(content=manifest, media_type="application/manifest+json")
-
-
-@app.get("/sw.js")
-async def pwa_service_worker():
-    sw_code = """
-const CACHE_NAME = "infinitywork-pwa-v1";
-const CORE_ASSETS = ["/", "/manifest.json", "/static/js/app.js", "/pwa-icon/192.png"];
-
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS)).catch(() => {})
-  );
-  self.skipWaiting();
-});
-
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
-  );
-  self.clients.claim();
-});
-
-self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
-  event.respondWith(
-    fetch(event.request)
-      .then((res) => {
-        if (res.ok && event.request.url.includes("/static/")) {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then((c) => c.put(event.request, clone));
-        }
-        return res;
-      })
-      .catch(() => caches.match(event.request))
-  );
-});
-"""
-    return Response(
-        content=sw_code.strip(),
-        media_type="application/javascript",
-        headers={"Service-Worker-Allowed": "/"},
-            )
-    
 @app.post("/admin/payout/{payout_id}/{action}")
 async def admin_review_payout(request: Request, payout_id: int, action: str):
     user = await get_current_user(request)
@@ -952,3 +819,157 @@ async def admin_review_payout(request: Request, payout_id: int, action: str):
                 {"balance": float(target_user["balance"]) + float(p["amount"])},
             )
         return redirect_with_flash(request, "/admin", "উইথড্র বাতিল করে ব্যালেন্স ফেরত দেওয়া হয়েছে।", "info")
+
+
+# ---------------- PWA ROUTES (FIXED INSTALLABLE) ----------------
+
+_PWA_ICON_CACHE: dict[int, bytes] = {}
+
+
+def _generate_infinity_png(size: int) -> bytes:
+    if size in _PWA_ICON_CACHE:
+        return _PWA_ICON_CACHE[size]
+
+    scale = 4 if size >= 512 else 2
+    base = size // scale
+    cx, cy = base / 2.0, base / 2.0
+    ring_offset = base * 0.165
+    ring_r = base * 0.165
+    stroke = base * 0.058
+
+    raw_rows = bytearray()
+    for y in range(base):
+        t_grad = y / max(1, base - 1)
+        bg_r = int(22 * (1 - t_grad) + 11 * t_grad)
+        bg_g = int(130 * (1 - t_grad) + 74 * t_grad)
+        bg_b = int(75 * (1 - t_grad) + 43 * t_grad)
+
+        row_pixels = bytearray()
+        dy = y - cy
+        for x in range(base):
+            d_l = abs(math.hypot(x - (cx - ring_offset), dy) - ring_r)
+            d_r = abs(math.hypot(x - (cx + ring_offset), dy) - ring_r)
+            d = min(d_l, d_r)
+
+            if d <= stroke:
+                alpha = 1.0
+            elif d <= stroke + 1.2:
+                alpha = max(0.0, 1.0 - (d - stroke) / 1.2)
+            else:
+                alpha = 0.0
+
+            r = int(bg_r * (1 - alpha) + 255 * alpha)
+            g = int(bg_g * (1 - alpha) + 255 * alpha)
+            b = int(bg_b * (1 - alpha) + 255 * alpha)
+            px = bytes((r, g, b, 255))
+            row_pixels.extend(px * scale)
+
+        for _ in range(scale):
+            raw_rows.append(0)
+            raw_rows.extend(row_pixels)
+
+    def chunk(tag: bytes, data: bytes) -> bytes:
+        return struct.pack("!I", len(data)) + tag + data + struct.pack("!I", zlib.crc32(tag + data) & 0xFFFFFFFF)
+
+    ihdr = struct.pack("!IIBBBBB", size, size, 8, 6, 0, 0, 0)
+    png_bytes = (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", ihdr)
+        + chunk(b"IDAT", zlib.compress(bytes(raw_rows), 6))
+        + chunk(b"IEND", b"")
+    )
+    _PWA_ICON_CACHE[size] = png_bytes
+    return png_bytes
+
+
+@app.get("/pwa-icon.svg")
+async def pwa_icon_svg():
+    svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#16824b"/><stop offset="100%" stop-color="#0b4a2b"/></linearGradient></defs>
+  <rect width="128" height="128" rx="32" fill="url(#g)"/>
+  <path d="M90.5 46c19 0 19 36 0 36-19 0-26.5-36-47.5-36-17 0-17 36 0 36 21 0 28.5-36 47.5-36z" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>"""
+    return Response(content=svg, media_type="image/svg+xml", headers={"Cache-Control": "public, max-age=86400"})
+
+
+@app.get("/pwa-icon/{size}.png")
+async def pwa_icon(size: int):
+    valid_size = 512 if size >= 512 else 192
+    return Response(
+        content=_generate_infinity_png(valid_size),
+        media_type="image/png",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
+
+
+@app.get("/launch", response_class=HTMLResponse)
+async def pwa_launch(request: Request):
+    user = await get_current_user(request)
+    target_url = "/i" if user else "/login"
+    return templates.TemplateResponse("launch.html", {"request": request, "target_url": target_url})
+
+
+@app.get("/manifest.json")
+async def pwa_manifest():
+    manifest = {
+        "id": "/launch",
+        "name": "InfinityWork",
+        "short_name": "InfinityWork",
+        "description": "কাজ করুন, আয় করুন - Trusted Online Income Platform",
+        "start_url": "/launch",
+        "scope": "/",
+        "display": "standalone",
+        "orientation": "portrait",
+        "theme_color": "#effcf4",
+        "background_color": "#effcf4",
+        "icons": [
+            {"src": "/pwa-icon/192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+            {"src": "/pwa-icon/512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+            {"src": "/pwa-icon/512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
+        ],
+    }
+    return JSONResponse(content=manifest, media_type="application/manifest+json")
+
+
+@app.get("/sw.js")
+async def pwa_service_worker():
+    sw_code = """
+const CACHE_NAME = "infinitywork-pwa-v2";
+const CORE_ASSETS = ["/launch", "/manifest.json", "/pwa-icon/192.png", "/pwa-icon/512.png", "/static/js/app.js"];
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS)).catch(() => {})
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+    )
+  );
+  self.clients.claim();
+});
+
+self.addEventListener("fetch", (event) => {
+  if (event.request.method !== "GET") return;
+  event.respondWith(
+    fetch(event.request)
+      .then((res) => {
+        if (res.ok && (event.request.url.includes("/static/") || event.request.url.includes("/pwa-icon/"))) {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then((c) => c.put(event.request, clone));
+        }
+        return res;
+      })
+      .catch(() => caches.match(event.request))
+  );
+});
+"""
+    return Response(
+        content=sw_code.strip(),
+        media_type="application/javascript",
+        headers={"Service-Worker-Allowed": "/"},
+    )
