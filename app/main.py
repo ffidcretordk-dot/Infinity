@@ -33,6 +33,7 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 
+
 async def get_current_user(request: Request) -> dict | None:
     token = request.cookies.get("iw_auth")
     if not token:
