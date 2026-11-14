@@ -1,0 +1,47 @@
+{% extends "base_app.html" %}
+{% block title %}ChatGPT Image কাজ - InfinityWork{% endblock %}
+{% block content %}
+<div class="space-y-4">
+  <div class="soft-card rounded-3xl p-5 flex items-center justify-between">
+    <div>
+      <h1 class="text-xl font-extrabold text-emerald-950"><i class="fa-solid fa-wand-magic-sparkles text-emerald-700 mr-1.5"></i>ChatGPT Image কাজ</h1>
+      <p class="text-xs text-emerald-700 mt-0.5">প্রম্পট কপি করে ChatGPT দিয়ে ছবি বানিয়ে জমা দিন</p>
+    </div>
+    <span class="bg-emerald-100 text-emerald-900 px-3 py-1 rounded-full text-xs font-extrabold">{{ tasks|length }} টি কাজ</span>
+  </div>
+
+  <div class="space-y-3">
+    {% for t in tasks %}
+    <div class="soft-card rounded-3xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-emerald-300 transition">
+      <div class="space-y-1.5 min-w-0">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="bg-emerald-100 text-emerald-900 px-2.5 py-0.5 rounded-full text-[11px] font-bold">
+            <i class="fa-solid fa-robot mr-1"></i>AI Image
+          </span>
+          {% if t.was_rejected %}
+          <span class="bg-red-100 text-red-700 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold">
+            আগে রিজেক্ট হয়েছিল • আবার করুন
+          </span>
+          {% endif %}
+        </div>
+        <h3 class="font-extrabold text-base text-emerald-950">{{ t.title }}</h3>
+        <p class="text-xs text-emerald-800/80 line-clamp-2">{{ t.description or t.prompt }}</p>
+      </div>
+
+      <div class="flex items-center justify-between sm:justify-end gap-3 shrink-0">
+        <div class="text-lg font-extrabold text-emerald-700">৳{{ "%.2f"|format(t.reward) }}</div>
+        <a href="/work/ai-image/{{ t.id }}" class="bg-emerald-900 hover:bg-emerald-800 text-white px-5 py-2.5 rounded-full text-xs font-bold shadow transition">
+          কাজ করুন →
+        </a>
+      </div>
+    </div>
+    {% else %}
+    <div class="soft-card rounded-3xl p-8 text-center space-y-2">
+      <div class="text-3xl text-emerald-600"><i class="fa-solid fa-circle-check"></i></div>
+      <p class="text-sm font-extrabold text-emerald-950">এই মুহূর্তে নতুন কোনো ChatGPT Image কাজ বাকি নেই!</p>
+      <p class="text-xs text-emerald-700">আপনার জমাকৃত কাজগুলো ভেরিফিকেশনের অপেক্ষায় আছে অথবা সম্পন্ন হয়েছে।</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
