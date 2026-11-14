@@ -401,44 +401,181 @@ async def work_survey_submit(request: Request, q1: str = Form(...), q2: str = Fo
     await db.insert("work_logs", {"user_id": user["id"], "work_type": "Survey", "details": f"{q1} | {q2}", "reward": reward})
     return redirect_with_flash(request, "/work/survey", f"সার্ভে সম্পন্ন! {reward}৳ বোনাস যোগ হয়েছে।", "success")
 
-
-@app.get("/work/ai-image", response_class=HTMLResponse)
-async def work_ai_image(request: Request):
-    user = await get_current_user(request)
-    if not user:
-        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
-    return templates.TemplateResponse("work_ai_image.html", base_ctx(request, user, "work"))
-
 @app.get("/about", response_class=HTMLResponse)
 async def about_page(request: Request):
     user = await get_current_user(request)
     return templates.TemplateResponse("about.html", base_ctx(request, user, "about"))
     
-@app.post("/work/ai-image")
+@app.get("/work/ai-image", response_class=HTMLResponse)
+async def work_ai_image(request: Request):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+
+    all_tasks = await db.select("ai_image_tasks", filters={"is_active": "true"}, order="id.desc")
+    user_subs = await db.select("ai_image_submissions", filters={"user_id": user["id"]}, order="created_at.desc")
+
+    # Hide tasks that have 'pending' or 'approved' submissions; keep 'rejected' tasks available to retry!
+    blocked_task_ids = {s["ai_task_id"] for s in user_subs if s.get("status") in ("pending", "approved")}
+    rejected_task_ids = {s["ai_task_id"] for s in user_subs if s.get("status") == "rejected"}
+
+    available_tasks = []
+    for t in all_tasks:
+        if t["id"] not in blocked_task_ids:
+            t["was_rejected"] = t["id"] in rejected_task_ids
+            available_tasks.append(t)
+
+    ctx = base_ctx(request, user, "work")
+    ctx["tasks"] = available_tasks
+    return templates.TemplateResponse("work_ai_image.html", ctx)
+
+
+@app.get("/work/ai-image/{task_id}", response_class=HTMLResponse)
+async def work_ai_image_detail(request: Request, task_id: int):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+
+    task = await db.select("ai_image_tasks", filters={"id": task_id}, single=True)
+    if not task or not task.get("is_active"):
+        return redirect_with_flash(request, "/work/ai-image", "কাজটি পাওয়া যায়নি!", "error")
+
+    user_subs = await db.select("ai_image_submissions", filters={"user_id": user["id"]})
+    if any(s["ai_task_id"] == task_id and s.get("status") in ("pending", "approved") for s in user_subs):
+        return redirect_with_flash(request, "/work/ai-image", "এই কাজটি ইতিমধ্যেই জমা দেওয়া হয়েছে!", "info")
+
+    ctx = base_ctx(request, user, "work")
+    ctx["task"] = task
+    return templates.TemplateResponse("work_ai_detail.html", ctx)
+
+
+@app.post("/work/ai-image/{task_id}/submit")
 async def work_ai_image_submit(
     request: Request,
-    prompt_used: str = Form(...),
-    ai_image: UploadFile = File(None),
+    task_id: int,
+    ai_image: UploadFile = File(...),
 ):
     user = await get_current_user(request)
     if not user:
         return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
 
+    task = await db.select("ai_image_tasks", filters={"id": task_id}, single=True)
+    if not task:
+        return redirect_with_flash(request, "/work/ai-image", "কাজটি পাওয়া যায়নি!", "error")
+
+    user_subs = await db.select("ai_image_submissions", filters={"user_id": user["id"]})
+    if any(s["ai_task_id"] == task_id and s.get("status") in ("pending", "approved") for s in user_subs):
+        return redirect_with_flash(request, "/work/ai-image", "এই কাজটি ইতিমধ্যেই জমা দেওয়া আছে!", "info")
+
     image_bytes = await ai_image.read() if ai_image and ai_image.filename else None
+    if not image_bytes:
+        return redirect_with_flash(request, f"/work/ai-image/{task_id}", "অনুগ্রহ করে তৈরি করা ছবিটি আপলোড করুন।", "error")
+
     img_url, is_dummy = await upload_with_load_balancer(image_bytes)
+
     await db.insert(
-        "work_logs",
+        "ai_image_submissions",
         {
             "user_id": user["id"],
-            "work_type": "ChatGPT Image Gen",
-            "details": f"Prompt: {prompt_used[:80]} | Dummy: {is_dummy}",
-            "reward": 0.0,
+            "ai_task_id": task_id,
+            "image_url": img_url,
+            "is_dummy": is_dummy,
             "status": "pending",
+            "reward": task["reward"],
         },
     )
-    return redirect_with_flash(request, "/work/ai-image", "ChatGPT জেনারেটেড ইমেজ সফলভাবে জমা হয়েছে!", "success")
+    return redirect_with_flash(request, "/work/ai-image", f"{task['title']} সফলভাবে জমা হয়েছে! ভেরিফিকেশনের পর টাকা যোগ হবে।", "success")
 
 
+# ---------------- ADMIN PANEL: CHATGPT IMAGE (/admin/c) ----------------
+
+@app.get("/admin/c", response_class=HTMLResponse)
+async def admin_ai_panel(request: Request):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অ্যাডমিন অ্যাক্সেস অনুমোদিত নয়!", "error")
+
+    tasks = await db.select("ai_image_tasks", order="id.desc")
+    task_map = {t["id"]: t for t in tasks}
+    submissions = await db.select("ai_image_submissions", order="created_at.desc", limit=50)
+
+    for s in submissions:
+        s["task_title"] = task_map.get(s["ai_task_id"], {}).get("title", f"Chatgpt Img #{s['ai_task_id']}")
+
+    next_num = (max((t["id"] for t in tasks), default=0)) + 1
+    ctx = base_ctx(request, user, "admin")
+    ctx.update({"tasks": tasks, "submissions": submissions, "next_auto_title": f"Chatgpt Img #{next_num}"})
+    return templates.TemplateResponse("admin_ai.html", ctx)
+
+
+@app.post("/admin/c/task/add")
+async def admin_ai_add_task(
+    request: Request,
+    title: str = Form(""),
+    prompt: str = Form(...),
+    reward: float = Form(...),
+    description: str = Form(""),
+):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
+
+    final_title = title.strip()
+    if not final_title:
+        existing = await db.select("ai_image_tasks", order="id.desc", limit=1)
+        next_num = (existing[0]["id"] + 1) if existing else 1
+        final_title = f"Chatgpt Img #{next_num}"
+
+    await db.insert(
+        "ai_image_tasks",
+        {
+            "title": final_title,
+            "prompt": prompt.strip(),
+            "description": description.strip(),
+            "reward": reward,
+            "is_active": True,
+        },
+    )
+    return redirect_with_flash(request, "/admin/c", f"'{final_title}' সফলভাবে পাবলিশ হয়েছে!", "success")
+
+
+@app.post("/admin/c/task/{task_id}/delete")
+async def admin_ai_delete_task(request: Request, task_id: int):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
+    await db.delete("ai_image_tasks", {"id": task_id})
+    return redirect_with_flash(request, "/admin/c", "ChatGPT টাস্ক ডিলিট করা হয়েছে।", "info")
+
+
+@app.post("/admin/c/submission/{sub_id}/{action}")
+async def admin_ai_review_submission(request: Request, sub_id: int, action: str):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
+
+    sub = await db.select("ai_image_submissions", filters={"id": sub_id}, single=True)
+    if not sub or sub["status"] != "pending":
+        return redirect_with_flash(request, "/admin/c", "সাবমিশনটি আগেই প্রসেস করা আছে।", "info")
+
+    if action == "approve":
+        await db.update("ai_image_submissions", {"id": sub_id}, {"status": "approved"})
+        target_user = await db.select("users", filters={"id": sub["user_id"]}, single=True)
+        if target_user:
+            reward = float(sub["reward"])
+            await db.update(
+                "users",
+                {"id": target_user["id"]},
+                {
+                    "balance": float(target_user["balance"]) + reward,
+                    "total_earned": float(target_user["total_earned"]) + reward,
+                },
+            )
+        return redirect_with_flash(request, "/admin/c", "ইমেজ অ্যাপ্রুভ হয়েছে ও ইউজারের ব্যালেন্সে টাকা যোগ হয়েছে!", "success")
+    else:
+        await db.update("ai_image_submissions", {"id": sub_id}, {"status": "rejected"})
+        return redirect_with_flash(request, "/admin/c", "রিজেক্ট করা হয়েছে — ইউজার কাজটি আবার করতে পারবে।", "info")
+    
 @app.get("/work/cube-game", response_class=HTMLResponse)
 async def work_cube(request: Request):
     user = await get_current_user(request)
