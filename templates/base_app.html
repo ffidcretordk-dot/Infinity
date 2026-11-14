@@ -3,38 +3,37 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %}InfinityWork - কাজ করুন, আয় করুন{% endblock %}</title>
+  <title>{% block title %}InfinityWork{% endblock %}</title>
 
-  <!-- PWA & App Logos -->
+  <!-- PWA & App Logos (Fixes 'V' icon & Enables Install) -->
   <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#effcf4" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="InfinityWork" />
   <link rel="icon" type="image/svg+xml" href="/pwa-icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="/pwa-icon/192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/pwa-icon/512.png" />
   <link rel="apple-touch-icon" href="/pwa-icon/192.png" />
 
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
   <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     body {
       font-family: 'Plus Jakarta Sans', 'Hind Siliguri', sans-serif;
-      background: linear-gradient(180deg, #effcf4 0%, #f6fef9 50%, #e7f9ee 100%);
+      background: linear-gradient(180deg, #effcf4 0%, #f7fefa 100%);
       color: #0b3b24;
     }
-    .glass-card {
-      background: rgba(255, 255, 255, 0.86);
-      backdrop-filter: blur(14px);
-      border: 1px solid rgba(255, 255, 255, 0.9);
-      box-shadow: 0 12px 35px -8px rgba(13, 74, 43, 0.08);
-    }
-    .btn-primary-green {
-      background: linear-gradient(135deg, #166534 0%, #0d4a2b 100%);
-      box-shadow: 0 10px 24px -6px rgba(13, 74, 43, 0.4);
+    .soft-card {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid #dcfce7;
+      box-shadow: 0 10px 30px -10px rgba(13, 74, 43, 0.08);
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col antialiased">
+<body class="min-h-screen pb-24">
   {% include "partials/splash.html" %}
 
   <!-- Top-Left Animated Flash Messages -->
@@ -50,16 +49,147 @@
     {% endfor %}
   </div>
 
-  {% block content %}{% endblock %}
+  <!-- Top Header (FontAwesome Icons) -->
+  <header class="sticky top-0 z-30 bg-white/85 backdrop-blur-md border-b border-emerald-100">
+    <div class="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between">
+      <a href="/i" class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-emerald-900 text-white flex items-center justify-center shadow-sm">
+          <i class="fa-solid fa-infinity text-base"></i>
+        </div>
+        <span class="font-extrabold text-lg tracking-tight text-emerald-950">InfinityWork</span>
+      </a>
+
+      <div class="flex items-center gap-2">
+        <a href="/payout" class="hidden sm:inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-900 px-3 py-1.5 rounded-full text-xs font-bold">
+          <i class="fa-solid fa-wallet text-emerald-700"></i>
+          <span>ব্যালেন্স:</span>
+          <span class="text-emerald-700">৳{{ "%.2f"|format(user.balance) }}</span>
+        </a>
+
+        <a href="/profile" title="Profile" class="w-10 h-10 rounded-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 flex items-center justify-center text-emerald-900 transition overflow-hidden">
+          {% if user and user.avatar_url %}
+          <img src="{{ user.avatar_url }}" alt="{{ user.name }}" class="w-full h-full object-cover" />
+          {% else %}
+          <i class="fa-solid fa-user text-sm"></i>
+          {% endif %}
+        </a>
+
+        <button onclick="toggleMenuDrawer()" aria-label="Menu" class="w-10 h-10 rounded-full bg-emerald-900 hover:bg-emerald-800 text-white flex items-center justify-center shadow transition">
+          <i class="fa-solid fa-bars text-sm"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-3xl mx-auto px-4 py-5">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Toggle Drawer Backdrop -->
+  <div id="iw-drawer-backdrop" onclick="toggleMenuDrawer(true)" class="hidden fixed inset-0 bg-emerald-950/35 backdrop-blur-xs z-40"></div>
+
+  <!-- Toggle Menu Drawer -->
+  <aside id="iw-drawer" class="fixed top-0 right-0 h-full w-72 bg-white z-50 shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col justify-between border-l border-emerald-100 overflow-y-auto">
+    <div>
+      <div class="p-5 border-b border-emerald-100 flex items-center justify-between bg-emerald-50/60">
+        <span class="font-bold text-emerald-950"><i class="fa-solid fa-layer-group mr-1.5 text-emerald-700"></i>মেনু ও কাজসমূহ</span>
+        <button onclick="toggleMenuDrawer(true)" class="w-8 h-8 rounded-full bg-white border border-emerald-200 flex items-center justify-center text-emerald-900">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <nav class="p-4 space-y-1.5 text-sm font-semibold text-emerald-900">
+        <button id="pwa-install-btn" onclick="installInfinityPWA()" class="hidden w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-emerald-900 text-white font-bold shadow-sm mb-2">
+          <span><i class="fa-solid fa-download w-5"></i> অ্যাপ ইন্সটল করুন</span>
+          <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded-full">PWA</span>
+        </button>
+
+        <a href="/task" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-emerald-50">
+          <span><i class="fa-solid fa-list-check w-5 text-emerald-700"></i> মাইক্রো টাস্ক</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
+        </a>
+        <a href="/history" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-emerald-50/70 hover:bg-emerald-100">
+          <span><i class="fa-solid fa-clock-rotate-left w-5 text-emerald-700"></i> আয়ের হিস্টোরি</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
+        </a>
+        <a href="/work/typing" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-emerald-50">
+          <span><i class="fa-solid fa-keyboard w-5 text-emerald-700"></i> টাইপিং টাস্ক</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
+        </a>
+        <a href="/work/survey" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-emerald-50">
+          <span><i class="fa-solid fa-square-poll-vertical w-5 text-emerald-700"></i> সার্ভে করে আয়</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
+        </a>
+        <a href="/work/ai-image" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-emerald-50">
+          <span><i class="fa-solid fa-wand-magic-sparkles w-5 text-emerald-700"></i> ChatGPT ইমেজ</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
+        </a>
+        <a href="/work/cube-game" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-emerald-50">
+          <span><i class="fa-solid fa-cubes w-5 text-emerald-700"></i> ২,৪,৮ কিউব গেম</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
+        </a>
+        <a href="/work/tiktok-sell" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-emerald-50">
+          <span><i class="fa-brands fa-tiktok w-5 text-emerald-700"></i> TikTok অ্যাকাউন্ট সেল</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
+        </a>
+        {% if user and user.is_admin %}
+        <a href="/admin" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-amber-50 text-amber-900 border border-amber-200">
+          <span><i class="fa-solid fa-gear w-5"></i> অ্যাডমিন প্যানেল</span><i class="fa-solid fa-chevron-right text-[10px]"></i>
+        </a>
+        {% endif %}
+        <div class="pt-3 border-t border-emerald-100 space-y-1.5">
+          <a href="{{ channel_url }}" target="_blank" class="flex items-center gap-2 px-3.5 py-2.5 rounded-xl hover:bg-emerald-50 text-emerald-700">
+            <i class="fa-brands fa-telegram w-5"></i> অফিশিয়াল চ্যানেল
+          </a>
+          <a href="{{ support_url }}" target="_blank" class="flex items-center gap-2 px-3.5 py-2.5 rounded-xl hover:bg-emerald-50 text-emerald-700">
+            <i class="fa-solid fa-headset w-5"></i> লাইভ সাপোর্ট
+          </a>
+        </div>
+      </nav>
+    </div>
+
+    <div class="p-4 border-t border-emerald-100 bg-emerald-50/40 space-y-2">
+      <div class="text-xs text-emerald-700 font-medium px-1">Menu • {{ user.name }}</div>
+      <a href="/logout" class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm shadow transition">
+        <i class="fa-solid fa-right-from-bracket"></i> লগআউট করুন
+      </a>
+    </div>
+  </aside>
 
   <!-- Floating Telegram Support Widget -->
   <a href="{{ support_url }}" target="_blank" rel="noopener"
-     class="fixed bottom-5 right-5 z-40 flex items-center gap-2 bg-white/95 hover:bg-emerald-50 border border-emerald-200 text-emerald-900 px-4 py-2.5 rounded-full shadow-xl transition hover:-translate-y-0.5">
-    <span class="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center">
-      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg>
+     class="fixed bottom-20 right-4 z-30 flex items-center gap-1.5 bg-white border border-emerald-200 text-emerald-900 px-3 py-2 rounded-full shadow-lg text-xs font-bold hover:bg-emerald-50">
+    <span class="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center">
+      <i class="fa-brands fa-telegram text-xs"></i>
     </span>
-    <span class="text-xs font-bold">সাপোর্ট</span>
+    সাপোর্ট
   </a>
+
+  <!-- Bottom Navigation Bar (Unchanged) -->
+  <nav class="fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-emerald-100 shadow-[0_-8px_25px_rgba(13,74,43,0.06)]">
+    <div class="max-w-3xl mx-auto px-2 h-16 grid grid-cols-5 items-center text-[11px] font-bold">
+      <a href="/i" class="flex flex-col items-center gap-1 {% if active_nav == 'home' %}text-emerald-700{% else %}text-slate-500{% endif %}">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955a1.126 1.126 0 011.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75"/></svg>
+        <span>Home</span>
+      </a>
+
+      <a href="/payout" class="flex flex-col items-center gap-1 {% if active_nav == 'payout' %}text-emerald-700{% else %}text-slate-500{% endif %}">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3"/></svg>
+        <span>Withdraw</span>
+      </a>
+
+      <a href="/work" class="flex flex-col items-center -mt-6">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-900 text-white flex items-center justify-center shadow-lg shadow-emerald-900/30 ring-4 ring-white transition transform active:scale-95">
+          <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 01-.673-.38m0 0A2.18 2.18 0 013 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387m7.5 0V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v.894m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+        </div>
+        <span class="text-emerald-900 font-extrabold mt-0.5">Work</span>
+      </a>
+
+      <a href="/profile" class="flex flex-col items-center gap-1 {% if active_nav == 'profile' %}text-emerald-700{% else %}text-slate-500{% endif %}">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+        <span>Profile</span>
+      </a>
+
+      <button onclick="toggleMenuDrawer()" class="flex flex-col items-center gap-1 text-slate-500">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
+        <span>Menu</span>
+      </button>
+    </div>
+  </nav>
 
   <script src="/static/js/app.js"></script>
 </body>
