@@ -65,3 +65,29 @@ function copyText(text, btnId) {
     }
   });
 }
+
+
+
+// 4. Register PWA Service Worker & Handle Custom Install Prompt
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  });
+}
+
+let deferredPrompt = null;
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const btn = document.getElementById("pwa-install-btn");
+  if (btn) btn.classList.remove("hidden");
+});
+
+async function installInfinityPWA() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  const btn = document.getElementById("pwa-install-btn");
+  if (btn) btn.classList.add("hidden");
+}
