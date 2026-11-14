@@ -637,6 +637,30 @@ async def payout_submit(
     return redirect_with_flash(request, "/payout", "উইথড্র রিকুয়েস্ট সফলভাবে পাঠানো হয়েছে!", "success")
 
 
+LEVEL_TIERS = [
+    {"key": "beginner", "name": "Beginner", "min": 0, "next": 100, "icon": "fa-seedling"},
+    {"key": "starter", "name": "Starter", "min": 100, "next": 500, "icon": "fa-rocket"},
+    {"key": "legend", "name": "Legend", "min": 500, "next": 1500, "icon": "fa-crown"},
+    {"key": "pro", "name": "Pro Earner", "min": 1500, "next": 5000, "icon": "fa-gem"},
+    {"key": "hero", "name": "Infinity Hero", "min": 5000, "next": None, "icon": "fa-infinity"},
+]
+
+
+def get_earning_level(total_earned: float) -> dict:
+    current = LEVEL_TIERS[0]
+    for tier in LEVEL_TIERS:
+        if total_earned >= tier["min"]:
+            current = tier
+    if current["next"]:
+        span = current["next"] - current["min"]
+        prog = max(0, min(100, round(((total_earned - current["min"]) / span) * 100)))
+        need = max(0.0, current["next"] - total_earned)
+    else:
+        prog = 100
+        need = 0.0
+    return {**current, "progress": prog, "need_more": need}
+
+
 @app.get("/profile", response_class=HTMLResponse)
 async def profile_page(request: Request):
     user = await get_current_user(request)
@@ -644,11 +668,34 @@ async def profile_page(request: Request):
         return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
 
     referrals = await db.select("users", filters={"referred_by": user["referral_code"]})
+    total_earned = float(user.get("total_earned") or 0)
+    level_info = get_earning_level(total_earned)
+
     ctx = base_ctx(request, user, "profile")
     ctx["referrals"] = referrals
+    ctx["level"] = level_info
+    ctx["all_levels"] = LEVEL_TIERS
+    ctx["total_earned"] = total_earned
     return templates.TemplateResponse("profile.html", ctx)
 
 
+@app.post("/profile/avatar")
+async def profile_avatar_upload(request: Request, avatar: UploadFile = File(...)):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+
+    image_bytes = await avatar.read() if avatar and avatar.filename else None
+    if not image_bytes:
+        return redirect_with_flash(request, "/profile", "অনুগ্রহ করে একটি সঠিক ছবি নির্বাচন করুন।", "error")
+
+    img_url, is_dummy = await upload_with_load_balancer(image_bytes)
+    if img_url and not is_dummy:
+        await db.update("users", {"id": user["id"]}, {"avatar_url": img_url})
+        return redirect_with_flash(request, "/profile", "প্রোফাইল ছবি সফলভাবে আপডেট হয়েছে!", "success")
+
+    return redirect_with_flash(request, "/profile", "ছবি আপলোডের জন্য ImgBB API Key সক্রিয় নেই।", "info")
+    
 # ---------------- ADMIN PANEL ----------------
 
 @app.get("/admin", response_class=HTMLResponse)
