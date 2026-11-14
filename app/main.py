@@ -409,7 +409,11 @@ async def work_ai_image(request: Request):
         return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
     return templates.TemplateResponse("work_ai_image.html", base_ctx(request, user, "work"))
 
-
+@app.get("/about", response_class=HTMLResponse)
+async def about_page(request: Request):
+    user = await get_current_user(request)
+    return templates.TemplateResponse("about.html", base_ctx(request, user, "about"))
+    
 @app.post("/work/ai-image")
 async def work_ai_image_submit(
     request: Request,
