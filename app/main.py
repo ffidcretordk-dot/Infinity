@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
+from datetime import datetime, timezone, timedelta
 
 from app.config import (
     TEMPLATES_DIR,
@@ -464,12 +465,62 @@ async def work_ai_image_submit(
     return redirect_with_flash(request, "/work/ai-image", "ChatGPT জেনারেটেড ইমেজ সফলভাবে জমা হয়েছে!", "success")
 
 
+DAILY_CUBE_LIMIT_SECONDS = 300  # 5 minutes per day
+
+
+def get_bd_today_str() -> str:
+    bd_tz = timezone(timedelta(hours=6))
+    return datetime.now(bd_tz).strftime("%Y-%m-%d")
+
+
+async def sync_cube_daily_limit(user: dict) -> int:
+    today = get_bd_today_str()
+    if user.get("cube_play_date") != today:
+        await db.update(
+            "users",
+            {"id": user["id"]},
+            {"cube_play_date": today, "cube_seconds_used": 0},
+        )
+        return DAILY_CUBE_LIMIT_SECONDS
+    used = int(user.get("cube_seconds_used") or 0)
+    return max(0, DAILY_CUBE_LIMIT_SECONDS - used)
+
+
+
+
 @app.get("/work/cube-game", response_class=HTMLResponse)
 async def work_cube(request: Request):
     user = await get_current_user(request)
     if not user:
         return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
-    return templates.TemplateResponse("work_cube.html", base_ctx(request, user, "work"))
+
+    remaining_seconds = await sync_cube_daily_limit(user)
+    ctx = base_ctx(request, user, "work")
+    ctx["remaining_seconds"] = remaining_seconds
+    return templates.TemplateResponse("work_cube.html", ctx)
+
+
+@app.post("/work/cube-game/tick")
+async def work_cube_tick(request: Request, seconds: int = Form(5)):
+    user = await get_current_user(request)
+    if not user:
+        return JSONResponse({"ok": False, "remaining_seconds": 0}, status_code=401)
+
+    remaining = await sync_cube_daily_limit(user)
+    if remaining <= 0:
+        return JSONResponse({"ok": True, "remaining_seconds": 0})
+
+    step = max(1, min(int(seconds), 15))
+    today = get_bd_today_str()
+    used = int(user.get("cube_seconds_used") or 0) if user.get("cube_play_date") == today else 0
+    new_used = min(DAILY_CUBE_LIMIT_SECONDS, used + step)
+
+    await db.update(
+        "users",
+        {"id": user["id"]},
+        {"cube_play_date": today, "cube_seconds_used": new_used},
+    )
+    return JSONResponse({"ok": True, "remaining_seconds": max(0, DAILY_CUBE_LIMIT_SECONDS - new_used)})
 
 
 @app.post("/work/cube-game/claim")
@@ -477,19 +528,36 @@ async def work_cube_claim(request: Request, score: int = Form(...)):
     user = await get_current_user(request)
     if not user:
         return JSONResponse({"ok": False, "message": "লগইন প্রয়োজন"}, status_code=401)
-    if score < 64:
-        return JSONResponse({"ok": False, "message": "রিওয়ার্ড পেতে কমপক্ষে ৬৪ স্কোর করতে হবে!"}, status_code=400)
 
-    reward = min(round(score / 100, 2), 10.0)
+    remaining = await sync_cube_daily_limit(user)
+    if remaining <= 0:
+        return JSONResponse({"ok": False, "message": "আজকের ৫ মিনিটের লিমিট শেষ হয়ে গেছে! আগামীকাল আবার খেলুন।"}, status_code=403)
+
+    if score < 150:
+        return JSONResponse({"ok": False, "message": "হার্ড মোডে রিওয়ার্ড পেতে কমপক্ষে ১৫০ স্কোর করতে হবে!"}, status_code=400)
+
+    # FIXED: No 10৳ upper cap! Counts past 10৳, 20৳, 50৳+ unlimitedly
+    reward = round(score / 150, 2)
+
     await db.update(
         "users",
         {"id": user["id"]},
-        {"balance": float(user["balance"]) + reward, "total_earned": float(user["total_earned"]) + reward},
+        {
+            "balance": float(user["balance"]) + reward,
+            "total_earned": float(user["total_earned"]) + reward,
+        },
     )
-    await db.insert("work_logs", {"user_id": user["id"], "work_type": "2,4,8 Cube Game", "details": f"Score: {score}", "reward": reward})
-    return JSONResponse({"ok": True, "reward": reward, "message": f"দারুণ! {reward}৳ ব্যালেন্সে যোগ হয়েছে।"})
-
-
+    await db.insert(
+        "work_logs",
+        {
+            "user_id": user["id"],
+            "work_type": "2,4,8 Cube Game",
+            "details": f"Hard Mode Score: {score}",
+            "reward": reward,
+        },
+    )
+    return JSONResponse({"ok": True, "reward": reward, "message": f"দারুণ! ৳{reward:.2f} আপনার ব্যালেন্সে যোগ হয়েছে।"})
+    
 @app.get("/work/tiktok-sell", response_class=HTMLResponse)
 async def work_tiktok(request: Request):
     user = await get_current_user(request)
