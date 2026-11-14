@@ -1,0 +1,162 @@
+{% extends "base_public.html" %}
+{% block title %}আমাদের সম্পর্কে (About Us) - InfinityWork{% endblock %}
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 pt-5 pb-16 space-y-10">
+  <!-- Top Navbar Pill -->
+  <header class="glass-card rounded-full px-5 py-3 flex items-center justify-between">
+    <a href="/" class="flex items-center gap-2.5">
+      <svg class="w-8 h-8 text-emerald-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M18.178 8c5.096 0 5.096 8 0 8-5.095 0-7.133-8-12.739-8-4.585 0-4.585 8 0 8 5.606 0 7.644-8 12.74-8z"/>
+      </svg>
+      <span class="font-extrabold text-lg text-emerald-950">Infinity Work</span>
+    </a>
+
+    <nav class="hidden md:flex items-center gap-2 text-sm font-semibold text-emerald-900">
+      <a href="/" class="px-3 py-1.5 hover:text-emerald-700">হোম</a>
+      <a href="/about" class="bg-emerald-600/20 text-emerald-950 px-4 py-1.5 rounded-full">আমাদের সম্পর্কে</a>
+      <a href="{{ channel_url }}" target="_blank" class="px-3 py-1.5 hover:text-emerald-700">অফিশিয়াল চ্যানেল</a>
+      <a href="{{ support_url }}" target="_blank" class="px-3 py-1.5 hover:text-emerald-700">সাপোর্ট</a>
+    </nav>
+
+    {% if user %}
+    <a href="/i" class="btn-primary-green text-white px-5 py-2 rounded-full text-xs sm:text-sm font-bold">ড্যাশবোর্ড →</a>
+    {% else %}
+    <a href="/signup" class="btn-primary-green text-white px-5 py-2 rounded-full text-xs sm:text-sm font-bold">শুরু করুন →</a>
+    {% endif %}
+  </header>
+
+  <!-- Emotional Hero Story -->
+  <section class="glass-card rounded-[2rem] p-7 md:p-10 text-center space-y-5 relative overflow-hidden">
+    <div class="w-64 h-64 rounded-full bg-emerald-200/40 blur-3xl absolute -top-20 -right-16 pointer-events-none"></div>
+    <span class="inline-flex items-center gap-2 bg-emerald-100 text-emerald-900 px-4 py-1.5 rounded-full text-xs font-extrabold">
+      <i class="fa-solid fa-heart text-emerald-700"></i> বিশ্বাস, স্বচ্ছতা ও সম্মানের গল্প
+    </span>
+    <h1 class="text-3xl md:text-4xl font-extrabold text-emerald-950 leading-snug">
+      আমরা শুধু একটি ওয়েবসাইট নই — <br class="hidden sm:block" />
+      <span class="text-emerald-700">হাজারো স্বপ্নের নির্ভরযোগ্য সঙ্গী</span>
+    </h1>
+    <p class="text-sm md:text-base text-emerald-900/85 max-w-2xl mx-auto leading-relaxed">
+      বাংলাদেশে অনলাইন ইনকামের নামে অসংখ্য প্রতারণা আর ভুয়া সাইটের ভিড়ে, মানুষ আজ কাজ করতে ভয় পায়। সেই ভয় দূর করে শিক্ষার্থী, গৃহিণী ও কর্মহীন তরুণদের হাতে কোনো প্রকার ইনভেস্টমেন্ট বা ঝুঁকি ছাড়াই সৎ আয়ের সুযোগ তুলে দিতেই <b>InfinityWork</b>-এর জন্ম। আপনার মেধা, সময় আর প্রতিটি পরিশ্রমের মূল্য দিতে আমরা প্রতিশ্রুতিবদ্ধ।
+    </p>
+  </section>
+
+  <!-- HIGHLIGHTED: 100% Free Withdraw Banner -->
+  <section class="rounded-[2rem] bg-gradient-to-br from-emerald-800 via-emerald-900 to-emerald-950 text-white p-7 md:p-8 shadow-2xl relative overflow-hidden">
+    <div class="absolute right-4 top-4 opacity-10 text-8xl"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+    <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+      <div class="space-y-2.5 max-w-2xl">
+        <span class="inline-flex items-center gap-1.5 bg-yellow-300 text-emerald-950 px-3.5 py-1 rounded-full text-xs font-extrabold uppercase tracking-wide">
+          <i class="fa-solid fa-bolt"></i> ১০০% ফ্রি উইথড্র সুবিধা
+        </span>
+        <h2 class="text-2xl md:text-3xl font-extrabold leading-tight">
+          কোনো জয়েনিং ফি নয়, উইথড্র করতেও <span class="text-yellow-300">০৳ চার্জ!</span>
+        </h2>
+        <p class="text-xs md:text-sm text-emerald-100 leading-relaxed">
+          অন্যান্য সাইটের মতো টাকা তোলার সময় আমরা কোনো কমিশন, হিডেন চার্জ বা অ্যাক্টিভেশন ফি কাটি না। আপনার অর্জিত প্রতিটি টাকা <b>bKash, Nagad এবং Rocket</b>-এর মাধ্যমে সম্পূর্ণ ফ্রিতে আপনার অ্যাকাউন্টে পৌঁছে দেওয়া হয়।
+        </p>
+      </div>
+      <div class="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 text-center shrink-0 w-full md:w-auto">
+        <div class="text-3xl font-extrabold text-yellow-300">০% ফি</div>
+        <div class="text-xs text-emerald-100 font-semibold mt-0.5">সম্পূর্ণ ফ্রি পেমেন্ট</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Transparent Revenue Model: Where does the money come from? -->
+  <section class="space-y-6">
+    <div class="text-center space-y-2">
+      <h2 class="text-2xl md:text-3xl font-extrabold text-emerald-950">আমাদের টাকা কোথা থেকে আসে এবং কীভাবে পেমেন্ট করি?</h2>
+      <p class="text-xs md:text-sm text-emerald-800 max-w-xl mx-auto">
+        অনেকের মনেই প্রশ্ন জাগে — "আমরা ফ্রিতে কাজ করিয়ে ইউজারদের টাকা কীভাবে দিই?" নিচে আমাদের সম্পূর্ণ স্বচ্ছ আয়ের প্রক্রিয়াটি তুলে ধরা হলো:
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4">
+      <!-- Card 1: Foreign Projects -->
+      <div class="glass-card rounded-3xl p-6 space-y-3 hover:border-emerald-300 transition">
+        <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-globe"></i>
+        </div>
+        <h3 class="text-lg font-extrabold text-emerald-950">১. বাইরের দেশ থেকে কাজ সংগ্রহ ও ডিস্ট্রিবিউশন</h3>
+        <p class="text-xs md:text-sm text-emerald-900/80 leading-relaxed">
+          আমরা ইউরোপ, আমেরিকা ও বিভিন্ন আন্তর্জাতিক মার্কেটিং এজেন্সির কাছ থেকে বড় প্রজেক্ট (যেমন: Micro Task, Data Typing, Market Survey, AI Image ও Social Engagement) সংগ্রহ করি। এরপর সেই কাজগুলো আমাদের ইউজারদের মাঝে ভাগ করে দিই এবং ক্লায়েন্টের পেমেন্টের বড় অংশ সরাসরি আপনাদের মাঝে বণ্টন করি।
+        </p>
+      </div>
+
+      <!-- Card 2: Account Sell -->
+      <div class="glass-card rounded-3xl p-6 space-y-3 hover:border-emerald-300 transition">
+        <div class="w-12 h-12 rounded-2xl bg-teal-100 text-teal-800 flex items-center justify-center text-xl">
+          <i class="fa-brands fa-tiktok"></i>
+        </div>
+        <h3 class="text-lg font-extrabold text-emerald-950">২. গ্লোবাল অ্যাকাউন্ট সেল ও ডিজিটাল অ্যাসেট</h3>
+        <p class="text-xs md:text-sm text-emerald-900/80 leading-relaxed">
+          আমাদের প্ল্যাটফর্মের মাধ্যমে ইউজাররা তাদের পুরোনো বা গ্রো করা TikTok ও সোশ্যাল অ্যাকাউন্ট ন্যায্য দামে বিক্রি করতে পারেন। আমরা সেই ভেরিফায়েড অ্যাকাউন্টগুলো আন্তর্জাতিক ব্র্যান্ড ও বিজনেসের কাছে বিক্রি করে একটি স্থায়ী রেভিনিউ তৈরি করি।
+        </p>
+      </div>
+
+      <!-- Card 3: Smart Investment -->
+      <div class="glass-card rounded-3xl p-6 space-y-3 hover:border-emerald-300 transition">
+        <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-chart-pie"></i>
+        </div>
+        <h3 class="text-lg font-extrabold text-emerald-950">৩. ডিজিটাল ইনভেস্টমেন্ট</h3>
+        <p class="text-xs md:text-sm text-emerald-900/80 leading-relaxed">
+          কোম্পানির আয়ের একটি নির্দিষ্ট অংশ আমরা নিরাপদ ও যাচাইকৃত ডিজিটাল অ্যাড নেটওয়ার্ক, ই-কমার্স ও অনলাইন মিডিয়া প্রজেক্টে ইনভেস্ট করি। এর ফলে প্ল্যাটফর্মের ফান্ড কখনো শূন্য হয় না এবং পেমেন্ট সবসময় সচল থাকে।
+        </p>
+      </div>
+
+      <!-- Card 4: Profit Share -->
+      <div class="glass-card rounded-3xl p-6 space-y-3 hover:border-emerald-300 transition">
+        <div class="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-handshake-angle"></i>
+        </div>
+        <h3 class="text-lg font-extrabold text-emerald-950">৪. কমিউনিটি প্রফিট শেয়ারিং</h3>
+        <p class="text-xs md:text-sm text-emerald-900/80 leading-relaxed">
+          আমাদের ইনভেস্টমেন্ট ও গ্লোবাল প্রজেক্ট থেকে আসা মুনাফার একটি অংশ আমরা নিজেরা না রেখে বোনাস, গেম রিওয়ার্ড (2,4,8 Cube), ও রেফারেল প্রোগ্রামের মাধ্যমে আমাদের পরিবারের সদস্যদের সাথে শেয়ার করি। কারণ আপনার সফলতাই আমাদের সফলতা।
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Simple Visual Money Cycle -->
+  <section class="glass-card rounded-3xl p-6 md:p-8 space-y-5">
+    <h2 class="text-center text-xl font-extrabold text-emerald-950">এক নজরে আমাদের ইনকাম ও পেমেন্ট চক্র</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-xs font-bold">
+      <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 space-y-2">
+        <div class="text-2xl text-emerald-700"><i class="fa-solid fa-earth-americas"></i></div>
+        <div>বিদেশি ক্লায়েন্ট ও অ্যাকাউন্ট সেল</div>
+      </div>
+      <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 space-y-2">
+        <div class="text-2xl text-emerald-700"><i class="fa-solid fa-sack-dollar"></i></div>
+        <div>আয় ও নিরাপদ ইনভেস্টমেন্ট</div>
+      </div>
+      <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 space-y-2">
+        <div class="text-2xl text-emerald-700"><i class="fa-solid fa-people-group"></i></div>
+        <div>ইউজারদের মাঝে কাজ ও প্রফিট শেয়ার</div>
+      </div>
+      <div class="bg-emerald-900 text-white rounded-2xl p-4 space-y-2 shadow">
+        <div class="text-2xl text-yellow-300"><i class="fa-solid fa-wallet"></i></div>
+        <div>১০০% ফ্রি উইথড্র (bKash/Nagad)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Emotional Final CTA -->
+  <section class="glass-card rounded-3xl p-7 text-center space-y-4">
+    <h2 class="text-2xl font-extrabold text-emerald-950">আপনার প্রথম উপার্জন শুরু হোক আজ থেকেই!</h2>
+    <p class="text-xs md:text-sm text-emerald-800 max-w-lg mx-auto">
+      কোনো টাকা খরচ না করেই শুধু আপনার হাতে থাকা মোবাইল দিয়ে আজই আমাদের পরিবারের একজন সদস্য হয়ে যান। যেকোনো সহায়তায় আমাদের সাপোর্ট টিম ২৪ ঘণ্টা আপনার পাশে আছে।
+    </p>
+    <div class="flex flex-wrap items-center justify-center gap-3 pt-1">
+      {% if user %}
+      <a href="/work" class="btn-primary-green text-white px-7 py-3 rounded-full text-sm font-bold">কাজ শুরু করুন →</a>
+      {% else %}
+      <a href="/signup" class="btn-primary-green text-white px-7 py-3 rounded-full text-sm font-bold">ফ্রি অ্যাকাউন্ট খুলুন →</a>
+      {% endif %}
+      <a href="{{ support_url }}" target="_blank" class="bg-white border border-emerald-200 text-emerald-900 px-6 py-3 rounded-full text-sm font-bold hover:bg-emerald-50">
+        <i class="fa-brands fa-telegram text-emerald-600 mr-1"></i> সাপোর্টে কথা বলুন
+      </a>
+    </div>
+  </section>
+</div>
+{% endblock %}
