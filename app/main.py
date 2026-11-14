@@ -1,3 +1,7 @@
+import math
+import struct
+import zlib
+from fastapi.responses import Response
 from fastapi import FastAPI, Request, Form, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -797,6 +801,134 @@ async def admin_review_submission(request: Request, sub_id: int, action: str):
         return redirect_with_flash(request, "/admin", "টাস্ক রিজেক্ট করা হয়েছে।", "info")
 
 
+_PWA_ICON_CACHE: dict[int, bytes] = {}
+
+
+def _generate_infinity_png(size: int) -> bytes:
+    if size in _PWA_ICON_CACHE:
+        return _PWA_ICON_CACHE[size]
+
+    # Fast O(1)-per-pixel PNG generator with emerald gradient + crisp white Infinity (∞)
+    cx, cy = size / 2.0, size / 2.0
+    ring_offset = size * 0.165
+    ring_r = size * 0.165
+    stroke = size * 0.055
+
+    raw_rows = bytearray()
+    for y in range(size):
+        raw_rows.append(0)  # PNG filter type 0
+        t_grad = y / max(1, size - 1)
+        bg_r = int(22 * (1 - t_grad) + 11 * t_grad)
+        bg_g = int(130 * (1 - t_grad) + 74 * t_grad)
+        bg_b = int(75 * (1 - t_grad) + 43 * t_grad)
+
+        dy = y - cy
+        for x in range(size):
+            dx_l = x - (cx - ring_offset)
+            dx_r = x - (cx + ring_offset)
+            d_l = abs(math.hypot(dx_l, dy) - ring_r)
+            d_r = abs(math.hypot(dx_r, dy) - ring_r)
+            d = min(d_l, d_r)
+
+            if d <= stroke:
+                alpha = 1.0
+            elif d <= stroke + 1.5:
+                alpha = max(0.0, 1.0 - (d - stroke) / 1.5)
+            else:
+                alpha = 0.0
+
+            r = int(bg_r * (1 - alpha) + 255 * alpha)
+            g = int(bg_g * (1 - alpha) + 255 * alpha)
+            b = int(bg_b * (1 - alpha) + 255 * alpha)
+            raw_rows.extend((r, g, b, 255))
+
+    def chunk(tag: bytes, data: bytes) -> bytes:
+        return struct.pack("!I", len(data)) + tag + data + struct.pack("!I", zlib.crc32(tag + data) & 0xFFFFFFFF)
+
+    ihdr = struct.pack("!IIBBBBB", size, size, 8, 6, 0, 0, 0)
+    png_bytes = (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", ihdr)
+        + chunk(b"IDAT", zlib.compress(bytes(raw_rows), 6))
+        + chunk(b"IEND", b"")
+    )
+    _PWA_ICON_CACHE[size] = png_bytes
+    return png_bytes
+
+
+@app.get("/pwa-icon/{size}.png")
+async def pwa_icon(size: int):
+    valid_size = 512 if size >= 512 else 192
+    return Response(
+        content=_generate_infinity_png(valid_size),
+        media_type="image/png",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
+
+
+@app.get("/manifest.json")
+async def pwa_manifest():
+    manifest = {
+        "name": "InfinityWork - কাজ করুন, আয় করুন",
+        "short_name": "InfinityWork",
+        "description": "Trusted Online Micro Task & Earning Platform",
+        "start_url": "/i?pwa=1",
+        "scope": "/",
+        "display": "standalone",
+        "orientation": "portrait",
+        "theme_color": "#effcf4",
+        "background_color": "#effcf4",
+        "icons": [
+            {"src": "/pwa-icon/192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+            {"src": "/pwa-icon/512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"},
+        ],
+    }
+    return JSONResponse(content=manifest, media_type="application/manifest+json")
+
+
+@app.get("/sw.js")
+async def pwa_service_worker():
+    sw_code = """
+const CACHE_NAME = "infinitywork-pwa-v1";
+const CORE_ASSETS = ["/", "/manifest.json", "/static/js/app.js", "/pwa-icon/192.png"];
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS)).catch(() => {})
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+    )
+  );
+  self.clients.claim();
+});
+
+self.addEventListener("fetch", (event) => {
+  if (event.request.method !== "GET") return;
+  event.respondWith(
+    fetch(event.request)
+      .then((res) => {
+        if (res.ok && event.request.url.includes("/static/")) {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then((c) => c.put(event.request, clone));
+        }
+        return res;
+      })
+      .catch(() => caches.match(event.request))
+  );
+});
+"""
+    return Response(
+        content=sw_code.strip(),
+        media_type="application/javascript",
+        headers={"Service-Worker-Allowed": "/"},
+            )
+    
 @app.post("/admin/payout/{payout_id}/{action}")
 async def admin_review_payout(request: Request, payout_id: int, action: str):
     user = await get_current_user(request)
