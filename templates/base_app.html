@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}InfinityWork App{% endblock %}</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
   <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     body {
@@ -33,34 +34,35 @@
     {% endfor %}
   </div>
 
-  <!-- Top Header -->
+  <!-- Top Header (With FontAwesome Icons) -->
   <header class="sticky top-0 z-30 bg-white/85 backdrop-blur-md border-b border-emerald-100">
     <div class="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between">
       <a href="/i" class="flex items-center gap-2.5">
         <div class="w-9 h-9 rounded-xl bg-emerald-900 text-white flex items-center justify-center shadow-sm">
-          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
-            <path d="M18.178 8c5.096 0 5.096 8 0 8-5.095 0-7.133-8-12.739-8-4.585 0-4.585 8 0 8 5.606 0 7.644-8 12.74-8z"/>
-          </svg>
+          <i class="fa-solid fa-infinity text-base"></i>
         </div>
         <span class="font-extrabold text-lg tracking-tight text-emerald-950">InfinityWork</span>
       </a>
 
       <div class="flex items-center gap-2">
         <a href="/payout" class="hidden sm:inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-900 px-3 py-1.5 rounded-full text-xs font-bold">
+          <i class="fa-solid fa-wallet text-emerald-700"></i>
           <span>ব্যালেন্স:</span>
           <span class="text-emerald-700">৳{{ "%.2f"|format(user.balance) }}</span>
         </a>
-        <!-- Profile Icon -->
-        <a href="/profile" title="Profile" class="w-10 h-10 rounded-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 flex items-center justify-center text-emerald-900 transition">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-          </svg>
+
+        <!-- Profile Icon (FA Icon or Avatar) -->
+        <a href="/profile" title="Profile" class="w-10 h-10 rounded-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 flex items-center justify-center text-emerald-900 transition overflow-hidden">
+          {% if user and user.avatar_url %}
+          <img src="{{ user.avatar_url }}" alt="{{ user.name }}" class="w-full h-full object-cover" />
+          {% else %}
+          <i class="fa-solid fa-user text-sm"></i>
+          {% endif %}
         </a>
-        <!-- Toggle Menu Icon -->
+
+        <!-- Toggle Menu Icon (FA Icon) -->
         <button onclick="toggleMenuDrawer()" aria-label="Menu" class="w-10 h-10 rounded-full bg-emerald-900 hover:bg-emerald-800 text-white flex items-center justify-center shadow transition">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-          </svg>
+          <i class="fa-solid fa-bars text-sm"></i>
         </button>
       </div>
     </div>
@@ -74,46 +76,49 @@
   <!-- Toggle Drawer Backdrop -->
   <div id="iw-drawer-backdrop" onclick="toggleMenuDrawer(true)" class="hidden fixed inset-0 bg-emerald-950/35 backdrop-blur-xs z-40"></div>
 
-  <!-- Toggle Menu Drawer (Important Nav excluding Bottom Nav items + Logout at bottom) -->
+  <!-- Toggle Menu Drawer -->
   <aside id="iw-drawer" class="fixed top-0 right-0 h-full w-72 bg-white z-50 shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col justify-between border-l border-emerald-100">
     <div>
       <div class="p-5 border-b border-emerald-100 flex items-center justify-between bg-emerald-50/60">
-        <div class="flex items-center gap-2">
-          <span class="font-bold text-emerald-950">মেনু ও কাজসমূহ</span>
-        </div>
-        <button onclick="toggleMenuDrawer(true)" class="w-8 h-8 rounded-full bg-white border border-emerald-200 flex items-center justify-center text-emerald-900">✕</button>
+        <span class="font-bold text-emerald-950"><i class="fa-solid fa-layer-group mr-1.5 text-emerald-700"></i>মেনু ও কাজসমূহ</span>
+        <button onclick="toggleMenuDrawer(true)" class="w-8 h-8 rounded-full bg-white border border-emerald-200 flex items-center justify-center text-emerald-900">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
       </div>
 
       <nav class="p-4 space-y-1.5 text-sm font-semibold text-emerald-900">
         <a href="/task" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-emerald-50">
-          <span>📋 মাইক্রো টাস্ক</span><span class="text-xs text-emerald-600">→</span>
+          <span><i class="fa-solid fa-list-check w-5 text-emerald-700"></i> মাইক্রো টাস্ক</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
+        </a>
+        <a href="/history" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-emerald-50/70 hover:bg-emerald-100">
+          <span><i class="fa-solid fa-clock-rotate-left w-5 text-emerald-700"></i> আয়ের হিস্টোরি</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
         </a>
         <a href="/work/typing" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-emerald-50">
-          <span>⌨️ টাইপিং টাস্ক</span><span class="text-xs text-emerald-600">→</span>
+          <span><i class="fa-solid fa-keyboard w-5 text-emerald-700"></i> টাইপিং টাস্ক</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
         </a>
         <a href="/work/survey" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-emerald-50">
-          <span>📝 সার্ভে করে আয়</span><span class="text-xs text-emerald-600">→</span>
+          <span><i class="fa-solid fa-square-poll-vertical w-5 text-emerald-700"></i> সার্ভে করে আয়</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
         </a>
         <a href="/work/ai-image" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-emerald-50">
-          <span>🎨 ChatGPT ইমেজ</span><span class="text-xs text-emerald-600">→</span>
+          <span><i class="fa-solid fa-wand-magic-sparkles w-5 text-emerald-700"></i> ChatGPT ইমেজ</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
         </a>
         <a href="/work/cube-game" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-emerald-50">
-          <span>🎲 ২,৪,৮ কিউব গেম</span><span class="text-xs text-emerald-600">→</span>
+          <span><i class="fa-solid fa-cubes w-5 text-emerald-700"></i> ২,৪,৮ কিউব গেম</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
         </a>
         <a href="/work/tiktok-sell" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-emerald-50">
-          <span>🎵 TikTok অ্যাকাউন্ট সেল</span><span class="text-xs text-emerald-600">→</span>
+          <span><i class="fa-brands fa-tiktok w-5 text-emerald-700"></i> TikTok অ্যাকাউন্ট সেল</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
         </a>
         {% if user and user.is_admin %}
         <a href="/admin" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-amber-50 text-amber-900 border border-amber-200">
-          <span>⚙️ অ্যাডমিন প্যানেল</span><span class="text-xs">→</span>
+          <span><i class="fa-solid fa-gear w-5"></i> অ্যাডমিন প্যানেল</span><i class="fa-solid fa-chevron-right text-[10px]"></i>
         </a>
         {% endif %}
         <div class="pt-3 border-t border-emerald-100 space-y-1.5">
           <a href="{{ channel_url }}" target="_blank" class="flex items-center gap-2 px-3.5 py-2.5 rounded-xl hover:bg-emerald-50 text-emerald-700">
-            <span>📢 অফিশিয়াল চ্যানেল</span>
+            <i class="fa-brands fa-telegram w-5"></i> অফিশিয়াল চ্যানেল
           </a>
           <a href="{{ support_url }}" target="_blank" class="flex items-center gap-2 px-3.5 py-2.5 rounded-xl hover:bg-emerald-50 text-emerald-700">
-            <span>💬 লাইভ সাপোর্ট</span>
+            <i class="fa-solid fa-headset w-5"></i> লাইভ সাপোর্ট
           </a>
         </div>
       </nav>
@@ -122,7 +127,7 @@
     <div class="p-4 border-t border-emerald-100 bg-emerald-50/40 space-y-2">
       <div class="text-xs text-emerald-700 font-medium px-1">Menu • {{ user.name }}</div>
       <a href="/logout" class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm shadow transition">
-        লগআউট করুন
+        <i class="fa-solid fa-right-from-bracket"></i> লগআউট করুন
       </a>
     </div>
   </aside>
@@ -131,12 +136,12 @@
   <a href="{{ support_url }}" target="_blank" rel="noopener"
      class="fixed bottom-20 right-4 z-30 flex items-center gap-1.5 bg-white border border-emerald-200 text-emerald-900 px-3 py-2 rounded-full shadow-lg text-xs font-bold hover:bg-emerald-50">
     <span class="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center">
-      <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg>
+      <i class="fa-brands fa-telegram text-xs"></i>
     </span>
     সাপোর্ট
   </a>
 
-  <!-- Bottom Navigation Bar: Home, Withdraw, Work (Highlight), Profile, Menu -->
+  <!-- Bottom Navigation Bar (Unchanged - Exact Original Design) -->
   <nav class="fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-emerald-100 shadow-[0_-8px_25px_rgba(13,74,43,0.06)]">
     <div class="max-w-3xl mx-auto px-2 h-16 grid grid-cols-5 items-center text-[11px] font-bold">
       <a href="/i" class="flex flex-col items-center gap-1 {% if active_nav == 'home' %}text-emerald-700{% else %}text-slate-500{% endif %}">
@@ -171,4 +176,4 @@
 
   <script src="/static/js/app.js"></script>
 </body>
-  </html>
+</html>
