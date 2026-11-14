@@ -1,0 +1,240 @@
+{% extends "base_app.html" %}
+{% block title %}প্রোফাইল - InfinityWork{% endblock %}
+{% block content %}
+<style>
+  @keyframes spinAura {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  @keyframes goldPulse {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.35), 0 10px 25px rgba(245, 158, 11, 0.35); }
+    50% { box-shadow: 0 0 0 7px rgba(251, 191, 36, 0.55), 0 10px 30px rgba(245, 158, 11, 0.55); }
+  }
+
+  /* 5 Distinct Level Avatar Frames */
+  .frame-beginner {
+    background: linear-gradient(135deg, #a7f3d0, #34d399);
+    box-shadow: 0 8px 20px -4px rgba(16, 185, 129, 0.35);
+  }
+  .frame-starter {
+    background: linear-gradient(135deg, #2dd4bf, #0284c7);
+    box-shadow: 0 8px 22px -4px rgba(2, 132, 199, 0.4);
+  }
+  .frame-legend {
+    background: linear-gradient(135deg, #c084fc, #6366f1, #ec4899);
+    box-shadow: 0 8px 25px -4px rgba(147, 51, 234, 0.45);
+  }
+  .frame-pro {
+    background: linear-gradient(135deg, #fde047, #f59e0b, #ea580c);
+    animation: goldPulse 2.2s infinite ease-in-out;
+  }
+  .frame-hero-wrap {
+    position: relative;
+    padding: 5px;
+    border-radius: 9999px;
+    overflow: hidden;
+    box-shadow: 0 0 28px rgba(16, 185, 129, 0.55);
+  }
+  .frame-hero-wrap::before {
+    content: "";
+    position: absolute;
+    inset: -40%;
+    background: conic-gradient(#10b981, #fde047, #06b6d4, #a855f7, #ec4899, #10b981);
+    animation: spinAura 3.5s linear infinite;
+  }
+</style>
+
+<div class="space-y-5">
+  <!-- Main Profile Hero Card -->
+  <div class="soft-card rounded-3xl overflow-hidden shadow-xl">
+    <!-- Top Banner matching current level -->
+    <div class="h-28 relative overflow-hidden
+      {% if level.key == 'hero' %}bg-gradient-to-r from-emerald-900 via-teal-800 to-purple-900
+      {% elif level.key == 'pro' %}bg-gradient-to-r from-amber-600 via-orange-500 to-emerald-800
+      {% elif level.key == 'legend' %}bg-gradient-to-r from-purple-700 via-indigo-700 to-emerald-800
+      {% elif level.key == 'starter' %}bg-gradient-to-r from-teal-600 to-emerald-800
+      {% else %}bg-gradient-to-r from-emerald-600 to-emerald-900{% endif %}">
+      <div class="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top_right,_#ffffff,_transparent_60%)]"></div>
+      <div class="absolute top-3 right-4 bg-white/20 backdrop-blur-md text-white px-3 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1.5 border border-white/25">
+        <i class="fa-solid {{ level.icon }}"></i>
+        <span>{{ level.name }}</span>
+      </div>
+    </div>
+
+    <div class="px-6 pb-6 -mt-14 relative">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <!-- Framed Avatar + Upload Trigger -->
+        <div class="flex items-end gap-4">
+          <div class="relative inline-block">
+            {% if level.key == 'hero' %}
+            <div class="frame-hero-wrap w-28 h-28">
+              <div class="relative z-10 w-full h-full rounded-full bg-white p-1">
+                {% if user.avatar_url %}
+                <img src="{{ user.avatar_url }}" alt="{{ user.name }}" class="w-full h-full rounded-full object-cover" />
+                {% else %}
+                <div class="w-full h-full rounded-full bg-emerald-950 text-white flex items-center justify-center text-3xl font-extrabold">{{ user.name[0]|upper }}</div>
+                {% endif %}
+              </div>
+            </div>
+            {% else %}
+            <div class="w-28 h-28 rounded-full p-1.5 frame-{{ level.key }}">
+              <div class="w-full h-full rounded-full bg-white p-0.5">
+                {% if user.avatar_url %}
+                <img src="{{ user.avatar_url }}" alt="{{ user.name }}" class="w-full h-full rounded-full object-cover" />
+                {% else %}
+                <div class="w-full h-full rounded-full bg-emerald-900 text-white flex items-center justify-center text-3xl font-extrabold">{{ user.name[0]|upper }}</div>
+                {% endif %}
+              </div>
+            </div>
+            {% endif %}
+
+            <!-- Level Floating Emblem -->
+            <span class="absolute -top-1 -left-1 z-20 w-8 h-8 rounded-full bg-white shadow-md border border-emerald-100 flex items-center justify-center text-xs
+              {% if level.key == 'pro' %}text-amber-500{% elif level.key == 'legend' %}text-purple-600{% elif level.key == 'hero' %}text-emerald-700{% elif level.key == 'starter' %}text-teal-600{% else %}text-emerald-600{% endif %}">
+              <i class="fa-solid {{ level.icon }}"></i>
+            </span>
+
+            <!-- ImgBB Camera Upload Form -->
+            <form id="avatar-upload-form" action="/profile/avatar" method="POST" enctype="multipart/form-data">
+              <label for="avatar-file-input" title="প্রোফাইল ছবি পরিবর্তন করুন"
+                     class="absolute bottom-0 right-0 z-20 w-9 h-9 rounded-full bg-emerald-900 hover:bg-emerald-800 text-white border-2 border-white shadow-lg flex items-center justify-center cursor-pointer transition transform hover:scale-105">
+                <i id="avatar-cam-icon" class="fa-solid fa-camera text-xs"></i>
+              </label>
+              <input id="avatar-file-input" type="file" name="avatar" accept="image/*" class="hidden" onchange="submitAvatarForm()" />
+            </form>
+          </div>
+
+          <div class="pb-1">
+            <div class="flex items-center gap-1.5">
+              <h1 class="text-xl font-extrabold text-emerald-950">{{ user.name }}</h1>
+              <i class="fa-solid fa-circle-check text-emerald-600 text-sm" title="Verified User"></i>
+            </div>
+            <p class="text-xs text-emerald-700 font-medium"><i class="fa-solid fa-envelope mr-1"></i>{{ user.email }}</p>
+            <div class="mt-1.5 inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-extrabold
+              {% if level.key == 'hero' %}bg-purple-100 text-purple-900
+              {% elif level.key == 'pro' %}bg-amber-100 text-amber-900
+              {% elif level.key == 'legend' %}bg-indigo-100 text-indigo-900
+              {% elif level.key == 'starter' %}bg-teal-100 text-teal-900
+              {% else %}bg-emerald-100 text-emerald-900{% endif %}">
+              <i class="fa-solid {{ level.icon }}"></i>
+              <span>লেভেল: {{ level.name }}</span>
+            </div>
+          </div>
+        </div>
+
+        <a href="/history" class="inline-flex items-center justify-center gap-2 bg-emerald-900 hover:bg-emerald-800 text-white px-4 py-2.5 rounded-full text-xs font-bold shadow transition">
+          <i class="fa-solid fa-clock-rotate-left"></i> আয়ের হিস্টোরি
+        </a>
+      </div>
+
+      <!-- Level Progress Bar -->
+      <div class="mt-5 bg-emerald-50/80 border border-emerald-100 rounded-2xl p-3.5 space-y-2">
+        <div class="flex items-center justify-between text-xs font-bold">
+          <span class="text-emerald-900">
+            <i class="fa-solid fa-chart-line text-emerald-600 mr-1"></i>
+            {% if level.next %}
+              পরবর্তী লেভেলের জন্য আর <b>৳{{ "%.0f"|format(level.need_more) }}</b> আয় প্রয়োজন
+            {% else %}
+              অভিনন্দন! আপনি সর্বোচ্চ <b>Infinity Hero</b> লেভেলে আছেন!
+            {% endif %}
+          </span>
+          <span class="text-emerald-700">{{ level.progress }}%</span>
+        </div>
+        <div class="w-full h-2.5 bg-white rounded-full overflow-hidden border border-emerald-100">
+          <div class="h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-800 transition-all duration-500" style="width: {{ level.progress }}%"></div>
+        </div>
+      </div>
+
+      <!-- 3 Stats Cards -->
+      <div class="grid grid-cols-3 gap-2.5 mt-4">
+        <div class="bg-white border border-emerald-100 rounded-2xl p-3.5 text-center shadow-xs">
+          <div class="text-emerald-600 text-base mb-1"><i class="fa-solid fa-wallet"></i></div>
+          <div class="text-[11px] font-bold text-emerald-700">বর্তমান ব্যালেন্স</div>
+          <div class="font-extrabold text-base text-emerald-950">৳{{ "%.2f"|format(user.balance) }}</div>
+        </div>
+        <div class="bg-white border border-emerald-100 rounded-2xl p-3.5 text-center shadow-xs">
+          <div class="text-amber-500 text-base mb-1"><i class="fa-solid fa-coins"></i></div>
+          <div class="text-[11px] font-bold text-emerald-700">মোট আয়</div>
+          <div class="font-extrabold text-base text-emerald-950">৳{{ "%.2f"|format(total_earned) }}</div>
+        </div>
+        <div class="bg-white border border-emerald-100 rounded-2xl p-3.5 text-center shadow-xs">
+          <div class="text-teal-600 text-base mb-1"><i class="fa-solid fa-users"></i></div>
+          <div class="text-[11px] font-bold text-emerald-700">মোট রেফার</div>
+          <div class="font-extrabold text-base text-emerald-950">{{ referrals|length }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- All 5 Earning Levels & Frames Showcase Card -->
+  <div class="soft-card rounded-3xl p-5 space-y-3.5">
+    <div class="flex items-center justify-between">
+      <h2 class="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
+        <i class="fa-solid fa-award text-amber-500"></i> আর্নিং লেভেল ও ফ্রেম সমূহ
+      </h2>
+      <span class="text-[11px] font-bold text-emerald-700">মোট ৫টি লেভেল</span>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-center">
+      {% for tier in all_levels %}
+      {% set unlocked = total_earned >= tier.min %}
+      <div class="rounded-2xl p-3 border transition {% if tier.key == level.key %}bg-emerald-50 border-emerald-400 ring-2 ring-emerald-200{% elif unlocked %}bg-white border-emerald-200{% else %}bg-slate-50/70 border-slate-200 opacity-65{% endif %}">
+        <div class="mx-auto w-12 h-12 rounded-full p-1 mb-2 flex items-center justify-center
+          {% if tier.key == 'hero' %}bg-gradient-to-tr from-emerald-500 via-amber-400 to-purple-600
+          {% else %}frame-{{ tier.key }}{% endif %}">
+          <div class="w-full h-full rounded-full bg-white flex items-center justify-center text-sm
+            {% if tier.key == 'pro' %}text-amber-500{% elif tier.key == 'legend' %}text-purple-600{% elif tier.key == 'hero' %}text-emerald-700{% elif tier.key == 'starter' %}text-teal-600{% else %}text-emerald-600{% endif %}">
+            <i class="fa-solid {{ tier.icon }}"></i>
+          </div>
+        </div>
+        <div class="font-extrabold text-xs text-emerald-950">{{ tier.name }}</div>
+        <div class="text-[10px] font-bold text-emerald-700 mt-0.5">৳{{ tier.min }}+</div>
+        <div class="mt-1">
+          {% if tier.key == level.key %}
+          <span class="inline-block px-2 py-0.5 rounded-full bg-emerald-700 text-white text-[9px] font-bold">বর্তমান</span>
+          {% elif unlocked %}
+          <span class="inline-block text-[10px] text-emerald-600 font-bold"><i class="fa-solid fa-check"></i> আনলকড</span>
+          {% else %}
+          <span class="inline-block text-[10px] text-slate-400 font-bold"><i class="fa-solid fa-lock"></i> লকড</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Referral & Account Security Card -->
+  <div class="soft-card rounded-3xl p-5 space-y-3">
+    <h2 class="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
+      <i class="fa-solid fa-shield-halved text-emerald-700"></i> রেফারেল ও ডিভাইস নিরাপত্তা
+    </h2>
+
+    <div class="flex items-center justify-between bg-emerald-50/80 border border-emerald-100 rounded-2xl p-3 text-xs">
+      <div>
+        <div class="text-emerald-700 font-semibold">আপনার রেফারেল কোড</div>
+        <div class="font-extrabold text-sm text-emerald-950 tracking-wider">{{ user.referral_code }}</div>
+      </div>
+      <button id="profile-copy-btn" onclick="copyText('{{ request.base_url }}signup?ref={{ user.referral_code }}', 'profile-copy-btn')"
+              class="bg-emerald-900 hover:bg-emerald-800 text-white px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
+        <i class="fa-solid fa-copy"></i> লিংক কপি
+      </button>
+    </div>
+
+    <div class="flex items-center justify-between text-xs px-1">
+      <span class="text-emerald-800 font-semibold"><i class="fa-solid fa-mobile-screen-button mr-1.5 text-emerald-700"></i>ভেরিফায়েড ডিভাইস আইডি</span>
+      <span class="font-mono text-[11px] bg-emerald-100 text-emerald-900 px-2.5 py-1 rounded-lg">{{ user.device_id[:14] }}...</span>
+    </div>
+  </div>
+</div>
+
+<script>
+function submitAvatarForm() {
+  const input = document.getElementById("avatar-file-input");
+  const icon = document.getElementById("avatar-cam-icon");
+  if (input && input.files && input.files.length > 0) {
+    if (icon) icon.className = "fa-solid fa-spinner fa-spin text-xs";
+    document.getElementById("avatar-upload-form").submit();
+  }
+}
+</script>
+{% endblock %}
