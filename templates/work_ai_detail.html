@@ -1,0 +1,142 @@
+{% extends "base_app.html" %}
+{% block title %}{{ task.title }} - InfinityWork{% endblock %}
+{% block content %}
+<div class="max-w-xl mx-auto space-y-4">
+  <div class="flex items-center justify-between">
+    <a href="/work/ai-image" class="inline-flex items-center gap-2 bg-white border border-emerald-200 px-4 py-2 rounded-full text-xs font-bold text-emerald-900">
+      <i class="fa-solid fa-arrow-left"></i> সব AI কাজ
+    </a>
+
+    <!-- "কীভাবে করবেন?" Popup Trigger Button -->
+    <button onclick="toggleHowToModal(true)" class="inline-flex items-center gap-1.5 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 px-4 py-2 rounded-full text-xs font-extrabold shadow-xs transition">
+      <i class="fa-solid fa-circle-question"></i> কীভাবে করবেন?
+    </button>
+  </div>
+
+  <!-- Title & Reward Hero Card -->
+  <div class="rounded-3xl bg-gradient-to-br from-emerald-800 via-emerald-900 to-emerald-950 text-white p-6 shadow-xl flex items-start justify-between gap-4">
+    <div class="space-y-1.5">
+      <span class="inline-flex items-center gap-1.5 bg-white/15 px-3 py-1 rounded-full text-[11px] font-bold text-emerald-100">
+        <i class="fa-solid fa-wand-magic-sparkles text-yellow-300"></i> ChatGPT Image Task
+      </span>
+      <h1 class="text-xl sm:text-2xl font-extrabold">{{ task.title }}</h1>
+      {% if task.description %}
+      <p class="text-xs text-emerald-100/90 leading-relaxed">{{ task.description }}</p>
+      {% endif %}
+    </div>
+    <div class="bg-white text-emerald-950 px-4 py-2.5 rounded-2xl text-center shrink-0 shadow">
+      <div class="text-[10px] font-bold text-emerald-700 uppercase">রিওয়ার্ড</div>
+      <div class="text-xl font-extrabold">৳{{ "%.2f"|format(task.reward) }}</div>
+    </div>
+  </div>
+
+  <!-- Prompt Card with 1-Click Copy -->
+  <div class="soft-card rounded-3xl p-5 space-y-3">
+    <div class="flex items-center justify-between">
+      <span class="font-extrabold text-sm text-emerald-950"><i class="fa-solid fa-terminal text-emerald-700 mr-1.5"></i>ChatGPT Prompt</span>
+      <button id="copy-prompt-btn" onclick="copyText(document.getElementById('ai-prompt-text').innerText, 'copy-prompt-btn')"
+              class="bg-emerald-900 hover:bg-emerald-800 text-white px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition">
+        <i class="fa-solid fa-copy"></i> প্রম্পট কপি করুন
+      </button>
+    </div>
+    <div id="ai-prompt-text" class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-xs sm:text-sm font-semibold text-emerald-950 leading-relaxed select-all">{{ task.prompt }}</div>
+  </div>
+
+  <!-- Upload Generated Image Card -->
+  <div class="soft-card rounded-3xl p-5 space-y-4">
+    <div class="flex items-center justify-between">
+      <span class="font-extrabold text-sm text-emerald-950"><i class="fa-solid fa-image text-emerald-700 mr-1.5"></i>তৈরি করা ছবি আপলোড করুন</span>
+    </div>
+
+    <form id="ai-submit-form" action="/work/ai-image/{{ task.id }}/submit" method="POST" enctype="multipart/form-data" class="space-y-4">
+      <label for="ai-image-input" class="block border-2 border-dashed border-emerald-300 hover:border-emerald-500 bg-emerald-50/50 rounded-3xl p-6 text-center cursor-pointer transition">
+        <div id="ai-placeholder" class="space-y-2">
+          <div class="w-14 h-14 mx-auto rounded-2xl bg-white shadow-sm border border-emerald-100 text-emerald-700 flex items-center justify-center text-2xl">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+          </div>
+          <div class="text-sm font-extrabold text-emerald-950">ট্যাপ করে ChatGPT-এর ছবি সিলেক্ট করুন</div>
+          <p class="text-[11px] text-emerald-700">PNG, JPG বা WEBP ইমেজ আপলোড করুন</p>
+        </div>
+
+        <div id="ai-preview-box" class="hidden space-y-2.5">
+          <img id="ai-preview-img" src="" alt="Preview" class="max-h-64 mx-auto rounded-2xl shadow-md border border-emerald-200 object-contain" />
+          <div class="text-xs font-bold text-emerald-800">
+            <i class="fa-solid fa-circle-check text-emerald-600 mr-1"></i>
+            <span id="ai-preview-name"></span>
+            <span class="underline text-emerald-600 ml-1">পরিবর্তন করুন</span>
+          </div>
+        </div>
+      </label>
+
+      <input id="ai-image-input" type="file" name="ai_image" accept="image/*" required class="hidden" onchange="previewAiImg(this)" />
+
+      <button id="ai-submit-btn" type="submit"
+              class="w-full bg-gradient-to-r from-emerald-700 to-emerald-950 text-white py-4 rounded-full font-extrabold text-sm shadow-lg flex items-center justify-center gap-2 disabled:opacity-60">
+        <i id="ai-submit-icon" class="fa-solid fa-paper-plane"></i>
+        <span id="ai-submit-text">ছবি জমা দিন (৳{{ "%.2f"|format(task.reward) }})</span>
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- Step-by-Step "কীভাবে করবেন?" Popup Modal -->
+<div id="howto-modal" class="hidden fixed inset-0 z-50 bg-emerald-950/50 backdrop-blur-xs flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-emerald-100 space-y-4">
+    <div class="flex items-center justify-between border-b border-emerald-100 pb-3">
+      <h2 class="font-extrabold text-base text-emerald-950"><i class="fa-solid fa-book-open text-emerald-700 mr-1.5"></i>কীভাবে কাজটি করবেন?</h2>
+      <button onclick="toggleHowToModal(false)" class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-900 flex items-center justify-center font-bold">✕</button>
+    </div>
+
+    <div class="space-y-3 text-xs text-emerald-900">
+      <div class="flex items-start gap-3 bg-emerald-50/70 p-3 rounded-2xl">
+        <span class="w-6 h-6 rounded-full bg-emerald-900 text-white flex items-center justify-center font-extrabold shrink-0">১</span>
+        <div><b>Prompt কপি করুন:</b> "প্রম্পট কপি করুন" বাটনে ক্লিক করে পুরো লেখাটি কপি করে নিন।</div>
+      </div>
+      <div class="flex items-start gap-3 bg-emerald-50/70 p-3 rounded-2xl">
+        <span class="w-6 h-6 rounded-full bg-emerald-900 text-white flex items-center justify-center font-extrabold shrink-0">২</span>
+        <div><b>ChatGPT-এ যান:</b> আপনার ফোনের ChatGPT অ্যাপ অথবা ব্রাউজারে ChatGPT ওপেন করে কপি করা প্রম্পটটি পেস্ট করুন।</div>
+      </div>
+      <div class="flex items-start gap-3 bg-emerald-50/70 p-3 rounded-2xl">
+        <span class="w-6 h-6 rounded-full bg-emerald-900 text-white flex items-center justify-center font-extrabold shrink-0">৩</span>
+        <div><b>ছবি ডাউনলোড করুন:</b> ChatGPT সুন্দর একটি ছবি তৈরি করে দিলে সেটি গ্যালারিতে ডাউনলোড/সেভ করুন।</div>
+      </div>
+      <div class="flex items-start gap-3 bg-emerald-50/70 p-3 rounded-2xl">
+        <span class="w-6 h-6 rounded-full bg-emerald-900 text-white flex items-center justify-center font-extrabold shrink-0">৪</span>
+        <div><b>আপলোড ও সাবমিট:</b> এই পেজে ফিরে এসে ডাউনলোড করা ছবিটি আপলোড করে "ছবি জমা দিন" বাটনে ক্লিক করুন।</div>
+      </div>
+    </div>
+
+    <button onclick="toggleHowToModal(false)" class="w-full bg-emerald-900 text-white py-3 rounded-full font-bold text-xs">
+      বুঝেছি, কাজ শুরু করি ✓
+    </button>
+  </div>
+</div>
+
+<script>
+function toggleHowToModal(show) {
+  const modal = document.getElementById("howto-modal");
+  if (!modal) return;
+  modal.classList.toggle("hidden", !show);
+}
+
+function previewAiImg(input) {
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      document.getElementById("ai-preview-img").src = e.target.result;
+      document.getElementById("ai-preview-name").innerText = file.name;
+      document.getElementById("ai-placeholder").classList.add("hidden");
+      document.getElementById("ai-preview-box").classList.remove("hidden");
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+document.getElementById("ai-submit-form").addEventListener("submit", function () {
+  document.getElementById("ai-submit-btn").disabled = true;
+  document.getElementById("ai-submit-icon").className = "fa-solid fa-spinner fa-spin";
+  document.getElementById("ai-submit-text").innerText = "জমা হচ্ছে...";
+});
+</script>
+{% endblock %}
