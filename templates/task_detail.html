@@ -1,45 +1,149 @@
 {% extends "base_app.html" %}
 {% block title %}{{ task.title }} - InfinityWork{% endblock %}
 {% block content %}
-<div class="space-y-4">
-  <a href="/task" class="inline-flex items-center gap-1 text-xs font-bold text-emerald-800">← সকল টাস্কে ফিরে যান</a>
+<div class="max-w-xl mx-auto space-y-5">
+  <!-- Top Back Link -->
+  <div class="flex items-center justify-between">
+    <a href="/task" class="inline-flex items-center gap-2 bg-white border border-emerald-200 hover:bg-emerald-50 text-emerald-900 px-4 py-2 rounded-full text-xs font-bold shadow-xs transition">
+      <i class="fa-solid fa-arrow-left"></i> সকল টাস্ক
+    </a>
+    <span class="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-900 px-3.5 py-1.5 rounded-full text-xs font-extrabold">
+      <i class="fa-solid fa-tag text-emerald-700"></i> {{ task.category }}
+    </span>
+  </div>
 
-  <div class="soft-card rounded-3xl p-6 space-y-4">
-    <div class="flex items-start justify-between gap-3">
-      <div>
-        <span class="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold">{{ task.category }}</span>
-        <h1 class="text-xl font-extrabold mt-2">{{ task.title }}</h1>
+  <!-- Task Header & Reward Hero Card -->
+  <div class="rounded-3xl bg-gradient-to-br from-emerald-800 via-emerald-900 to-emerald-950 text-white p-6 shadow-xl relative overflow-hidden">
+    <div class="absolute -right-6 -bottom-6 text-white/5 text-8xl pointer-events-none">
+      <i class="fa-solid fa-list-check"></i>
+    </div>
+    <div class="relative z-10 flex items-start justify-between gap-4">
+      <div class="space-y-2">
+        <span class="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-bold text-emerald-100">
+          <i class="fa-solid fa-bolt text-yellow-300"></i> ভেরিফায়েড মাইক্রো টাস্ক
+        </span>
+        <h1 class="text-xl sm:text-2xl font-extrabold leading-snug">{{ task.title }}</h1>
       </div>
-      <div class="bg-emerald-900 text-white px-4 py-2 rounded-2xl font-extrabold text-base">৳{{ "%.2f"|format(task.rate) }}</div>
+
+      <div class="bg-white text-emerald-950 px-4 py-2.5 rounded-2xl text-center shrink-0 shadow-lg">
+        <div class="text-[10px] font-bold text-emerald-700 uppercase">রিওয়ার্ড</div>
+        <div class="text-xl font-extrabold text-emerald-900">৳{{ "%.2f"|format(task.rate) }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step-by-Step Instructions Card -->
+  <div class="soft-card rounded-3xl p-5 sm:p-6 space-y-4">
+    <div class="flex items-center gap-2 font-extrabold text-sm text-emerald-950">
+      <span class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
+        <i class="fa-solid fa-circle-info"></i>
+      </span>
+      <span>কাজের নিয়মাবলি</span>
     </div>
 
-    <div class="bg-emerald-50/80 border border-emerald-100 rounded-2xl p-4 text-sm text-emerald-900 whitespace-pre-line">{{ task.description }}</div>
+    <div class="bg-emerald-50/80 border border-emerald-100 rounded-2xl p-4 text-sm text-emerald-950 leading-relaxed whitespace-pre-line">
+      {{ task.description }}
+    </div>
+
+    <!-- Quick 3-Step Mini Guide -->
+    <div class="grid grid-cols-3 gap-2 text-center text-[11px] font-bold text-emerald-800 pt-1">
+      <div class="bg-white border border-emerald-100 rounded-2xl p-2.5">
+        <div class="text-emerald-700 text-sm mb-1"><i class="fa-solid fa-arrow-up-right-from-square"></i></div>
+        ১. লিংকে যান
+      </div>
+      <div class="bg-white border border-emerald-100 rounded-2xl p-2.5">
+        <div class="text-emerald-700 text-sm mb-1"><i class="fa-solid fa-camera"></i></div>
+        ২. স্ক্রিনশট নিন
+      </div>
+      <div class="bg-white border border-emerald-100 rounded-2xl p-2.5">
+        <div class="text-emerald-700 text-sm mb-1"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+        ৩. জমা দিন
+      </div>
+    </div>
 
     {% if task.task_link %}
     <a href="{{ task.task_link }}" target="_blank" rel="noopener"
-       class="inline-flex items-center gap-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-950 px-5 py-2.5 rounded-full text-xs font-bold">
-      🔗 কাজের লিংকে যান →
+       class="w-full flex items-center justify-center gap-2 bg-emerald-100 hover:bg-emerald-200 border border-emerald-200 text-emerald-950 py-3.5 rounded-2xl text-sm font-extrabold transition">
+      <i class="fa-solid fa-link text-emerald-700"></i>
+      <span>কাজের লিংকে প্রবেশ করুন</span>
+      <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
     </a>
     {% endif %}
   </div>
 
-  <div class="soft-card rounded-3xl p-6 space-y-4">
-    <h2 class="font-extrabold text-base">কাজটি জমা দিন</h2>
-    <form action="/task/{{ task.id }}/submit" method="POST" enctype="multipart/form-data" class="space-y-4">
-      <div>
-        <label class="text-xs font-bold block mb-1">প্রমাণ নোট / ইউজারনেম</label>
-        <input type="text" name="proof_note" required placeholder="যে আইডি দিয়ে কাজ করেছেন তার নাম/নোট দিন"
-               class="w-full px-4 py-3 rounded-2xl border border-emerald-200 text-sm" />
+  <!-- Screenshot Only Upload & Submit Card -->
+  <div class="soft-card rounded-3xl p-5 sm:p-6 space-y-4">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2 font-extrabold text-sm text-emerald-950">
+        <span class="w-8 h-8 rounded-xl bg-emerald-900 text-white flex items-center justify-center">
+          <i class="fa-solid fa-image"></i>
+        </span>
+        <span>স্ক্রিনশট জমা দিন</span>
       </div>
-      <div>
-        <label class="text-xs font-bold block mb-1">স্ক্রিনশট আপলোড করুন</label>
-        <input type="file" name="proof_image" accept="image/*"
-               class="w-full px-3 py-2.5 rounded-2xl border border-emerald-200 text-xs bg-white" />
-      </div>
-      <button type="submit" class="w-full bg-emerald-900 hover:bg-emerald-800 text-white py-3.5 rounded-full font-bold text-sm shadow">
-        কাজ সাবমিট করুন ✓
+      <span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">শুধু ছবি আপলোড</span>
+    </div>
+
+    <form id="task-submit-form" action="/task/{{ task.id }}/submit" method="POST" enctype="multipart/form-data" class="space-y-4">
+      <!-- Interactive Dropzone -->
+      <label id="dropzone-label" for="proof-image-input"
+             class="block border-2 border-dashed border-emerald-300 hover:border-emerald-500 bg-emerald-50/50 hover:bg-emerald-50 rounded-3xl p-6 text-center cursor-pointer transition">
+        <div id="upload-placeholder" class="space-y-2.5">
+          <div class="w-14 h-14 mx-auto rounded-2xl bg-white shadow-sm border border-emerald-100 text-emerald-700 flex items-center justify-center text-2xl">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+          </div>
+          <div class="text-sm font-extrabold text-emerald-950">ট্যাপ করে স্ক্রিনশট সিলেক্ট করুন</div>
+          <p class="text-[11px] text-emerald-700 font-medium">PNG, JPG বা WEBP ফরম্যাটের প্রমাণ ছবি দিন</p>
+        </div>
+
+        <!-- Live Image Preview -->
+        <div id="preview-box" class="hidden space-y-3">
+          <img id="preview-img" src="" alt="Preview" class="max-h-64 mx-auto rounded-2xl shadow-md border border-emerald-200 object-contain" />
+          <div class="flex items-center justify-center gap-2 text-xs font-bold text-emerald-800">
+            <i class="fa-solid fa-circle-check text-emerald-600"></i>
+            <span id="preview-filename" class="truncate max-w-[200px]"></span>
+            <span class="text-emerald-600 underline ml-1">পরিবর্তন করুন</span>
+          </div>
+        </div>
+      </label>
+
+      <input id="proof-image-input" type="file" name="proof_image" accept="image/*" required class="hidden" onchange="handleTaskImagePreview(this)" />
+
+      <button id="task-submit-btn" type="submit"
+              class="w-full bg-gradient-to-r from-emerald-700 to-emerald-950 hover:opacity-95 text-white py-4 rounded-full font-extrabold text-sm shadow-lg shadow-emerald-900/25 flex items-center justify-center gap-2 transition active:scale-98 disabled:opacity-60">
+        <i id="task-submit-icon" class="fa-solid fa-paper-plane"></i>
+        <span id="task-submit-text">কাজ সাবমিট করুন (৳{{ "%.2f"|format(task.rate) }})</span>
       </button>
     </form>
   </div>
 </div>
+
+<script>
+function handleTaskImagePreview(input) {
+  const placeholder = document.getElementById("upload-placeholder");
+  const previewBox = document.getElementById("preview-box");
+  const previewImg = document.getElementById("preview-img");
+  const filenameEl = document.getElementById("preview-filename");
+
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      previewImg.src = e.target.result;
+      filenameEl.innerText = file.name;
+      placeholder.classList.add("hidden");
+      previewBox.classList.remove("hidden");
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+document.getElementById("task-submit-form").addEventListener("submit", function () {
+  const btn = document.getElementById("task-submit-btn");
+  const icon = document.getElementById("task-submit-icon");
+  const text = document.getElementById("task-submit-text");
+  btn.disabled = true;
+  if (icon) icon.className = "fa-solid fa-spinner fa-spin";
+  if (text) text.innerText = "সাবমিট হচ্ছে...";
+});
+</script>
 {% endblock %}
