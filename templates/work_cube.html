@@ -1,31 +1,74 @@
 {% extends "base_app.html" %}
-{% block title %}2,4,8 Cube Game - InfinityWork{% endblock %}
+{% block title %}2,4,8 Cube Game (Hard) - InfinityWork{% endblock %}
 {% block content %}
 <style>
   .cube-board-wrap {
-    touch-action: none; /* Prevents page scroll while swiping on mobile */
+    touch-action: none;
     user-select: none;
+    transition: transform 0.12s cubic-bezier(0.22, 1, 0.36, 1);
   }
+  .nudge-left  { transform: translateX(-6px); }
+  .nudge-right { transform: translateX(6px); }
+  .nudge-up    { transform: translateY(-6px); }
+  .nudge-down  { transform: translateY(6px); }
+
+  @keyframes boardShake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+  .board-shake { animation: boardShake 0.28s ease-in-out; }
+
   @keyframes tilePop {
-    0% { transform: scale(0.65); opacity: 0.5; }
-    60% { transform: scale(1.1); }
-    100% { transform: scale(1); opacity: 1; }
+    0% { transform: scale(0.4) rotate(-8deg); opacity: 0.3; }
+    65% { transform: scale(1.12) rotate(2deg); }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
   }
   @keyframes tileMerge {
-    0% { transform: scale(1); }
-    45% { transform: scale(1.18); box-shadow: 0 0 22px rgba(16, 185, 129, 0.55); }
+    0% { transform: scale(0.92); }
+    45% { transform: scale(1.22); box-shadow: 0 0 26px rgba(16, 185, 129, 0.7); }
     100% { transform: scale(1); }
   }
-  @keyframes floatScore {
-    0% { opacity: 1; transform: translateY(0) scale(1); }
-    100% { opacity: 0; transform: translateY(-28px) scale(1.15); }
+  @keyframes floatCellScore {
+    0% { opacity: 1; transform: translate(-50%, 0) scale(0.9); }
+    30% { opacity: 1; transform: translate(-50%, -14px) scale(1.15); }
+    100% { opacity: 0; transform: translate(-50%, -36px) scale(1); }
   }
-  .tile-new { animation: tilePop 0.2s cubic-bezier(0.22, 1, 0.36, 1); }
-  .tile-merged { animation: tileMerge 0.24s cubic-bezier(0.22, 1, 0.36, 1); }
-  .float-score { animation: floatScore 0.75s ease-out forwards; }
+  @keyframes shimmerGlow {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.18); }
+  }
+  .tile-new { animation: tilePop 0.22s cubic-bezier(0.22, 1, 0.36, 1); }
+  .tile-merged { animation: tileMerge 0.28s cubic-bezier(0.22, 1, 0.36, 1); }
+  .tile-high-glow { animation: shimmerGlow 1.8s infinite ease-in-out; }
+  .float-cell-score {
+    position: absolute;
+    left: 50%;
+    top: 15%;
+    z-index: 20;
+    pointer-events: none;
+    animation: floatCellScore 0.75s ease-out forwards;
+  }
+
+  /* Confetti Particle */
+  @keyframes confettiDrop {
+    0% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
+    100% { transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(0.3); opacity: 0; }
+  }
+  .confetti-dot {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 3px;
+    pointer-events: none;
+    z-index: 30;
+    animation: confettiDrop 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
 
   /* Glossy 3D Cube Colors */
-  .tile-0    { background: rgba(255, 255, 255, 0.55); color: transparent; box-shadow: inset 0 2px 5px rgba(13, 74, 43, 0.06); }
+  .tile-0    { background: rgba(255, 255, 255, 0.55); color: transparent; box-shadow: inset 0 2px 6px rgba(13, 74, 43, 0.08); }
   .tile-2    { background: linear-gradient(145deg, #ffffff, #ecfdf5); color: #064e3b; border-bottom: 4px solid #a7f3d0; }
   .tile-4    { background: linear-gradient(145deg, #d1fae5, #a7f3d0); color: #064e3b; border-bottom: 4px solid #6ee7b7; }
   .tile-8    { background: linear-gradient(145deg, #34d399, #10b981); color: #ffffff; border-bottom: 4px solid #059669; }
@@ -36,49 +79,55 @@
   .tile-256  { background: linear-gradient(145deg, #f97316, #ea580c); color: #ffffff; border-bottom: 4px solid #c2410c; }
   .tile-512  { background: linear-gradient(145deg, #ec4899, #db2777); color: #ffffff; border-bottom: 4px solid #be185d; }
   .tile-1024 { background: linear-gradient(145deg, #8b5cf6, #7c3aed); color: #ffffff; border-bottom: 4px solid #6d28d9; }
-  .tile-2048 { background: linear-gradient(145deg, #064e3b, #022c22); color: #fde047; border-bottom: 4px solid #eab308; box-shadow: 0 0 20px rgba(234, 179, 8, 0.45); }
+  .tile-2048 { background: linear-gradient(145deg, #064e3b, #022c22); color: #fde047; border-bottom: 4px solid #eab308; box-shadow: 0 0 22px rgba(234, 179, 8, 0.55); }
 </style>
 
-<div class="max-w-md mx-auto space-y-4">
-  <!-- Top Game Header Bar -->
+<div class="max-w-md mx-auto space-y-3.5">
+  <!-- Header Bar with Daily 5 Min Timer & Hard Badge -->
   <div class="soft-card rounded-3xl p-4 flex items-center justify-between">
-    <div class="flex items-center gap-3">
-      <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-900 text-white flex items-center justify-center shadow-md">
+    <div class="flex items-center gap-2.5">
+      <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-950 text-white flex items-center justify-center shadow-md">
         <i class="fa-solid fa-cubes text-lg"></i>
       </div>
       <div>
-        <h1 class="font-extrabold text-base text-emerald-950 leading-tight">2, 4, 8 Cube</h1>
-        <p class="text-[11px] text-emerald-700 font-semibold">
-          <i class="fa-solid fa-hand-pointer mr-1"></i>সোয়াইপ বা অ্যারো দিয়ে খেলুন
-        </p>
+        <div class="flex items-center gap-1.5">
+          <h1 class="font-extrabold text-base text-emerald-950">2, 4, 8 Cube</h1>
+          <span class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-extrabold uppercase">
+            <i class="fa-solid fa-fire mr-0.5"></i>Hard
+          </span>
+        </div>
+        <div class="flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 mt-0.5">
+          <i class="fa-solid fa-stopwatch text-amber-600"></i>
+          <span>ডেইলি সময় বাকি:</span>
+          <span id="daily-timer" class="font-mono font-extrabold text-emerald-950 bg-emerald-100 px-2 py-0.5 rounded-lg">05:00</span>
+        </div>
       </div>
     </div>
 
-    <!-- Action Controls: Sound, Undo, Restart -->
     <div class="flex items-center gap-1.5">
-      <button id="sound-btn" onclick="toggleSound()" title="Sound On/Off"
+      <button id="sound-btn" onclick="toggleSound()" title="Sound"
               class="w-9 h-9 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-900 flex items-center justify-center transition">
         <i id="sound-icon" class="fa-solid fa-volume-high text-sm"></i>
       </button>
-      <button id="undo-btn" onclick="undoMove()" title="Undo Move"
-              class="w-9 h-9 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-900 flex items-center justify-center transition disabled:opacity-40">
+      <button id="undo-btn" onclick="undoMove()" title="1 Undo per game"
+              class="relative w-9 h-9 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-900 flex items-center justify-center transition disabled:opacity-40">
         <i class="fa-solid fa-backward-step text-sm"></i>
+        <span id="undo-badge" class="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-amber-500 text-white text-[9px] font-extrabold flex items-center justify-center">1</span>
       </button>
-      <button onclick="restartGame()" title="Restart Game"
+      <button onclick="restartGame()" title="Restart"
               class="w-9 h-9 rounded-xl bg-emerald-900 hover:bg-emerald-800 text-white flex items-center justify-center shadow transition">
         <i class="fa-solid fa-rotate-left text-sm"></i>
       </button>
     </div>
   </div>
 
-  <!-- Score, Best Score & Live Reward HUD -->
+  <!-- HUD: Score, Best, Uncapped Reward -->
   <div class="grid grid-cols-3 gap-2.5">
-    <div class="soft-card rounded-2xl p-3 text-center relative overflow-visible">
+    <div class="soft-card rounded-2xl p-3 text-center">
       <div class="text-[10px] font-bold uppercase text-emerald-700 flex items-center justify-center gap-1">
         <i class="fa-solid fa-star text-amber-500"></i> স্কোর
       </div>
       <div id="cube-score" class="text-xl font-extrabold text-emerald-950 mt-0.5">0</div>
-      <div id="score-popup-anchor" class="absolute inset-x-0 top-0 flex justify-center pointer-events-none"></div>
     </div>
 
     <div class="soft-card rounded-2xl p-3 text-center">
@@ -90,39 +139,39 @@
 
     <div class="rounded-2xl p-3 text-center bg-gradient-to-br from-emerald-800 to-emerald-950 text-white shadow-md">
       <div class="text-[10px] font-bold uppercase text-emerald-200 flex items-center justify-center gap-1">
-        <i class="fa-solid fa-coins text-yellow-300"></i> রিওয়ার্ড
+        <i class="fa-solid fa-coins text-yellow-300"></i> রিওয়ার্ড (∞)
       </div>
       <div id="cube-reward-preview" class="text-xl font-extrabold text-yellow-300 mt-0.5">৳0.00</div>
     </div>
   </div>
 
-  <!-- Progress Bar toward 64 Score Unlock -->
-  <div class="soft-card rounded-2xl px-4 py-3 space-y-1.5">
+  <!-- Unlock Progress -->
+  <div class="soft-card rounded-2xl px-4 py-2.5 space-y-1.5">
     <div class="flex items-center justify-between text-[11px] font-bold">
       <span id="combo-badge" class="text-emerald-800 flex items-center gap-1">
-        <i class="fa-solid fa-bolt text-amber-500"></i> ক্লেইম আনলক (মিনিমাম ৬৪ স্কোর)
+        <i class="fa-solid fa-bolt text-amber-500"></i> হার্ড মোড আনলক (মিনিমাম ১৫০ স্কোর)
       </span>
       <span id="progress-pct" class="text-emerald-700">0%</span>
     </div>
     <div class="w-full h-2.5 bg-emerald-100 rounded-full overflow-hidden">
-      <div id="progress-bar" class="h-full bg-gradient-to-r from-emerald-500 to-emerald-700 rounded-full transition-all duration-300" style="width: 0%"></div>
+      <div id="progress-bar" class="h-full bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-800 rounded-full transition-all duration-300" style="width: 0%"></div>
     </div>
   </div>
 
-  <!-- Main Game Board -->
-  <div class="relative soft-card rounded-3xl p-3.5 bg-gradient-to-b from-emerald-100/80 to-emerald-50/90 shadow-xl">
+  <!-- Game Board Container -->
+  <div id="board-shell" class="relative soft-card rounded-3xl p-3.5 bg-gradient-to-b from-emerald-100/80 to-emerald-50/90 shadow-xl overflow-hidden">
     <div id="cube-board" class="cube-board-wrap grid grid-cols-4 gap-2.5 bg-emerald-900/10 p-2.5 rounded-2xl relative">
       <!-- Tiles rendered by JS -->
     </div>
 
     <!-- Game Over Overlay -->
-    <div id="game-over-overlay" class="hidden absolute inset-0 rounded-3xl bg-emerald-950/75 backdrop-blur-xs flex flex-col items-center justify-center text-white p-6 text-center space-y-4 z-10">
-      <div class="w-16 h-16 rounded-full bg-white/15 flex items-center justify-center text-3xl text-yellow-300">
+    <div id="game-over-overlay" class="hidden absolute inset-0 rounded-3xl bg-emerald-950/80 backdrop-blur-xs flex flex-col items-center justify-center text-white p-6 text-center space-y-4 z-20">
+      <div class="w-16 h-16 rounded-full bg-white/15 flex items-center justify-center text-3xl text-yellow-300 animate-bounce">
         <i class="fa-solid fa-flag-checkered"></i>
       </div>
       <div>
         <h2 class="text-2xl font-extrabold">গেম শেষ!</h2>
-        <p class="text-xs text-emerald-200 mt-1">আপনার মোট স্কোর: <b id="final-score-text" class="text-white">0</b></p>
+        <p class="text-xs text-emerald-200 mt-1">আপনার স্কোর: <b id="final-score-text" class="text-white">0</b></p>
       </div>
       <div class="flex gap-2.5 w-full max-w-xs">
         <button onclick="restartGame()" class="flex-1 bg-white text-emerald-950 py-2.5 rounded-full font-bold text-xs shadow">
@@ -133,29 +182,41 @@
         </button>
       </div>
     </div>
+
+    <!-- Daily 5-Minute Limit Reached Overlay -->
+    <div id="time-limit-overlay" class="hidden absolute inset-0 rounded-3xl bg-emerald-950/90 backdrop-blur-sm flex flex-col items-center justify-center text-white p-6 text-center space-y-3 z-30">
+      <div class="w-16 h-16 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center text-3xl">
+        <i class="fa-solid fa-hourglass-end"></i>
+      </div>
+      <h2 class="text-xl font-extrabold">আজকের ৫ মিনিট শেষ!</h2>
+      <p class="text-xs text-emerald-200 max-w-xs">প্রতিদিন সর্বোচ্চ ৫ মিনিট 2,4,8 Cube Game খেলা যাবে। আগামীকাল আবার নতুন সময় পাবেন!</p>
+      <a href="/work" class="bg-white text-emerald-950 px-6 py-2.5 rounded-full text-xs font-extrabold shadow">
+        <i class="fa-solid fa-briefcase mr-1"></i> অন্য কাজগুলো দেখুন
+      </a>
+    </div>
   </div>
 
-  <!-- On-Screen Touch D-Pad + Claim Button -->
+  <!-- D-Pad + Claim Button -->
   <div class="soft-card rounded-3xl p-4 space-y-3">
     <div class="flex items-center justify-center gap-2">
-      <button onclick="move('left')" class="w-14 h-12 rounded-2xl bg-emerald-50 hover:bg-emerald-100 active:scale-95 border border-emerald-200 text-emerald-900 font-bold shadow-xs transition">
+      <button onclick="move('left')" class="w-14 h-12 rounded-2xl bg-emerald-50 hover:bg-emerald-100 active:scale-90 border border-emerald-200 text-emerald-900 font-bold shadow-xs transition">
         <i class="fa-solid fa-arrow-left text-base"></i>
       </button>
       <div class="flex flex-col gap-2">
-        <button onclick="move('up')" class="w-14 h-11 rounded-2xl bg-emerald-50 hover:bg-emerald-100 active:scale-95 border border-emerald-200 text-emerald-900 font-bold shadow-xs transition">
+        <button onclick="move('up')" class="w-14 h-11 rounded-2xl bg-emerald-50 hover:bg-emerald-100 active:scale-90 border border-emerald-200 text-emerald-900 font-bold shadow-xs transition">
           <i class="fa-solid fa-arrow-up text-base"></i>
         </button>
-        <button onclick="move('down')" class="w-14 h-11 rounded-2xl bg-emerald-50 hover:bg-emerald-100 active:scale-95 border border-emerald-200 text-emerald-900 font-bold shadow-xs transition">
+        <button onclick="move('down')" class="w-14 h-11 rounded-2xl bg-emerald-50 hover:bg-emerald-100 active:scale-90 border border-emerald-200 text-emerald-900 font-bold shadow-xs transition">
           <i class="fa-solid fa-arrow-down text-base"></i>
         </button>
       </div>
-      <button onclick="move('right')" class="w-14 h-12 rounded-2xl bg-emerald-50 hover:bg-emerald-100 active:scale-95 border border-emerald-200 text-emerald-900 font-bold shadow-xs transition">
+      <button onclick="move('right')" class="w-14 h-12 rounded-2xl bg-emerald-50 hover:bg-emerald-100 active:scale-90 border border-emerald-200 text-emerald-900 font-bold shadow-xs transition">
         <i class="fa-solid fa-arrow-right text-base"></i>
       </button>
     </div>
 
     <button id="claim-btn" onclick="claimCubeReward()"
-            class="w-full py-3.5 rounded-full font-extrabold text-sm shadow-lg transition flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-700 to-emerald-900 text-white hover:opacity-95 active:scale-98">
+            class="w-full py-3.5 rounded-full font-extrabold text-sm shadow-lg transition flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-700 to-emerald-900 text-white hover:opacity-95 active:scale-95">
       <i class="fa-solid fa-gift"></i>
       <span>রিওয়ার্ড ক্লেইম করুন</span>
       <span id="claim-btn-amount" class="bg-white/20 px-2.5 py-0.5 rounded-full text-xs">৳0.00</span>
@@ -166,7 +227,7 @@
 </div>
 
 <script>
-// ================= WEB AUDIO SYNTHESIZER (NO EXTERNAL MP3 NEEDED) =================
+// ================= SOUND SYNTHESIZER =================
 const SoundFX = (() => {
   let ctx = null;
   let enabled = localStorage.getItem("iw_cube_sound") !== "off";
@@ -190,11 +251,9 @@ const SoundFX = (() => {
     osc.type = type;
     osc.frequency.setValueAtTime(freq, now);
     if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, now + duration);
-
     gain.gain.setValueAtTime(0.001, now);
     gain.gain.exponentialRampToValueAtTime(vol, now + 0.015);
     gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-
     osc.connect(gain);
     gain.connect(c.destination);
     osc.start(now);
@@ -210,74 +269,131 @@ const SoundFX = (() => {
       return enabled;
     },
     slide: () => tone(240, 0.07, "triangle", 0.08, 340),
-    bump: () => tone(130, 0.09, "sawtooth", 0.05, 95),
+    bump: () => tone(125, 0.09, "sawtooth", 0.06, 90),
     merge: (maxVal) => {
-      const pitchBoost = Math.min(Math.log2(maxVal || 4) * 55, 500);
+      const pitchBoost = Math.min(Math.log2(maxVal || 4) * 55, 520);
       tone(380 + pitchBoost, 0.12, "sine", 0.14, 580 + pitchBoost);
       tone(570 + pitchBoost, 0.14, "triangle", 0.09, 760 + pitchBoost, 0.04);
     },
-    claim: () => {
-      [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(f, 0.18, "triangle", 0.14, null, i * 0.07));
-    },
-    gameOver: () => {
-      [392, 349, 311, 261].forEach((f, i) => tone(f, 0.2, "sawtooth", 0.07, null, i * 0.11));
-    }
+    claim: () => [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(f, 0.18, "triangle", 0.14, null, i * 0.07)),
+    gameOver: () => [392, 349, 311, 261].forEach((f, i) => tone(f, 0.2, "sawtooth", 0.07, null, i * 0.11)),
   };
 })();
 
 function updateSoundIcon() {
   const icon = document.getElementById("sound-icon");
-  if (!icon) return;
-  icon.className = SoundFX.isEnabled() ? "fa-solid fa-volume-high text-sm" : "fa-solid fa-volume-xmark text-sm text-red-500";
+  if (icon) icon.className = SoundFX.isEnabled() ? "fa-solid fa-volume-high text-sm" : "fa-solid fa-volume-xmark text-sm text-red-500";
 }
-function toggleSound() {
-  SoundFX.toggle();
-  updateSoundIcon();
+function toggleSound() { SoundFX.toggle(); updateSoundIcon(); }
+
+// ================= DAILY 5-MINUTE TIMER =================
+let remainingSeconds = {{ remaining_seconds|default(300) }};
+let timerLocked = remainingSeconds <= 0;
+
+function formatTime(sec) {
+  const m = String(Math.floor(sec / 60)).padStart(2, "0");
+  const s = String(sec % 60).padStart(2, "0");
+  return `${m}:${s}`;
 }
 
-// ================= GAME STATE & LOGIC =================
+function updateTimerUI() {
+  const el = document.getElementById("daily-timer");
+  el.innerText = formatTime(Math.max(0, remainingSeconds));
+  if (remainingSeconds <= 60) {
+    el.className = "font-mono font-extrabold text-red-700 bg-red-100 px-2 py-0.5 rounded-lg animate-pulse";
+  }
+  if (remainingSeconds <= 0) {
+    timerLocked = true;
+    document.getElementById("time-limit-overlay").classList.remove("hidden");
+  }
+}
+
+setInterval(() => {
+  if (timerLocked || document.hidden) return;
+  remainingSeconds = Math.max(0, remainingSeconds - 1);
+  updateTimerUI();
+}, 1000);
+
+// Sync play time to server every 5 seconds
+setInterval(async () => {
+  if (timerLocked || document.hidden) return;
+  try {
+    const fd = new FormData();
+    fd.append("seconds", "5");
+    const r = await fetch("/work/cube-game/tick", { method: "POST", body: fd });
+    const data = await r.json();
+    if (data.ok) {
+      remainingSeconds = data.remaining_seconds;
+      updateTimerUI();
+    }
+  } catch (e) {}
+}, 5000);
+
+// ================= CONFETTI BURST =================
+function spawnConfetti(count = 20) {
+  const shell = document.getElementById("board-shell");
+  const colors = ["#10b981", "#f59e0b", "#0ea5e9", "#ec4899", "#fde047"];
+  for (let i = 0; i < count; i++) {
+    const dot = document.createElement("div");
+    dot.className = "confetti-dot";
+    dot.style.left = `${45 + (Math.random() * 20 - 10)}%`;
+    dot.style.top = `${45 + (Math.random() * 20 - 10)}%`;
+    dot.style.background = colors[i % colors.length];
+    dot.style.setProperty("--tx", `${(Math.random() - 0.5) * 240}px`);
+    dot.style.setProperty("--ty", `${(Math.random() - 0.5) * 240}px`);
+    dot.style.setProperty("--rot", `${Math.random() * 540}deg`);
+    shell.appendChild(dot);
+    setTimeout(() => dot.remove(), 900);
+  }
+}
+
+// ================= HARD MODE GAME LOGIC =================
 let board = Array(16).fill(0);
 let score = 0;
+let displayedScore = 0;
 let bestScore = parseInt(localStorage.getItem("iw_cube_best") || "0", 10);
 let prevState = null;
-let newIdx = -1;
-let mergedIndices = new Set();
+let undoLeft = 1;
+let newIndices = new Set();
+let mergedPopups = {}; // idx -> points
 let comboCount = 0;
 
-function saveSnapshot() {
-  prevState = { board: [...board], score };
-  document.getElementById("undo-btn").disabled = false;
+function spawnSingle() {
+  const empty = board.map((v, i) => (v === 0 ? i : -1)).filter(i => i !== -1);
+  if (!empty.length) return;
+  const pick = empty[Math.floor(Math.random() * empty.length)];
+  const roll = Math.random();
+  // Hard Mode Spawns: 55% -> 2, 35% -> 4, 10% -> 8 (when score >= 200)
+  let val = roll < 0.55 ? 2 : 4;
+  if (score >= 200 && roll > 0.90) val = 8;
+  board[pick] = val;
+  newIndices.add(pick);
+}
+
+function spawnHard() {
+  newIndices.clear();
+  spawnSingle();
+  // 18% chance of double spawn in Hard Mode if enough space
+  const emptyCount = board.filter(v => v === 0).length;
+  if (emptyCount >= 5 && Math.random() < 0.18) {
+    spawnSingle();
+  }
 }
 
 function undoMove() {
-  if (!prevState) return;
+  if (!prevState || undoLeft <= 0 || timerLocked) return;
   board = [...prevState.board];
   score = prevState.score;
+  displayedScore = score;
   prevState = null;
-  newIdx = -1;
-  mergedIndices.clear();
+  undoLeft--;
+  newIndices.clear();
+  mergedPopups = {};
+  document.getElementById("undo-badge").innerText = undoLeft;
   document.getElementById("undo-btn").disabled = true;
   document.getElementById("game-over-overlay").classList.add("hidden");
   SoundFX.slide();
   render();
-}
-
-function spawn() {
-  const empty = board.map((v, i) => (v === 0 ? i : -1)).filter(i => i !== -1);
-  if (!empty.length) return;
-  const pick = empty[Math.floor(Math.random() * empty.length)];
-  board[pick] = Math.random() < 0.85 ? 2 : 4;
-  newIdx = pick;
-}
-
-function showScorePopup(points) {
-  if (points <= 0) return;
-  const anchor = document.getElementById("score-popup-anchor");
-  const pop = document.createElement("span");
-  pop.className = "float-score text-xs font-extrabold text-emerald-600";
-  pop.innerText = `+${points}`;
-  anchor.appendChild(pop);
-  setTimeout(() => pop.remove(), 750);
 }
 
 function hasMovesLeft() {
@@ -292,42 +408,58 @@ function hasMovesLeft() {
   return false;
 }
 
+function animateScoreNumber(target) {
+  const el = document.getElementById("cube-score");
+  const start = displayedScore;
+  const diff = target - start;
+  if (diff <= 0) { el.innerText = target; return; }
+  let step = 0;
+  const steps = 8;
+  const iv = setInterval(() => {
+    step++;
+    displayedScore = Math.round(start + (diff * step) / steps);
+    el.innerText = displayedScore;
+    if (step >= steps) clearInterval(iv);
+  }, 22);
+}
+
 function render() {
   const el = document.getElementById("cube-board");
   el.innerHTML = board.map((v, idx) => {
     const cls = v <= 2048 ? `tile-${v}` : "tile-2048";
-    const anim = idx === newIdx ? "tile-new" : (mergedIndices.has(idx) ? "tile-merged" : "");
+    const anim = newIndices.has(idx) ? "tile-new" : (mergedPopups[idx] ? "tile-merged" : "");
+    const glow = v >= 128 ? "tile-high-glow" : "";
     const fontSize = v >= 1024 ? "text-base" : v >= 128 ? "text-lg" : "text-xl";
-    return `<div class="h-16 sm:h-[72px] rounded-2xl flex items-center justify-center font-extrabold ${fontSize} ${cls} ${anim} shadow-sm transition-colors">
-      ${v || ""}
+    const popHtml = mergedPopups[idx]
+      ? `<span class="float-cell-score text-xs font-extrabold text-yellow-200 drop-shadow">+${mergedPopups[idx]}</span>`
+      : "";
+    return `<div class="relative h-16 sm:h-[72px] rounded-2xl flex items-center justify-center font-extrabold ${fontSize} ${cls} ${anim} ${glow} shadow-sm">
+      ${v || ""}${popHtml}
     </div>`;
   }).join("");
 
-  document.getElementById("cube-score").innerText = score;
+  animateScoreNumber(score);
+
   if (score > bestScore) {
     bestScore = score;
     localStorage.setItem("iw_cube_best", String(bestScore));
   }
   document.getElementById("cube-best").innerText = bestScore;
 
-  // Live reward preview (matches backend: score >= 64 -> min(score/100, 10))
-  const rewardEst = score >= 64 ? Math.min(score / 100, 10) : 0;
+  // FIXED: Uncapped reward preview (score >= 150 -> score / 150, NO 10 cap!)
+  const rewardEst = score >= 150 ? score / 150 : 0;
   document.getElementById("cube-reward-preview").innerText = `৳${rewardEst.toFixed(2)}`;
   document.getElementById("claim-btn-amount").innerText = `৳${rewardEst.toFixed(2)}`;
 
-  const pct = Math.min(Math.round((score / 64) * 100), 100);
-  document.getElementById("progress-pct").innerText = score >= 64 ? "আনলকড ✓" : `${pct}%`;
+  const pct = Math.min(Math.round((score / 150) * 100), 100);
+  document.getElementById("progress-pct").innerText = score >= 150 ? "আনলকড ✓" : `${pct}%`;
   document.getElementById("progress-bar").style.width = `${pct}%`;
 }
 
 function slideLine(line, indices) {
-  let nonZero = [];
-  for (let i = 0; i < line.length; i++) {
-    if (line[i] !== 0) nonZero.push(line[i]);
-  }
-
+  let nonZero = line.filter(v => v !== 0);
   let result = [];
-  let localMerges = [];
+  let localMergePoints = [];
   let gained = 0;
   let maxMerged = 0;
 
@@ -337,7 +469,7 @@ function slideLine(line, indices) {
       result.push(mergedVal);
       gained += mergedVal;
       if (mergedVal > maxMerged) maxMerged = mergedVal;
-      localMerges.push(result.length - 1);
+      localMergePoints.push({ pos: result.length - 1, val: mergedVal });
       i++;
     } else {
       result.push(nonZero[i]);
@@ -345,16 +477,24 @@ function slideLine(line, indices) {
   }
   while (result.length < 4) result.push(0);
 
-  const mergedBoardIndices = localMerges.map(pos => indices[pos]);
-  return { result, gained, maxMerged, mergedBoardIndices };
+  const cellPopups = {};
+  localMergePoints.forEach(m => { cellPopups[indices[m.pos]] = m.val; });
+  return { result, gained, maxMerged, cellPopups };
+}
+
+function nudgeBoard(dir) {
+  const boardEl = document.getElementById("cube-board");
+  boardEl.classList.add(`nudge-${dir}`);
+  setTimeout(() => boardEl.classList.remove(`nudge-${dir}`), 120);
 }
 
 function move(dir) {
+  if (timerLocked) return;
   const snapshot = { board: [...board], score };
   let next = [...board];
   let totalGained = 0;
   let maxMerged = 0;
-  let newMergedSet = new Set();
+  let newPopups = {};
 
   for (let i = 0; i < 4; i++) {
     let indices = [];
@@ -367,29 +507,36 @@ function move(dir) {
       indices.push(idx);
     }
     const line = indices.map(idx => board[idx]);
-    const { result, gained, maxMerged: mMax, mergedBoardIndices } = slideLine(line, indices);
+    const { result, gained, maxMerged: mMax, cellPopups } = slideLine(line, indices);
     totalGained += gained;
     if (mMax > maxMerged) maxMerged = mMax;
-    mergedBoardIndices.forEach(idx => newMergedSet.add(idx));
+    Object.assign(newPopups, cellPopups);
     indices.forEach((idx, pos) => (next[idx] = result[pos]));
   }
 
   if (JSON.stringify(next) === JSON.stringify(board)) {
     SoundFX.bump();
+    const boardEl = document.getElementById("cube-board");
+    boardEl.classList.remove("board-shake");
+    void boardEl.offsetWidth;
+    boardEl.classList.add("board-shake");
     return;
   }
 
-  prevState = snapshot;
-  document.getElementById("undo-btn").disabled = false;
+  nudgeBoard(dir);
+  if (undoLeft > 0) {
+    prevState = snapshot;
+    document.getElementById("undo-btn").disabled = false;
+  }
 
   board = next;
   score += totalGained;
-  mergedIndices = newMergedSet;
+  mergedPopups = newPopups;
 
   if (totalGained > 0) {
     comboCount++;
     SoundFX.merge(maxMerged);
-    showScorePopup(totalGained);
+    if (maxMerged >= 64) spawnConfetti(18);
     if (navigator.vibrate) navigator.vibrate(15);
     if (comboCount >= 2) {
       document.getElementById("combo-badge").innerHTML = `<i class="fa-solid fa-fire text-orange-500"></i> ${comboCount}x মার্জ স্ট্রিক!`;
@@ -397,10 +544,10 @@ function move(dir) {
   } else {
     comboCount = 0;
     SoundFX.slide();
-    document.getElementById("combo-badge").innerHTML = `<i class="fa-solid fa-bolt text-amber-500"></i> ক্লেইম আনলক (মিনিমাম ৬৪ স্কোর)`;
+    document.getElementById("combo-badge").innerHTML = `<i class="fa-solid fa-bolt text-amber-500"></i> হার্ড মোড আনলক (মিনিমাম ১৫০ স্কোর)`;
   }
 
-  spawn();
+  spawnHard();
   render();
 
   if (!hasMovesLeft()) {
@@ -411,22 +558,27 @@ function move(dir) {
 }
 
 function restartGame() {
+  if (timerLocked) return;
   board = Array(16).fill(0);
   score = 0;
+  displayedScore = 0;
   prevState = null;
-  newIdx = -1;
-  mergedIndices.clear();
+  undoLeft = 1;
+  newIndices.clear();
+  mergedPopups = {};
   comboCount = 0;
+  document.getElementById("undo-badge").innerText = "1";
   document.getElementById("undo-btn").disabled = true;
   document.getElementById("game-over-overlay").classList.add("hidden");
   document.getElementById("cube-msg").classList.add("hidden");
-  spawn();
-  spawn();
+  spawnSingle();
+  spawnSingle();
   SoundFX.slide();
   render();
 }
 
 async function claimCubeReward() {
+  if (timerLocked) return;
   const msgBox = document.getElementById("cube-msg");
   const btn = document.getElementById("claim-btn");
   btn.disabled = true;
@@ -441,16 +593,11 @@ async function claimCubeReward() {
 
     if (data.ok) {
       SoundFX.claim();
+      spawnConfetti(32);
       if (navigator.vibrate) navigator.vibrate([30, 40, 60]);
       msgBox.className = "rounded-2xl px-4 py-2.5 text-xs font-bold text-center bg-emerald-100 text-emerald-900 border border-emerald-300";
       msgBox.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> ${data.message}`;
-      board = Array(16).fill(0);
-      score = 0;
-      prevState = null;
-      document.getElementById("game-over-overlay").classList.add("hidden");
-      spawn();
-      spawn();
-      render();
+      restartGame();
     } else {
       SoundFX.bump();
       msgBox.className = "rounded-2xl px-4 py-2.5 text-xs font-bold text-center bg-amber-50 text-amber-900 border border-amber-200";
@@ -463,13 +610,10 @@ async function claimCubeReward() {
   }
 }
 
-// ================= KEYBOARD & TOUCH SWIPE CONTROLS =================
+// ================= KEYBOARD & TOUCH SWIPE =================
 document.addEventListener("keydown", (e) => {
   const map = { ArrowLeft: "left", a: "left", A: "left", ArrowRight: "right", d: "right", D: "right", ArrowUp: "up", w: "up", W: "up", ArrowDown: "down", s: "down", S: "down" };
-  if (map[e.key]) {
-    e.preventDefault();
-    move(map[e.key]);
-  }
+  if (map[e.key]) { e.preventDefault(); move(map[e.key]); }
 });
 
 let touchStartX = 0, touchStartY = 0;
@@ -478,7 +622,6 @@ boardEl.addEventListener("touchstart", (e) => {
   touchStartX = e.changedTouches[0].screenX;
   touchStartY = e.changedTouches[0].screenY;
 }, { passive: true });
-
 boardEl.addEventListener("touchend", (e) => {
   const dx = e.changedTouches[0].screenX - touchStartX;
   const dy = e.changedTouches[0].screenY - touchStartY;
@@ -489,9 +632,10 @@ boardEl.addEventListener("touchend", (e) => {
 
 // Init
 updateSoundIcon();
+updateTimerUI();
 document.getElementById("undo-btn").disabled = true;
-spawn();
-spawn();
+spawnSingle();
+spawnSingle();
 render();
 </script>
 {% endblock %}
