@@ -930,6 +930,9 @@ async def pwa_manifest():
     }
     return JSONResponse(content=manifest, media_type="application/manifest+json")
 
+@app.get("/favicon.ico")
+async def favicon():
+    return Response(content=_generate_infinity_png(192), media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
 
 @app.get("/sw.js")
 async def pwa_service_worker():
