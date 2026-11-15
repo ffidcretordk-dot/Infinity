@@ -350,33 +350,187 @@ async def task_submit(
 
 # ---------------- SPECIALIZED WORK MODULES ----------------
 
+# ---------------- TYPING TASK SYSTEM (/work/typing & /admin/t) ----------------
+
 @app.get("/work/typing", response_class=HTMLResponse)
 async def work_typing(request: Request):
     user = await get_current_user(request)
     if not user:
         return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
-    return templates.TemplateResponse("work_typing.html", base_ctx(request, user, "work"))
+
+    all_tasks = await db.select("typing_tasks", filters={"is_active": "true"}, order="id.desc")
+    user_subs = await db.select("typing_submissions", filters={"user_id": user["id"]}, order="created_at.desc")
+
+    blocked_ids = {s["typing_task_id"] for s in user_subs if s.get("status") in ("pending", "approved")}
+    rejected_ids = {s["typing_task_id"] for s in user_subs if s.get("status") == "rejected"}
+
+    available_tasks = []
+    for t in all_tasks:
+        if t["id"] not in blocked_ids:
+            t["was_rejected"] = t["id"] in rejected_ids
+            available_tasks.append(t)
+
+    ctx = base_ctx(request, user, "work")
+    ctx["tasks"] = available_tasks
+    return templates.TemplateResponse("work_typing.html", ctx)
 
 
-@app.post("/work/typing")
-async def work_typing_submit(request: Request, typed_text: str = Form(...), target_text: str = Form(...)):
+@app.get("/work/typing/{task_id}", response_class=HTMLResponse)
+async def work_typing_detail(request: Request, task_id: int):
     user = await get_current_user(request)
     if not user:
-        return JSONResponse({"ok": False, "msg": "Unauthorized"}, status_code=401)
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
 
-    if typed_text.strip() != target_text.strip():
-        return redirect_with_flash(request, "/work/typing", "লেখাটি হুবহু মিলেনি! আবার চেষ্টা করুন।", "error")
+    task = await db.select("typing_tasks", filters={"id": task_id}, single=True)
+    if not task or not task.get("is_active"):
+        return redirect_with_flash(request, "/work/typing", "টাইপিং টাস্কটি পাওয়া যায়নি!", "error")
 
-    reward = 2.50
-    await db.update(
-        "users",
-        {"id": user["id"]},
-        {"balance": float(user["balance"]) + reward, "total_earned": float(user["total_earned"]) + reward},
+    user_subs = await db.select("typing_submissions", filters={"user_id": user["id"]})
+    if any(s["typing_task_id"] == task_id and s.get("status") in ("pending", "approved") for s in user_subs):
+        return redirect_with_flash(request, "/work/typing", "এই টাইপিং কাজটি ইতিমধ্যেই জমা দেওয়া হয়েছে!", "info")
+
+    ctx = base_ctx(request, user, "work")
+    ctx["task"] = task
+    return templates.TemplateResponse("work_typing_detail.html", ctx)
+
+
+@app.post("/work/typing/{task_id}/submit")
+async def work_typing_submit(
+    request: Request,
+    task_id: int,
+    typed_text: str = Form(...),
+):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+
+    task = await db.select("typing_tasks", filters={"id": task_id}, single=True)
+    if not task:
+        return redirect_with_flash(request, "/work/typing", "টাইপিং টাস্কটি পাওয়া যায়নি!", "error")
+
+    user_subs = await db.select("typing_submissions", filters={"user_id": user["id"]})
+    if any(s["typing_task_id"] == task_id and s.get("status") in ("pending", "approved") for s in user_subs):
+        return redirect_with_flash(request, "/work/typing", "এই কাজটি আগেই জমা দেওয়া আছে!", "info")
+
+    if not typed_text.strip():
+        return redirect_with_flash(request, f"/work/typing/{task_id}", "অনুগ্রহ করে ছবি দেখে টেক্সট টাইপ করুন।", "error")
+
+    await db.insert(
+        "typing_submissions",
+        {
+            "user_id": user["id"],
+            "typing_task_id": task_id,
+            "typed_text": typed_text.strip(),
+            "status": "pending",
+            "reward": task["reward"],
+        },
     )
-    await db.insert("work_logs", {"user_id": user["id"], "work_type": "Typing Task", "details": "সফল টাইপিং সম্পন্ন", "reward": reward})
-    return redirect_with_flash(request, "/work/typing", f"অভিনন্দন! {reward}৳ আপনার ব্যালেন্সে যোগ হয়েছে।", "success")
+    return redirect_with_flash(request, "/work/typing", f"{task['title']} সফলভাবে জমা হয়েছে! অ্যাপ্রুভ হলে টাকা যোগ হবে।", "success")
 
 
+# ---------------- ADMIN PANEL: TYPING (/admin/t) ----------------
+
+@app.get("/admin/t", response_class=HTMLResponse)
+async def admin_typing_panel(request: Request):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অ্যাডমিন অ্যাক্সেস অনুমোদিত নয়!", "error")
+
+    tasks = await db.select("typing_tasks", order="id.desc")
+    task_map = {t["id"]: t for t in tasks}
+    submissions = await db.select("typing_submissions", order="created_at.desc", limit=50)
+
+    for s in submissions:
+        t = task_map.get(s["typing_task_id"], {})
+        s["task_title"] = t.get("title", f"Typing #{s['typing_task_id']}")
+        s["task_image"] = t.get("image_url")
+
+    next_num = (max((t["id"] for t in tasks), default=0)) + 1
+    ctx = base_ctx(request, user, "admin")
+    ctx.update({"tasks": tasks, "submissions": submissions, "next_auto_title": f"Typing #{next_num}"})
+    return templates.TemplateResponse("admin_typing.html", ctx)
+
+
+@app.post("/admin/t/task/add")
+async def admin_typing_add_task(
+    request: Request,
+    title: str = Form(""),
+    reward: float = Form(...),
+    typing_image: UploadFile = File(None),
+    fallback_image_url: str = Form(""),
+):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
+
+    image_bytes = await typing_image.read() if typing_image and typing_image.filename else None
+    img_url = None
+    if image_bytes:
+        uploaded_url, is_dummy = await upload_with_load_balancer(image_bytes)
+        if uploaded_url and not is_dummy:
+            img_url = uploaded_url
+
+    if not img_url and fallback_image_url.strip():
+        img_url = fallback_image_url.strip()
+
+    if not img_url:
+        return redirect_with_flash(request, "/admin/t", "ImgBB API Key সক্রিয় করুন অথবা ইমেজ লিংক দিন!", "error")
+
+    final_title = title.strip()
+    if not final_title:
+        existing = await db.select("typing_tasks", order="id.desc", limit=1)
+        next_num = (existing[0]["id"] + 1) if existing else 1
+        final_title = f"Typing #{next_num}"
+
+    await db.insert(
+        "typing_tasks",
+        {
+            "title": final_title,
+            "image_url": img_url,
+            "reward": reward,
+            "is_active": True,
+        },
+    )
+    return redirect_with_flash(request, "/admin/t", f"'{final_title}' সফলভাবে পাবলিশ হয়েছে!", "success")
+
+
+@app.post("/admin/t/task/{task_id}/delete")
+async def admin_typing_delete_task(request: Request, task_id: int):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
+    await db.delete("typing_tasks", {"id": task_id})
+    return redirect_with_flash(request, "/admin/t", "টাইপিং টাস্ক ডিলিট করা হয়েছে।", "info")
+
+
+@app.post("/admin/t/submission/{sub_id}/{action}")
+async def admin_typing_review_submission(request: Request, sub_id: int, action: str):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
+
+    sub = await db.select("typing_submissions", filters={"id": sub_id}, single=True)
+    if not sub or sub["status"] != "pending":
+        return redirect_with_flash(request, "/admin/t", "সাবমিশনটি আগেই প্রসেস করা আছে।", "info")
+
+    if action == "approve":
+        await db.update("typing_submissions", {"id": sub_id}, {"status": "approved"})
+        target_user = await db.select("users", filters={"id": sub["user_id"]}, single=True)
+        if target_user:
+            reward = float(sub["reward"])
+            await db.update(
+                "users",
+                {"id": target_user["id"]},
+                {
+                    "balance": float(target_user["balance"]) + reward,
+                    "total_earned": float(target_user["total_earned"]) + reward,
+                },
+            )
+        return redirect_with_flash(request, "/admin/t", "টাইপিং অ্যাপ্রুভ হয়েছে ও ইউজারের ব্যালেন্সে টাকা যোগ হয়েছে!", "success")
+    else:
+        await db.update("typing_submissions", {"id": sub_id}, {"status": "rejected"})
+        return redirect_with_flash(request, "/admin/t", "রিজেক্ট করা হয়েছে — ইউজার আবার টাইপ করতে পারবে।", "info")
+        
 @app.get("/work/survey", response_class=HTMLResponse)
 async def work_survey(request: Request):
     user = await get_current_user(request)
