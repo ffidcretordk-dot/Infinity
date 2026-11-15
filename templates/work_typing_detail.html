@@ -1,0 +1,63 @@
+{% extends "base_app.html" %}
+{% block title %}{{ task.title }} - InfinityWork{% endblock %}
+{% block content %}
+<div class="max-w-xl mx-auto space-y-4">
+  <div class="flex items-center justify-between">
+    <a href="/work/typing" class="inline-flex items-center gap-2 bg-white border border-emerald-200 px-4 py-2 rounded-full text-xs font-bold text-emerald-900">
+      <i class="fa-solid fa-arrow-left"></i> সব টাইপিং কাজ
+    </a>
+    <span class="bg-emerald-900 text-white px-4 py-1.5 rounded-full text-xs font-extrabold shadow">
+      রিওয়ার্ড: ৳{{ "%.2f"|format(task.reward) }}
+    </span>
+  </div>
+
+  <!-- Title Card -->
+  <div class="soft-card rounded-3xl p-5 flex items-center justify-between">
+    <div>
+      <span class="text-[11px] font-bold text-sky-700 bg-sky-100 px-2.5 py-0.5 rounded-full">Image Typing Task</span>
+      <h1 class="text-xl font-extrabold text-emerald-950 mt-1.5">{{ task.title }}</h1>
+    </div>
+    <div class="w-11 h-11 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-xl">
+      <i class="fa-solid fa-keyboard"></i>
+    </div>
+  </div>
+
+  <!-- Uploaded Image Viewer -->
+  <div class="soft-card rounded-3xl p-4 space-y-2.5">
+    <div class="flex items-center justify-between text-xs font-extrabold text-emerald-950 px-1">
+      <span><i class="fa-solid fa-image text-emerald-700 mr-1"></i> এই ছবির লেখাটি দেখে নিচে টাইপ করুন:</span>
+      <a href="{{ task.image_url }}" target="_blank" class="text-sky-600 underline text-[11px]">জুম করে দেখুন</a>
+    </div>
+    <div class="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-2 overflow-hidden">
+      <img src="{{ task.image_url }}" alt="{{ task.title }}" class="w-full max-h-96 object-contain rounded-xl mx-auto" />
+    </div>
+  </div>
+
+  <!-- Typing Input & Submit Card -->
+  <div class="soft-card rounded-3xl p-5 space-y-4">
+    <form id="typing-submit-form" action="/work/typing/{{ task.id }}/submit" method="POST" class="space-y-4">
+      <div>
+        <label class="text-xs font-extrabold text-emerald-950 block mb-1.5">
+          <i class="fa-solid fa-pen-to-square text-emerald-700 mr-1"></i> ছবির হুবহু টেক্সট লিখুন
+        </label>
+        <textarea name="typed_text" rows="5" required placeholder="ছবিতে যা লেখা আছে তা কোনো ভুল ছাড়াই এখানে টাইপ করুন..."
+                  class="w-full px-4 py-3 rounded-2xl border border-emerald-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+      </div>
+
+      <button id="typing-submit-btn" type="submit"
+              class="w-full bg-gradient-to-r from-emerald-700 to-emerald-950 text-white py-4 rounded-full font-extrabold text-sm shadow-lg flex items-center justify-center gap-2 disabled:opacity-60">
+        <i id="typing-submit-icon" class="fa-solid fa-paper-plane"></i>
+        <span id="typing-submit-text">টাইপিং সাবমিট করুন (৳{{ "%.2f"|format(task.reward) }})</span>
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+document.getElementById("typing-submit-form").addEventListener("submit", function () {
+  document.getElementById("typing-submit-btn").disabled = true;
+  document.getElementById("typing-submit-icon").className = "fa-solid fa-spinner fa-spin";
+  document.getElementById("typing-submit-text").innerText = "জমা হচ্ছে...";
+});
+</script>
+{% endblock %}
