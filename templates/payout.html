@@ -1,0 +1,195 @@
+{% extends "base_app.html" %}
+{% block title %}উইথড্র - InfinityWork{% endblock %}
+{% block content %}
+{% set bal = user.balance|float %}
+{% set bal_ok = bal >= 350 %}
+{% set ref_ok = referral_count >= 4 %}
+{% set can_withdraw = bal_ok and ref_ok %}
+
+<div class="max-w-xl mx-auto space-y-5">
+  <!-- Wallet Hero Card -->
+  <div class="rounded-3xl bg-gradient-to-br from-emerald-800 via-emerald-900 to-emerald-950 text-white p-6 shadow-xl relative overflow-hidden">
+    <div class="absolute -right-6 -bottom-6 text-white/5 text-8xl pointer-events-none">
+      <i class="fa-solid fa-wallet"></i>
+    </div>
+    <div class="relative z-10 flex items-center justify-between gap-4">
+      <div>
+        <span class="inline-flex items-center gap-1.5 bg-yellow-300 text-emerald-950 px-3 py-0.5 rounded-full text-[10px] font-extrabold uppercase">
+          <i class="fa-solid fa-bolt"></i> ০% চার্জ • ফ্রি উইথড্র
+        </span>
+        <div class="text-xs text-emerald-200 mt-2">উত্তোলনযোগ্য ব্যালেন্স</div>
+        <div class="text-3xl font-extrabold mt-0.5">৳{{ "%.2f"|format(bal) }}</div>
+      </div>
+      <div class="bg-white/15 backdrop-blur-md border border-white/20 rounded-2xl px-4 py-3 text-center">
+        <div class="text-[10px] text-emerald-200 font-bold">আপনার রেফার</div>
+        <div class="text-xl font-extrabold {% if ref_ok %}text-yellow-300{% else %}text-white{% endif %}">{{ referral_count }} / 4</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2 Unlock Requirements Checklist -->
+  <div class="soft-card rounded-3xl p-5 space-y-3">
+    <h2 class="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
+      <i class="fa-solid fa-shield-check text-emerald-700"></i> উইথড্র করার ২টি শর্ত
+    </h2>
+
+    <div class="grid sm:grid-cols-2 gap-3 text-xs">
+      <!-- Requirement 1: Minimum 350৳ -->
+      <div class="rounded-2xl p-3.5 border {% if bal_ok %}bg-emerald-50 border-emerald-300{% else %}bg-white border-emerald-100{% endif %} space-y-1.5">
+        <div class="flex items-center justify-between font-extrabold">
+          <span>১. মিনিমাম ৩৫০৳ ব্যালেন্স</span>
+          {% if bal_ok %}
+          <i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i>
+          {% else %}
+          <i class="fa-solid fa-lock text-amber-500 text-sm"></i>
+          {% endif %}
+        </div>
+        <div class="text-[11px] text-emerald-700">বর্তমান: <b>৳{{ "%.2f"|format(bal) }}</b> / ৳350.00</div>
+        <div class="w-full h-2 bg-emerald-100 rounded-full overflow-hidden">
+          {% set bal_pct = [((bal / 350) * 100)|round|int, 100]|min %}
+          <div class="h-full bg-emerald-600 rounded-full transition-all" style="width: {{ bal_pct }}%"></div>
+        </div>
+      </div>
+
+      <!-- Requirement 2: Minimum 4 Referrals -->
+      <div class="rounded-2xl p-3.5 border {% if ref_ok %}bg-emerald-50 border-emerald-300{% else %}bg-white border-emerald-100{% endif %} space-y-1.5">
+        <div class="flex items-center justify-between font-extrabold">
+          <span>২. কমপক্ষে ৪টি রেফার</span>
+          {% if ref_ok %}
+          <i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i>
+          {% else %}
+          <i class="fa-solid fa-lock text-amber-500 text-sm"></i>
+          {% endif %}
+        </div>
+        <div class="text-[11px] text-emerald-700">বর্তমান: <b>{{ referral_count }}</b> / 4 টি সম্পন্ন</div>
+        <div class="w-full h-2 bg-emerald-100 rounded-full overflow-hidden">
+          {% set ref_pct = [((referral_count / 4) * 100)|round|int, 100]|min %}
+          <div class="h-full bg-emerald-600 rounded-full transition-all" style="width: {{ ref_pct }}%"></div>
+        </div>
+      </div>
+    </div>
+
+    {% if not ref_ok %}
+    <div class="flex items-center justify-between gap-2 bg-amber-50 border border-amber-200 rounded-2xl p-3 text-xs">
+      <div class="text-amber-900 font-bold">
+        <i class="fa-solid fa-users mr-1"></i> আরও {{ 4 - referral_count }}টি রেফার করলে উইথড্র আনলক হবে!
+      </div>
+      <button id="payout-copy-ref" onclick="copyText('{{ request.base_url }}signup?ref={{ user.referral_code }}', 'payout-copy-ref')"
+              class="bg-emerald-900 text-white px-3 py-1.5 rounded-xl font-bold shrink-0">
+        লিংক কপি
+      </button>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Withdraw Form Card -->
+  <div class="soft-card rounded-3xl p-5 sm:p-6 space-y-4">
+    <h2 class="font-extrabold text-base text-emerald-950 flex items-center gap-2">
+      <i class="fa-solid fa-money-bill-transfer text-emerald-700"></i> পেমেন্ট রিকুয়েস্ট পাঠান
+    </h2>
+
+    <form action="/payout" method="POST" class="space-y-4">
+      <!-- Interactive 4 Method Selector -->
+      <div>
+        <label class="text-xs font-bold block mb-2 text-emerald-900">পেমেন্ট মেথড বেছে নিন</label>
+        <input type="hidden" name="method" id="selected-method" value="bKash" />
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <button type="button" onclick="selectMethod('bKash', this)"
+                  class="method-btn py-3 px-2 rounded-2xl border-2 border-emerald-700 bg-emerald-50 text-emerald-950 font-extrabold text-xs flex flex-col items-center gap-1 transition">
+            <i class="fa-solid fa-mobile-screen-button text-pink-600 text-base"></i>
+            <span>bKash</span>
+          </button>
+          <button type="button" onclick="selectMethod('Nagad', this)"
+                  class="method-btn py-3 px-2 rounded-2xl border border-emerald-200 bg-white text-emerald-900 font-extrabold text-xs flex flex-col items-center gap-1 transition">
+            <i class="fa-solid fa-wallet text-orange-500 text-base"></i>
+            <span>Nagad</span>
+          </button>
+          <button type="button" onclick="selectMethod('Rocket', this)"
+                  class="method-btn py-3 px-2 rounded-2xl border border-emerald-200 bg-white text-emerald-900 font-extrabold text-xs flex flex-col items-center gap-1 transition">
+            <i class="fa-solid fa-rocket text-purple-600 text-base"></i>
+            <span>Rocket</span>
+          </button>
+          <button type="button" onclick="selectMethod('Binance', this)"
+                  class="method-btn py-3 px-2 rounded-2xl border border-emerald-200 bg-white text-emerald-900 font-extrabold text-xs flex flex-col items-center gap-1 transition">
+            <i class="fa-solid fa-coins text-amber-500 text-base"></i>
+            <span>Binance</span>
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <label id="account-label" class="text-xs font-bold block mb-1 text-emerald-900">bKash নম্বর</label>
+        <input id="account-input" type="text" name="account_number" required placeholder="01XXXXXXXXX (Personal)"
+               class="w-full px-4 py-3 rounded-2xl border border-emerald-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+      </div>
+
+      <div>
+        <label class="text-xs font-bold block mb-1 text-emerald-900">টাকার পরিমাণ (সর্বনিম্ন ৩৫০৳)</label>
+        <input type="number" name="amount" min="350" step="1" required placeholder="350"
+               class="w-full px-4 py-3 rounded-2xl border border-emerald-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+      </div>
+
+      <button type="submit" {% if not can_withdraw %}disabled{% endif %}
+              class="w-full py-3.5 rounded-full font-extrabold text-sm shadow-lg transition flex items-center justify-center gap-2
+              {% if can_withdraw %}bg-gradient-to-r from-emerald-700 to-emerald-950 text-white hover:opacity-95{% else %}bg-slate-200 text-slate-500 cursor-not-allowed shadow-none{% endif %}">
+        {% if can_withdraw %}
+        <i class="fa-solid fa-paper-plane"></i> উইথড্র রিকুয়েস্ট দিন
+        {% else %}
+        <i class="fa-solid fa-lock"></i> ৩৫০৳ ও ৪টি রেফার পূর্ণ হলে আনলক হবে
+        {% endif %}
+      </button>
+    </form>
+  </div>
+
+  <!-- Payout History -->
+  <div class="soft-card rounded-3xl p-5 space-y-3">
+    <h2 class="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
+      <i class="fa-solid fa-clock-rotate-left text-emerald-700"></i> উইথড্র হিস্টোরি
+    </h2>
+    {% if payouts %}
+    <div class="divide-y divide-emerald-100">
+      {% for p in payouts %}
+      <div class="flex items-center justify-between py-3 text-xs">
+        <div class="space-y-0.5">
+          <div class="font-extrabold text-emerald-950">{{ p.method }} • {{ p.account_number }}</div>
+          <div class="text-emerald-700">{{ p.created_at[:16].replace('T', ' ') }}</div>
+        </div>
+        <div class="text-right space-y-1">
+          <div class="font-extrabold text-sm text-emerald-950">৳{{ "%.2f"|format(p.amount) }}</div>
+          <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold
+            {% if p.status == 'paid' %}bg-emerald-100 text-emerald-800
+            {% elif p.status == 'rejected' %}bg-red-100 text-red-700
+            {% else %}bg-amber-100 text-amber-800{% endif %}">
+            {{ p.status|upper }}
+          </span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-xs text-emerald-700 text-center py-4">এখনো কোনো উইথড্র রিকুয়েস্ট নেই।</p>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+function selectMethod(method, btn) {
+  document.getElementById("selected-method").value = method;
+
+  document.querySelectorAll(".method-btn").forEach((el) => {
+    el.className = "method-btn py-3 px-2 rounded-2xl border border-emerald-200 bg-white text-emerald-900 font-extrabold text-xs flex flex-col items-center gap-1 transition";
+  });
+  btn.className = "method-btn py-3 px-2 rounded-2xl border-2 border-emerald-700 bg-emerald-50 text-emerald-950 font-extrabold text-xs flex flex-col items-center gap-1 transition shadow-xs";
+
+  const label = document.getElementById("account-label");
+  const input = document.getElementById("account-input");
+  if (method === "Binance") {
+    label.innerText = "Binance Pay ID / UID / Email";
+    input.placeholder = "আপনার Binance UID বা Pay Email দিন";
+  } else {
+    label.innerText = `${method} নম্বর`;
+    input.placeholder = "01XXXXXXXXX (Personal)";
+  }
+}
+</script>
+{% endblock %}
