@@ -763,8 +763,10 @@ async def payout_page(request: Request):
         return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
 
     payouts = await db.select("payouts", filters={"user_id": user["id"]}, order="created_at.desc")
+    referrals = await db.select("users", filters={"referred_by": user["referral_code"]})
     ctx = base_ctx(request, user, "payout")
     ctx["payouts"] = payouts
+    ctx["referral_count"] = len(referrals)
     return templates.TemplateResponse("payout.html", ctx)
 
 
@@ -779,9 +781,23 @@ async def payout_submit(
     if not user:
         return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
 
+    allowed_methods = {"bKash", "Nagad", "Rocket", "Binance"}
+    if method not in allowed_methods:
+        return redirect_with_flash(request, "/payout", "সঠিক পেমেন্ট মেথড নির্বাচন করুন!", "error")
+
+    referrals = await db.select("users", filters={"referred_by": user["referral_code"]})
+    ref_count = len(referrals)
+    if ref_count < 4:
+        return redirect_with_flash(
+            request,
+            "/payout",
+            f"উইথড্র করতে কমপক্ষে ৪টি রেফার প্রয়োজন! (বর্তমান রেফার: {ref_count}/4)",
+            "error",
+        )
+
     current_bal = float(user.get("balance", 0))
-    if amount < 50:
-        return redirect_with_flash(request, "/payout", "সর্বনিম্ন উইথড্র ৫০৳!", "error")
+    if amount < 350:
+        return redirect_with_flash(request, "/payout", "সর্বনিম্ন উইথড্র ৩৫০৳!", "error")
     if amount > current_bal:
         return redirect_with_flash(request, "/payout", "আপনার অ্যাকাউন্টে পর্যাপ্ত ব্যালেন্স নেই!", "error")
 
@@ -797,7 +813,7 @@ async def payout_submit(
         },
     )
     return redirect_with_flash(request, "/payout", "উইথড্র রিকুয়েস্ট সফলভাবে পাঠানো হয়েছে!", "success")
-
+    
 
 @app.get("/profile", response_class=HTMLResponse)
 async def profile_page(request: Request):
