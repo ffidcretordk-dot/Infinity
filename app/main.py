@@ -600,52 +600,6 @@ async def work_ai_image_detail(request: Request, task_id: int):
     ctx = base_ctx(request, user, "work")
     ctx["task"] = task
     return templates.TemplateResponse("work_ai_detail.html", ctx)
-COMING_SOON_TASKS = {
-    "gmail-sell": {
-        "title": "Gmail Account Sell",
-        "icon": "fa-solid fa-envelope",
-        "color": "text-red-600 bg-red-100",
-        "desc": "নতুন ও পুরোনো Gmail অ্যাকাউন্ট নিরাপদে বিক্রি করে সরাসরি টাকা আয় করুন।",
-    },
-    "fb-sell": {
-        "title": "Facebook Account Sell",
-        "icon": "fa-brands fa-facebook",
-        "color": "text-blue-600 bg-blue-100",
-        "desc": "ভেরিফায়েড ও পুরোনো Facebook অ্যাকাউন্ট উচ্চ মূল্যে বিক্রি করার সুবিধা আসছে।",
-    },
-    "ig-sell": {
-        "title": "Instagram Account Sell",
-        "icon": "fa-brands fa-instagram",
-        "color": "text-pink-600 bg-pink-100",
-        "desc": "আপনার Instagram অ্যাকাউন্ট ন্যায্য দামে আমাদের প্ল্যাটফর্মে বিক্রি করতে পারবেন।",
-    },
-    "tiktok-sell": {
-        "title": "TikTok Account Sell",
-        "icon": "fa-brands fa-tiktok",
-        "color": "text-rose-600 bg-rose-100",
-        "desc": "ফলোয়ারযুক্ত বা পুরোনো TikTok অ্যাকাউন্ট নিরাপদ ডিলের মাধ্যমে বিক্রি করুন।",
-    },
-    "survey": {
-        "title": "Daily Survey",
-        "icon": "fa-solid fa-square-poll-vertical",
-        "color": "text-teal-700 bg-teal-100",
-        "desc": "প্রতিদিন সহজ আন্তর্জাতিক সার্ভের উত্তর দিয়ে বাড়তি আয় করার সিস্টেম চালু হচ্ছে।",
-    },
-}
-
-
-@app.get("/work/{slug}", response_class=HTMLResponse)
-async def work_coming_soon(request: Request, slug: str):
-    if slug not in COMING_SOON_TASKS:
-        return redirect_with_flash(request, "/work", "কাজটি পাওয়া যায়নি!", "error")
-
-    user = await get_current_user(request)
-    if not user:
-        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
-
-    ctx = base_ctx(request, user, "work")
-    ctx["task_info"] = COMING_SOON_TASKS[slug]
-    return templates.TemplateResponse("coming_soon.html", ctx)
 
 @app.post("/work/ai-image/{task_id}/submit")
 async def work_ai_image_submit(
@@ -843,6 +797,52 @@ async def work_cube_claim(request: Request, score: int = Form(...)):
     )
     return JSONResponse({"ok": True, "reward": reward, "message": f"দারুণ! ৳{reward:.2f} আপনার ব্যালেন্সে যোগ হয়েছে।"})
 
+COMING_SOON_TASKS = {
+    "gmail-sell": {
+        "title": "Gmail Account Sell",
+        "icon": "fa-solid fa-envelope",
+        "color": "text-red-600 bg-red-100",
+        "desc": "নতুন ও পুরোনো Gmail অ্যাকাউন্ট নিরাপদে বিক্রি করে সরাসরি টাকা আয় করুন।",
+    },
+    "fb-sell": {
+        "title": "Facebook Account Sell",
+        "icon": "fa-brands fa-facebook",
+        "color": "text-blue-600 bg-blue-100",
+        "desc": "ভেরিফায়েড ও পুরোনো Facebook অ্যাকাউন্ট উচ্চ মূল্যে বিক্রি করার সুবিধা আসছে।",
+    },
+    "ig-sell": {
+        "title": "Instagram Account Sell",
+        "icon": "fa-brands fa-instagram",
+        "color": "text-pink-600 bg-pink-100",
+        "desc": "আপনার Instagram অ্যাকাউন্ট ন্যায্য দামে আমাদের প্ল্যাটফর্মে বিক্রি করতে পারবেন।",
+    },
+    "tiktok-sell": {
+        "title": "TikTok Account Sell",
+        "icon": "fa-brands fa-tiktok",
+        "color": "text-rose-600 bg-rose-100",
+        "desc": "ফলোয়ারযুক্ত বা পুরোনো TikTok অ্যাকাউন্ট নিরাপদ ডিলের মাধ্যমে বিক্রি করুন।",
+    },
+    "survey": {
+        "title": "Daily Survey",
+        "icon": "fa-solid fa-square-poll-vertical",
+        "color": "text-teal-700 bg-teal-100",
+        "desc": "প্রতিদিন সহজ আন্তর্জাতিক সার্ভের উত্তর দিয়ে বাড়তি আয় করার সিস্টেম চালু হচ্ছে।",
+    },
+}
+
+
+@app.get("/work/{slug}", response_class=HTMLResponse)
+async def work_coming_soon(request: Request, slug: str):
+    if slug not in COMING_SOON_TASKS:
+        return redirect_with_flash(request, "/work", "কাজটি পাওয়া যায়নি!", "error")
+
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+
+    ctx = base_ctx(request, user, "work")
+    ctx["task_info"] = COMING_SOON_TASKS[slug]
+    return templates.TemplateResponse("coming_soon.html", ctx)
 
 @app.get("/work/tiktok-sell", response_class=HTMLResponse)
 async def work_tiktok(request: Request):
