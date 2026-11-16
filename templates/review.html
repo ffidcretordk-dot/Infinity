@@ -1,0 +1,160 @@
+{% extends "base_app.html" if user else "base_public.html" %}
+{% block title %}ইউজার রিভিউ ও পেমেন্ট প্রুফ - InfinityWork{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto px-3 sm:px-0 pt-2 pb-12 space-y-5">
+  <!-- Summary Rating Hero Banner -->
+  <div class="rounded-[2rem] bg-gradient-to-br from-emerald-800 via-emerald-900 to-emerald-950 text-white p-6 shadow-xl relative overflow-hidden">
+    <div class="absolute -right-6 -bottom-6 text-yellow-300/10 text-9xl pointer-events-none">
+      <i class="fa-solid fa-star"></i>
+    </div>
+    <div class="relative z-10 flex flex-wrap items-center justify-between gap-4">
+      <div class="space-y-1.5">
+        <span class="inline-flex items-center gap-1.5 bg-white/15 px-3 py-1 rounded-full text-[11px] font-bold text-yellow-300">
+          <i class="fa-solid fa-shield-check"></i> ভেরিফায়েড রিভিউ ও প্রুফ
+        </span>
+        <h1 class="text-2xl sm:text-3xl font-extrabold">আমাদের সদস্যদের মতামত</h1>
+        <p class="text-xs text-emerald-200">ইউজারদের রিভিউ ও আসল পেমেন্ট প্রুফ দেখুন</p>
+      </div>
+
+      <div class="bg-white/15 backdrop-blur-md border border-white/20 rounded-2xl px-5 py-3 text-center shrink-0">
+        <div class="text-2xl font-extrabold text-yellow-300 flex items-center justify-center gap-1">
+          <span>{{ avg_rating }}</span>
+          <i class="fa-solid fa-star text-lg"></i>
+        </div>
+        <div class="text-[11px] text-emerald-100 font-bold">{{ total_reviews }} টি রিভিউ</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Write a Review Card (For Logged-in Users) -->
+  {% if user %}
+  <div class="soft-card rounded-3xl p-5 space-y-4">
+    <div class="flex items-center justify-between">
+      <h2 class="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
+        <i class="fa-solid fa-pen-to-square text-emerald-700"></i> আপনার রিভিউ লিখুন
+      </h2>
+      <span class="text-[11px] font-bold text-emerald-700">{{ user.name }}</span>
+    </div>
+
+    <form action="/review/add" method="POST" enctype="multipart/form-data" class="space-y-3.5">
+      <!-- Interactive 5-Star Rating Selector -->
+      <div>
+        <label class="text-xs font-bold text-emerald-800 block mb-1.5">রেটিং দিন:</label>
+        <input type="hidden" name="rating" id="user-rating-input" value="5" />
+        <div class="flex items-center gap-2 text-xl" id="star-selector">
+          {% for s in [1, 2, 3, 4, 5] %}
+          <button type="button" onclick="setRating({{ s }})" class="star-btn text-amber-400 transition transform hover:scale-110">
+            <i class="fa-solid fa-star"></i>
+          </button>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div>
+        <textarea name="comment" rows="3" required placeholder="InfinityWork সম্পর্কে আপনার অভিজ্ঞতা লিখুন..."
+                  class="w-full px-4 py-3 rounded-2xl border border-emerald-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+      </div>
+
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <label class="inline-flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-900 px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer">
+          <i class="fa-solid fa-image text-emerald-700"></i>
+          <span id="user-proof-label">পেমেন্ট প্রুফ ছবি (অপশনাল)</span>
+          <input type="file" name="proof_file" accept="image/*" class="hidden" onchange="if(this.files[0]) document.getElementById('user-proof-label').innerText = this.files[0].name" />
+        </label>
+
+        <button type="submit" class="bg-emerald-900 hover:bg-emerald-800 text-white px-6 py-2.5 rounded-full text-xs font-extrabold shadow transition">
+          <i class="fa-solid fa-paper-plane mr-1"></i> রিভিউ সাবমিট করুন
+        </button>
+      </div>
+    </form>
+  </div>
+  {% else %}
+  <div class="soft-card rounded-3xl p-4 flex items-center justify-between gap-3 text-xs">
+    <span class="font-bold text-emerald-900">আপনার অভিজ্ঞতা শেয়ার করতে লগইন করুন</span>
+    <a href="/login" class="bg-emerald-900 text-white px-4 py-2 rounded-full font-bold shrink-0">লগইন করুন →</a>
+  </div>
+  {% endif %}
+
+  <!-- Reviews Feed -->
+  <div class="space-y-4">
+    {% for r in reviews %}
+    <article class="soft-card rounded-3xl p-5 space-y-3">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <!-- Reviewer DP -->
+          <div class="w-11 h-11 rounded-full overflow-hidden border-2 border-emerald-200 bg-emerald-900 text-white flex items-center justify-center font-extrabold text-sm shrink-0">
+            {% if r.reviewer_avatar %}
+            <img src="{{ r.reviewer_avatar }}" alt="{{ r.reviewer_name }}" class="w-full h-full object-cover" />
+            {% else %}
+            {{ r.reviewer_name[0]|upper }}
+            {% endif %}
+          </div>
+
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="font-extrabold text-sm text-emerald-950 truncate">{{ r.reviewer_name }}</span>
+              <i class="fa-solid fa-circle-check text-emerald-600 text-xs" title="Verified"></i>
+              {% if not r.is_admin_post %}
+              <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full text-[9px] font-extrabold">আপনার রিভিউ</span>
+              {% endif %}
+            </div>
+            <div class="text-[11px] text-emerald-700 font-medium">
+              <i class="fa-regular fa-calendar mr-1"></i>{{ r.display_date }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Star Rating -->
+        <div class="flex items-center gap-0.5 text-amber-400 text-xs shrink-0 pt-1">
+          {% for i in range(1, 6) %}
+          <i class="fa-solid fa-star {% if i > (r.rating or 5) %}text-slate-200{% endif %}"></i>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Review Text -->
+      <p class="text-xs sm:text-sm text-emerald-950/90 leading-relaxed whitespace-pre-line">{{ r.comment }}</p>
+
+      <!-- Proof Image (if attached) -->
+      {% if r.proof_image %}
+      <div class="pt-1">
+        <div onclick="openReviewLightbox('{{ r.proof_image }}')" class="cursor-pointer inline-block rounded-2xl overflow-hidden border border-emerald-200 bg-emerald-50 max-w-xs">
+          <img src="{{ r.proof_image }}" alt="Payment Proof" class="max-h-56 w-auto object-cover hover:scale-[1.02] transition" />
+        </div>
+        <div class="text-[10px] font-bold text-emerald-700 mt-1">
+          <i class="fa-solid fa-receipt mr-1"></i>সংযুক্ত পেমেন্ট প্রুফ (জুম করতে ট্যাপ করুন)
+        </div>
+      </div>
+      {% endif %}
+    </article>
+    {% else %}
+    <div class="soft-card rounded-3xl p-8 text-center space-y-2">
+      <div class="text-3xl text-amber-400"><i class="fa-solid fa-star"></i></div>
+      <p class="text-sm font-extrabold text-emerald-950">এখনো কোনো রিভিউ নেই</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Proof Lightbox Modal -->
+<div id="review-lightbox" onclick="this.classList.add('hidden')" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-xs flex items-center justify-center p-4">
+  <button onclick="document.getElementById('review-lightbox').classList.add('hidden')" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 text-white font-bold text-lg">✕</button>
+  <img id="review-lightbox-img" src="" alt="Proof" class="max-w-full max-h-[88vh] rounded-2xl shadow-2xl object-contain" onclick="event.stopPropagation()" />
+</div>
+
+<script>
+function setRating(val) {
+  document.getElementById("user-rating-input").value = val;
+  document.querySelectorAll("#star-selector .star-btn").forEach((btn, idx) => {
+    btn.className = idx < val
+      ? "star-btn text-amber-400 transition transform hover:scale-110"
+      : "star-btn text-slate-300 transition transform hover:scale-110";
+  });
+}
+
+function openReviewLightbox(src) {
+  document.getElementById("review-lightbox-img").src = src;
+  document.getElementById("review-lightbox").classList.remove("hidden");
+}
+</script>
+{% endblock %}
