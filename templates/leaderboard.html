@@ -1,0 +1,169 @@
+{% extends "base_app.html" if user else "base_public.html" %}
+{% block title %}Top Earners Leaderboard - InfinityWork{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto px-3 sm:px-0 pt-2 pb-10 space-y-5">
+  <!-- Hero Banner -->
+  <div class="rounded-[2rem] bg-gradient-to-br from-emerald-800 via-emerald-900 to-emerald-950 text-white p-6 shadow-xl relative overflow-hidden">
+    <div class="absolute -right-6 -bottom-6 text-yellow-300/10 text-9xl pointer-events-none">
+      <i class="fa-solid fa-trophy"></i>
+    </div>
+    <div class="relative z-10 flex items-center justify-between gap-4">
+      <div>
+        <span class="inline-flex items-center gap-1.5 bg-yellow-300 text-emerald-950 px-3 py-1 rounded-full text-[11px] font-extrabold">
+          <i class="fa-solid fa-crown"></i> TOP EARNERS
+        </span>
+        <h1 class="text-2xl sm:text-3xl font-extrabold mt-2">সেরা উপার্জনকারীদের তালিকা</h1>
+        <p class="text-xs text-emerald-200 mt-0.5">InfinityWork-এর সবচেয়ে বেশি আয় করা টপ আর্নাররা</p>
+      </div>
+      {% if user and my_rank %}
+      <div class="bg-white/15 backdrop-blur-md border border-white/20 rounded-2xl px-4 py-2.5 text-center shrink-0">
+        <div class="text-[10px] text-emerald-200 font-bold">আপনার Rank</div>
+        <div class="text-xl font-extrabold text-yellow-300">#{{ my_rank }}</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Top 3 Podium Cards (Rank 2, Rank 1, Rank 3) -->
+  {% if top3|length >= 1 %}
+  <div class="grid grid-cols-3 gap-2.5 items-end pt-2">
+    <!-- #2 Silver -->
+    {% if top3|length >= 2 %}
+    {% set u2 = top3[1] %}
+    <div class="soft-card rounded-3xl p-3 sm:p-4 text-center space-y-2 border-slate-200">
+      <div class="relative inline-block">
+        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full p-1 bg-gradient-to-br from-slate-300 to-slate-500 mx-auto">
+          {% if u2.avatar_url %}
+          <img src="{{ u2.avatar_url }}" alt="{{ u2.name }}" class="w-full h-full rounded-full object-cover bg-white" />
+          {% else %}
+          <div class="w-full h-full rounded-full bg-emerald-900 text-white flex items-center justify-center text-lg font-extrabold">{{ u2.name[0]|upper }}</div>
+          {% endif %}
+        </div>
+        <span class="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-slate-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow">#2</span>
+      </div>
+      <div class="pt-1">
+        <div class="font-extrabold text-xs text-emerald-950 truncate">{{ u2.name }}</div>
+        <div class="font-extrabold text-xs sm:text-sm text-emerald-700 mt-0.5">৳{{ "%.2f"|format(u2.amount) }}</div>
+      </div>
+    </div>
+    {% else %}
+    <div></div>
+    {% endif %}
+
+    <!-- #1 Gold Crown -->
+    {% set u1 = top3[0] %}
+    <div class="rounded-3xl p-3.5 sm:p-5 text-center space-y-2 bg-gradient-to-b from-amber-50 to-white border-2 border-amber-300 shadow-lg -mt-3">
+      <div class="text-amber-500 text-lg animate-bounce"><i class="fa-solid fa-crown"></i></div>
+      <div class="relative inline-block">
+        <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full p-1 bg-gradient-to-br from-yellow-300 via-amber-500 to-orange-500 mx-auto shadow-md">
+          {% if u1.avatar_url %}
+          <img src="{{ u1.avatar_url }}" alt="{{ u1.name }}" class="w-full h-full rounded-full object-cover bg-white" />
+          {% else %}
+          <div class="w-full h-full rounded-full bg-emerald-950 text-white flex items-center justify-center text-xl font-extrabold">{{ u1.name[0]|upper }}</div>
+          {% endif %}
+        </div>
+        <span class="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-amber-500 text-emerald-950 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow">#1</span>
+      </div>
+      <div class="pt-1">
+        <div class="font-extrabold text-xs sm:text-sm text-emerald-950 truncate">{{ u1.name }}</div>
+        <div class="font-extrabold text-sm sm:text-base text-emerald-800 mt-0.5">৳{{ "%.2f"|format(u1.amount) }}</div>
+      </div>
+    </div>
+
+    <!-- #3 Bronze -->
+    {% if top3|length >= 3 %}
+    {% set u3 = top3[2] %}
+    <div class="soft-card rounded-3xl p-3 sm:p-4 text-center space-y-2 border-amber-200">
+      <div class="relative inline-block">
+        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full p-1 bg-gradient-to-br from-amber-600 to-amber-800 mx-auto">
+          {% if u3.avatar_url %}
+          <img src="{{ u3.avatar_url }}" alt="{{ u3.name }}" class="w-full h-full rounded-full object-cover bg-white" />
+          {% else %}
+          <div class="w-full h-full rounded-full bg-emerald-900 text-white flex items-center justify-center text-lg font-extrabold">{{ u3.name[0]|upper }}</div>
+          {% endif %}
+        </div>
+        <span class="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-amber-700 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow">#3</span>
+      </div>
+      <div class="pt-1">
+        <div class="font-extrabold text-xs text-emerald-950 truncate">{{ u3.name }}</div>
+        <div class="font-extrabold text-xs sm:text-sm text-emerald-700 mt-0.5">৳{{ "%.2f"|format(u3.amount) }}</div>
+      </div>
+    </div>
+    {% else %}
+    <div></div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Your Own Rank Strip -->
+  {% if user %}
+  <div class="soft-card rounded-2xl px-4 py-3 flex items-center justify-between bg-emerald-50/90 border-emerald-300 text-xs">
+    <div class="flex items-center gap-2.5">
+      <span class="w-8 h-8 rounded-xl bg-emerald-900 text-white font-extrabold flex items-center justify-center">#{{ my_rank or '-' }}</span>
+      <div>
+        <div class="font-extrabold text-emerald-950">{{ user.name }} (আপনি)</div>
+        <div class="text-[11px] text-emerald-700">কাজ করে আপনার Rank আরও ওপরে তুলুন!</div>
+      </div>
+    </div>
+    <div class="font-extrabold text-sm text-emerald-900">৳{{ "%.2f"|format(my_earned) }}</div>
+  </div>
+  {% endif %}
+
+  <!-- Full Top Earner List: Rank | DP | Name | Amount -->
+  <div class="soft-card rounded-3xl p-4 sm:p-5 space-y-3">
+    <div class="flex items-center justify-between text-xs font-extrabold text-emerald-800 px-1 border-b border-emerald-100 pb-2.5">
+      <span>Rank • আর্নার</span>
+      <span>মোট আয়</span>
+    </div>
+
+    {% if leaders %}
+    <div class="space-y-2">
+      {% for row in leaders %}
+      <div class="flex items-center justify-between gap-3 p-3 rounded-2xl border transition
+        {% if row.is_me %}bg-emerald-50 border-emerald-400 ring-1 ring-emerald-200{% else %}bg-white border-emerald-100{% endif %}">
+        <div class="flex items-center gap-3 min-w-0">
+          <!-- Rank -->
+          <span class="w-8 h-8 rounded-xl text-xs font-extrabold flex items-center justify-center shrink-0
+            {% if row.rank == 1 %}bg-amber-400 text-emerald-950
+            {% elif row.rank == 2 %}bg-slate-200 text-slate-800
+            {% elif row.rank == 3 %}bg-amber-700 text-white
+            {% else %}bg-emerald-50 text-emerald-900 border border-emerald-100{% endif %}">
+            {% if row.rank <= 3 %}<i class="fa-solid fa-medal mr-0.5 text-[10px]"></i>{% endif %}{{ row.rank }}
+          </span>
+
+          <!-- DP (Profile Pic or Initial) -->
+          <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-emerald-200 shrink-0 bg-emerald-900 text-white flex items-center justify-center font-extrabold text-sm">
+            {% if row.avatar_url %}
+            <img src="{{ row.avatar_url }}" alt="{{ row.name }}" class="w-full h-full object-cover" />
+            {% else %}
+            {{ row.name[0]|upper }}
+            {% endif %}
+          </div>
+
+          <!-- Name & Level -->
+          <div class="min-w-0">
+            <div class="font-extrabold text-sm text-emerald-950 truncate flex items-center gap-1.5">
+              <span>{{ row.name }}</span>
+              {% if row.is_me %}
+              <span class="px-2 py-0.5 rounded-full bg-emerald-800 text-white text-[9px] font-bold">আপনি</span>
+              {% endif %}
+            </div>
+            <div class="text-[11px] text-emerald-700 font-semibold">
+              <i class="fa-solid {{ row.level.icon }} mr-0.5"></i> {{ row.level.name }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Amount -->
+        <div class="text-right shrink-0">
+          <div class="font-extrabold text-sm text-emerald-800">৳{{ "%.2f"|format(row.amount) }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-xs text-emerald-700 text-center py-6">এখনো কোনো আর্নার ডেটা পাওয়া যায়নি।</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
