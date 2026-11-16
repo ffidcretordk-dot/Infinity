@@ -531,29 +531,6 @@ async def admin_typing_review_submission(request: Request, sub_id: int, action: 
         await db.update("typing_submissions", {"id": sub_id}, {"status": "rejected"})
         return redirect_with_flash(request, "/admin/t", "রিজেক্ট করা হয়েছে — ইউজার আবার টাইপ করতে পারবে।", "info")
         
-@app.get("/work/survey", response_class=HTMLResponse)
-async def work_survey(request: Request):
-    user = await get_current_user(request)
-    if not user:
-        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
-    return templates.TemplateResponse("work_survey.html", base_ctx(request, user, "work"))
-
-
-@app.post("/work/survey")
-async def work_survey_submit(request: Request, q1: str = Form(...), q2: str = Form(...)):
-    user = await get_current_user(request)
-    if not user:
-        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
-
-    reward = 5.00
-    await db.update(
-        "users",
-        {"id": user["id"]},
-        {"balance": float(user["balance"]) + reward, "total_earned": float(user["total_earned"]) + reward},
-    )
-    await db.insert("work_logs", {"user_id": user["id"], "work_type": "Survey", "details": f"{q1} | {q2}", "reward": reward})
-    return redirect_with_flash(request, "/work/survey", f"সার্ভে সম্পন্ন! {reward}৳ বোনাস যোগ হয়েছে।", "success")
-
 @app.get("/about", response_class=HTMLResponse)
 async def about_page(request: Request):
     user = await get_current_user(request)
@@ -861,42 +838,7 @@ async def work_coming_soon(request: Request, slug: str):
     ctx = base_ctx(request, user, "work")
     ctx["task_info"] = COMING_SOON_TASKS[slug]
     return templates.TemplateResponse("coming_soon.html", ctx)
-
-@app.get("/work/tiktok-sell", response_class=HTMLResponse)
-async def work_tiktok(request: Request):
-    user = await get_current_user(request)
-    if not user:
-        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
-    return templates.TemplateResponse("work_tiktok.html", base_ctx(request, user, "work"))
-
-
-@app.post("/work/tiktok-sell")
-async def work_tiktok_submit(
-    request: Request,
-    username: str = Form(...),
-    followers: int = Form(...),
-    asking_price: float = Form(...),
-    contact_tg: str = Form(...),
-):
-    user = await get_current_user(request)
-    if not user:
-        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
-
-    await db.insert(
-        "work_logs",
-        {
-            "user_id": user["id"],
-            "work_type": "TikTok Account Sell",
-            "details": f"@{username} | {followers} followers | {asking_price}৳ | TG: {contact_tg}",
-            "reward": 0.0,
-            "status": "pending",
-        },
-    )
-    return redirect_with_flash(request, "/work/tiktok-sell", "আপনার TikTok অ্যাকাউন্ট বিক্রয়ের আবেদন জমা হয়েছে! টিম যোগাযোগ করবে।", "success")
-
-
-# ---------------- HISTORY, PAYOUT & PROFILE ----------------
-
+    
 @app.get("/history", response_class=HTMLResponse)
 async def history_page(request: Request, status: str = "all"):
     user = await get_current_user(request)
