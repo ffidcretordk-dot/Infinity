@@ -266,19 +266,54 @@ async def logout(request: Request):
 
 # ---------------- AUTHENTICATED APP ROUTES ----------------
 
+async def get_global_notice() -> str:
+    try:
+        row = await db.select("site_settings", filters={"key": "global_notice"}, single=True)
+        if row and row.get("value"):
+            return row["value"]
+    except Exception:
+        pass
+    try:
+        notices = await db.select("notices", order="is_pinned.desc,created_at.desc", limit=1)
+        if notices:
+            return notices[0].get("content") or notices[0].get("title")
+    except Exception:
+        pass
+    return "নতুন কাজ ও ইভেন্ট লাইভ হয়েছে! নিয়মিত কাজ করে দ্রুত পেমেন্ট নিন।"
+
+
 @app.get("/i", response_class=HTMLResponse)
 async def app_home(request: Request):
     user = await get_current_user(request)
     if not user:
         return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
 
-    recent_logs = await db.select("work_logs", filters={"user_id": user["id"]}, order="created_at.desc", limit=6)
+    recent_logs = await db.select("work_logs", filters={"user_id": user["id"]}, order="created_at.desc", limit=5)
     referrals = await db.select("users", filters={"referred_by": user["referral_code"]})
+    global_notice = await get_global_notice()
+    level_info = get_earning_level(float(user.get("total_earned") or 0))
+
     ctx = base_ctx(request, user, "home")
     ctx["recent_logs"] = recent_logs
     ctx["referral_count"] = len(referrals)
+    ctx["global_notice"] = global_notice
+    ctx["level"] = level_info
     return templates.TemplateResponse("home.html", ctx)
 
+@app.post("/admin/global-notice")
+async def admin_update_global_notice(request: Request, global_notice: str = Form(...)):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
+
+    text = global_notice.strip()
+    existing = await db.select("site_settings", filters={"key": "global_notice"}, single=True)
+    if existing:
+        await db.update("site_settings", {"key": "global_notice"}, {"value": text})
+    else:
+        await db.insert("site_settings", {"key": "global_notice", "value": text})
+
+    return redirect_with_flash(request, "/admin", "Global Welcome Notice সফলভাবে আপডেট হয়েছে!", "success")
 
 @app.get("/work", response_class=HTMLResponse)
 async def work_hub(request: Request):
