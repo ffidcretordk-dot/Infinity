@@ -1128,6 +1128,40 @@ async def admin_delete_imgbb(request: Request, key_id: int):
     await db.delete("imgbb_keys", {"id": key_id})
     return redirect_with_flash(request, "/admin", "API Key ডিলিট হয়েছে।", "info")
 
+@app.get("/contact", response_class=HTMLResponse)
+async def contact_page(request: Request):
+    user = await get_current_user(request)
+    return templates.TemplateResponse("contact.html", base_ctx(request, user, "contact"))
+
+
+@app.post("/contact")
+async def contact_submit(
+    request: Request,
+    name: str = Form(...),
+    contact_info: str = Form(...),
+    topic: str = Form(...),
+    message: str = Form(...),
+):
+    try:
+        await db.insert(
+            "contact_messages",
+            {
+                "name": name.strip(),
+                "contact_info": contact_info.strip(),
+                "topic": topic.strip(),
+                "message": message.strip(),
+            },
+        )
+    except Exception:
+        pass
+
+    return redirect_with_flash(
+        request,
+        "/contact",
+        "আপনার বার্তাটি সফলভাবে পাঠানো হয়েছে! আমাদের টিম শীঘ্রই যোগাযোগ করবে।",
+        "success",
+    )
+    
 
 @app.post("/admin/submission/{sub_id}/{action}")
 async def admin_review_submission(request: Request, sub_id: int, action: str):
