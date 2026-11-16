@@ -1,63 +1,164 @@
 {% extends "base_app.html" %}
-{% block title %}হোম - InfinityWork{% endblock %}
+{% block title %}ড্যাশবোর্ড - InfinityWork{% endblock %}
 {% block content %}
+<style>
+  @keyframes popupSpring {
+    0% { opacity: 0; transform: scale(0.78) translateY(24px); }
+    65% { opacity: 1; transform: scale(1.03) translateY(-3px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  @keyframes shimmerBorder {
+    0%, 100% { box-shadow: 0 20px 50px -12px rgba(6, 95, 70, 0.35), 0 0 0 1px rgba(167, 243, 208, 0.5); }
+    50% { box-shadow: 0 24px 60px -10px rgba(16, 185, 129, 0.45), 0 0 0 2px rgba(52, 211, 153, 0.7); }
+  }
+  .welcome-popup-card {
+    animation: popupSpring 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards, shimmerBorder 3s infinite ease-in-out;
+  }
+</style>
+
 <div class="space-y-5">
-  <!-- Wallet Card -->
-  <div class="rounded-3xl bg-gradient-to-br from-emerald-800 to-emerald-950 text-white p-6 shadow-xl relative overflow-hidden">
-    <div class="flex items-start justify-between">
-      <div>
-        <p class="text-xs text-emerald-200 font-medium">স্বাগতম, {{ user.name }}</p>
-        <h2 class="text-3xl font-extrabold mt-1">৳{{ "%.2f"|format(user.balance) }}</h2>
-        <p class="text-xs text-emerald-300 mt-1">মোট আয়: ৳{{ "%.2f"|format(user.total_earned) }} • মোট রেফার: {{ referral_count }}</p>
+  <!-- 1. PREMIUM WALLET HERO CARD -->
+  <div class="rounded-[2rem] bg-gradient-to-br from-emerald-800 via-emerald-900 to-emerald-950 text-white p-6 shadow-2xl relative overflow-hidden">
+    <div class="absolute -right-10 -top-10 w-44 h-44 rounded-full bg-emerald-400/15 blur-2xl pointer-events-none"></div>
+    <div class="absolute -left-8 -bottom-10 w-36 h-36 rounded-full bg-teal-400/10 blur-2xl pointer-events-none"></div>
+
+    <div class="relative z-10 space-y-4">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-12 h-12 rounded-2xl bg-white/15 border border-white/25 overflow-hidden flex items-center justify-center font-extrabold text-lg shrink-0">
+            {% if user.avatar_url %}
+            <img src="{{ user.avatar_url }}" alt="{{ user.name }}" class="w-full h-full object-cover" />
+            {% else %}
+            {{ user.name[0]|upper }}
+            {% endif %}
+          </div>
+          <div class="min-w-0">
+            <p class="text-xs text-emerald-200 font-semibold">স্বাগতম ফিরে আসায়,</p>
+            <h1 class="text-lg font-extrabold truncate">{{ user.name }}</h1>
+          </div>
+        </div>
+
+        <a href="/profile" class="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 border border-white/20 px-3 py-1.5 rounded-full text-[11px] font-extrabold text-yellow-300 shrink-0">
+          <i class="fa-solid {{ level.icon }}"></i> {{ level.name }}
+        </a>
       </div>
-      <a href="/payout" class="bg-white text-emerald-950 px-4 py-2 rounded-full text-xs font-extrabold shadow">উইথড্র</a>
+
+      <div class="flex flex-wrap items-end justify-between gap-4 pt-1">
+        <div>
+          <div class="text-[11px] text-emerald-200 font-semibold uppercase tracking-wider">বর্তমান ব্যালেন্স</div>
+          <div class="text-3xl sm:text-4xl font-extrabold tracking-tight mt-0.5">৳{{ "%.2f"|format(user.balance) }}</div>
+          <div class="text-xs text-emerald-200/90 mt-1 flex items-center gap-3">
+            <span><i class="fa-solid fa-coins text-yellow-300 mr-1"></i>মোট আয়: ৳{{ "%.2f"|format(user.total_earned) }}</span>
+            <span><i class="fa-solid fa-users text-emerald-300 mr-1"></i>রেফার: {{ referral_count }}</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <a href="/history" class="bg-white/15 hover:bg-white/25 border border-white/20 text-white px-4 py-2.5 rounded-full text-xs font-extrabold transition">
+            <i class="fa-solid fa-clock-rotate-left mr-1"></i> হিস্টোরি
+          </a>
+          <a href="/payout" class="bg-yellow-300 hover:bg-yellow-200 text-emerald-950 px-5 py-2.5 rounded-full text-xs font-extrabold shadow-lg transition">
+            <i class="fa-solid fa-wallet mr-1"></i> উইথড্র
+          </a>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Referral Card -->
+  <!-- 2. RUNNING ৳8,000 EVENT PROMO STRIP -->
+  <a href="/event" class="block rounded-3xl bg-gradient-to-r from-amber-100 via-yellow-50 to-emerald-50 border border-amber-300 p-4 shadow-sm hover:shadow-md transition">
+    <div class="flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-11 h-11 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-lg shrink-0 shadow">
+          <i class="fa-solid fa-fire animate-pulse"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-1.5">
+            <span class="font-extrabold text-sm text-emerald-950 truncate">৳৮,০০০ মেগা রেফার ইভেন্ট!</span>
+            <span class="bg-red-600 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full">LIVE</span>
+          </div>
+          <p class="text-[11px] text-amber-900 font-semibold truncate">৭২ ঘণ্টায় ৭০+ অ্যাক্টিভ মেম্বার রেফারে ইনস্ট্যান্ট বোনাস</p>
+        </div>
+      </div>
+      <span class="bg-emerald-900 text-white px-3.5 py-2 rounded-full text-[11px] font-extrabold shrink-0">দেখুন →</span>
+    </div>
+  </a>
+
+  <!-- 3. ALL IMPORTANT QUICK NAV GRID -->
+  <div class="space-y-2.5">
+    <div class="flex items-center justify-between px-1">
+      <h2 class="font-extrabold text-sm text-emerald-950"><i class="fa-solid fa-grid-2 text-emerald-700 mr-1.5"></i>কুইক নেভিগেশন</h2>
+      <a href="/work" class="text-xs font-bold text-emerald-700">সব কাজ →</a>
+    </div>
+
+    <div class="grid grid-cols-4 gap-2.5 text-center">
+      <a href="/task" class="soft-card rounded-2xl p-3 hover:border-emerald-400 transition space-y-1.5">
+        <div class="w-10 h-10 mx-auto rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-base"><i class="fa-solid fa-list-check"></i></div>
+        <div class="text-[11px] font-extrabold text-emerald-950 truncate">Micro Task</div>
+      </a>
+
+      <a href="/work/ai-image" class="soft-card rounded-2xl p-3 hover:border-purple-400 transition space-y-1.5">
+        <div class="w-10 h-10 mx-auto rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center text-base"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+        <div class="text-[11px] font-extrabold text-emerald-950 truncate">AI Image</div>
+      </a>
+
+      <a href="/work/typing" class="soft-card rounded-2xl p-3 hover:border-sky-400 transition space-y-1.5">
+        <div class="w-10 h-10 mx-auto rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center text-base"><i class="fa-solid fa-keyboard"></i></div>
+        <div class="text-[11px] font-extrabold text-emerald-950 truncate">Typing</div>
+      </a>
+
+      <a href="/work/cube-game" class="soft-card rounded-2xl p-3 hover:border-amber-400 transition space-y-1.5">
+        <div class="w-10 h-10 mx-auto rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-base"><i class="fa-solid fa-cubes"></i></div>
+        <div class="text-[11px] font-extrabold text-emerald-950 truncate">Cube Game</div>
+      </a>
+
+      <a href="/refer" class="soft-card rounded-2xl p-3 hover:border-teal-400 transition space-y-1.5">
+        <div class="w-10 h-10 mx-auto rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center text-base"><i class="fa-solid fa-users"></i></div>
+        <div class="text-[11px] font-extrabold text-emerald-950 truncate">Refer</div>
+      </a>
+
+      <a href="/leaderboard" class="soft-card rounded-2xl p-3 hover:border-amber-400 transition space-y-1.5">
+        <div class="w-10 h-10 mx-auto rounded-xl bg-yellow-100 text-amber-600 flex items-center justify-center text-base"><i class="fa-solid fa-trophy"></i></div>
+        <div class="text-[11px] font-extrabold text-emerald-950 truncate">Top Earners</div>
+      </a>
+
+      <a href="/notice" class="soft-card rounded-2xl p-3 hover:border-rose-300 transition space-y-1.5">
+        <div class="w-10 h-10 mx-auto rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-base"><i class="fa-solid fa-bullhorn"></i></div>
+        <div class="text-[11px] font-extrabold text-emerald-950 truncate">Notice</div>
+      </a>
+
+      <a href="/history" class="soft-card rounded-2xl p-3 hover:border-emerald-400 transition space-y-1.5">
+        <div class="w-10 h-10 mx-auto rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-center text-base"><i class="fa-solid fa-clock-rotate-left"></i></div>
+        <div class="text-[11px] font-extrabold text-emerald-950 truncate">History</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- 4. REFERRAL QUICK SHARE CARD -->
   <div class="soft-card rounded-3xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
     <div>
-      <h3 class="font-extrabold text-sm">বন্ধুদের রেফার করে আয় করুন!</h3>
+      <h3 class="font-extrabold text-sm text-emerald-950"><i class="fa-solid fa-gift text-emerald-700 mr-1"></i>বন্ধুদের রেফার করে আয় করুন!</h3>
       <p class="text-xs text-emerald-700">প্রতি রেফারে আপনি পাবেন <b>৮৳</b> এবং আপনার বন্ধু পাবে <b>১০৳</b></p>
     </div>
     <div class="flex items-center gap-2">
-      <code class="bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl text-xs font-bold">{{ user.referral_code }}</code>
+      <code class="bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl text-xs font-extrabold text-emerald-950">{{ user.referral_code }}</code>
       <button id="copy-ref-btn" onclick="copyText('{{ request.base_url }}signup?ref={{ user.referral_code }}', 'copy-ref-btn')"
-              class="bg-emerald-900 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold">লিংক কপি</button>
+              class="bg-emerald-900 hover:bg-emerald-800 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold">লিংক কপি</button>
     </div>
   </div>
 
-  <!-- Quick Work Grid -->
-  <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-    <a href="/task" class="soft-card rounded-2xl p-4 hover:border-emerald-400 transition">
-      <div class="text-2xl mb-1">📋</div>
-      <div class="font-bold text-sm">Micro Task</div>
-      <div class="text-[11px] text-emerald-700">ছোট টাস্ক করে আয়</div>
-    </a>
-    <a href="/work/typing" class="soft-card rounded-2xl p-4 hover:border-emerald-400 transition">
-      <div class="text-2xl mb-1">⌨️</div>
-      <div class="font-bold text-sm">Typing Task</div>
-      <div class="text-[11px] text-emerald-700">লিখে আয় করুন</div>
-    </a>
-    <a href="/work/cube-game" class="soft-card rounded-2xl p-4 hover:border-emerald-400 transition">
-      <div class="text-2xl mb-1">🎲</div>
-      <div class="font-bold text-sm">2,4,8 Cube</div>
-      <div class="text-[11px] text-emerald-700">গেম খেলে আয়</div>
-    </a>
-  </div>
-
-  <!-- Recent Logs -->
+  <!-- 5. RECENT ACTIVITY -->
   <div class="soft-card rounded-3xl p-5 space-y-3">
     <div class="flex items-center justify-between">
-      <h3 class="font-extrabold text-sm">সাম্প্রতিক কার্যক্রম</h3>
-      <a href="/work" class="text-xs font-bold text-emerald-700">সব কাজ →</a>
+      <h3 class="font-extrabold text-sm text-emerald-950"><i class="fa-solid fa-bolt text-amber-500 mr-1"></i>সাম্প্রতিক কার্যক্রম</h3>
+      <a href="/history" class="text-xs font-bold text-emerald-700">সব হিস্টোরি →</a>
     </div>
     {% if recent_logs %}
     <div class="divide-y divide-emerald-100">
       {% for log in recent_logs %}
       <div class="py-2.5 flex items-center justify-between text-xs">
         <div>
-          <div class="font-bold">{{ log.work_type }}</div>
+          <div class="font-bold text-emerald-950">{{ log.work_type }}</div>
           <div class="text-emerald-700/80">{{ log.details }}</div>
         </div>
         <span class="font-extrabold text-emerald-700">+৳{{ "%.2f"|format(log.reward) }}</span>
@@ -65,8 +166,104 @@
       {% endfor %}
     </div>
     {% else %}
-    <p class="text-xs text-emerald-700">এখনো কোনো কাজের হিস্টোরি নেই। Work বাটনে ক্লিক করে শুরু করুন!</p>
+    <p class="text-xs text-emerald-700">এখনো কোনো কাজের হিস্টোরি নেই। ওপরের কাজগুলো দিয়ে শুরু করুন!</p>
     {% endif %}
   </div>
+
+  <!-- 6. LAST AREA: 2 IMPORTANT CTAs (Review & How We Pay You) -->
+  <div class="grid sm:grid-cols-2 gap-3.5 pt-1">
+    <!-- CTA 1: Review -->
+    <a href="/review" class="soft-card rounded-3xl p-5 flex items-center justify-between gap-3 border-amber-200 bg-gradient-to-br from-amber-50/70 to-white hover:-translate-y-0.5 transition group">
+      <div class="flex items-center gap-3.5 min-w-0">
+        <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl shrink-0">
+          <i class="fa-solid fa-star"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="font-extrabold text-sm text-emerald-950">ইউজার রিভিউ ও প্রুফ</div>
+          <p class="text-[11px] text-emerald-700 mt-0.5">সদস্যদের মতামত ও পেমেন্ট প্রুফ দেখুন</p>
+        </div>
+      </div>
+      <span class="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center text-xs shrink-0 group-hover:translate-x-0.5 transition">
+        <i class="fa-solid fa-arrow-right"></i>
+      </span>
+    </a>
+
+    <!-- CTA 2: How We Pay You -->
+    <a href="/about" class="rounded-3xl p-5 flex items-center justify-between gap-3 bg-gradient-to-br from-emerald-800 to-emerald-950 text-white shadow-lg hover:-translate-y-0.5 transition group">
+      <div class="flex items-center gap-3.5 min-w-0">
+        <div class="w-12 h-12 rounded-2xl bg-white/15 text-yellow-300 flex items-center justify-center text-xl shrink-0">
+          <i class="fa-solid fa-hand-holding-dollar"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="font-extrabold text-sm">আমরা কীভাবে আপনাদের টাকা দেবো?</div>
+          <p class="text-[11px] text-emerald-200 mt-0.5">আমাদের ইনকাম ও ফ্রি পেমেন্ট সিস্টেম জানুন</p>
+        </div>
+      </div>
+      <span class="w-8 h-8 rounded-full bg-white text-emerald-950 flex items-center justify-center text-xs shrink-0 group-hover:translate-x-0.5 transition">
+        <i class="fa-solid fa-arrow-right"></i>
+      </span>
+    </a>
+  </div>
 </div>
+
+<!-- ANIMATED WELCOME BACK + GLOBAL NOTICE POPUP (50% Chance) -->
+<div id="welcome-notice-popup" class="hidden fixed inset-0 z-[70] bg-emerald-950/55 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="welcome-popup-card relative bg-white rounded-[2rem] max-w-sm w-full overflow-hidden border border-emerald-200">
+    <!-- Top Animated Gradient Header -->
+    <div class="bg-gradient-to-br from-emerald-700 via-emerald-800 to-emerald-950 p-6 text-white text-center relative overflow-hidden">
+      <div class="w-36 h-36 rounded-full bg-emerald-400/20 blur-2xl -top-10 -right-10 absolute pointer-events-none"></div>
+      <button onclick="closeWelcomePopup()" class="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center text-sm font-bold transition">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="w-14 h-14 mx-auto rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center text-2xl text-yellow-300 shadow-inner mb-3 animate-bounce">
+        <i class="fa-solid fa-infinity"></i>
+      </div>
+      <span class="inline-block bg-yellow-300 text-emerald-950 px-3 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider">
+        Global Notice
+      </span>
+      <h2 class="text-xl font-extrabold mt-2">Welcome Back, {{ user.name }}!</h2>
+    </div>
+
+    <!-- Body: Global Notice from Admin Panel -->
+    <div class="p-6 space-y-4 text-center">
+      <div class="bg-emerald-50/90 border border-emerald-200 rounded-2xl p-4 text-xs sm:text-sm text-emerald-950 font-semibold leading-relaxed whitespace-pre-line">
+        {{ global_notice }}
+      </div>
+
+      <!-- 2 Action Buttons: Updates দেখুন & Telegram Channel -->
+      <div class="grid grid-cols-2 gap-2.5">
+        <a href="/notice" class="bg-emerald-900 hover:bg-emerald-800 text-white py-3 px-3 rounded-2xl text-xs font-extrabold shadow flex items-center justify-center gap-1.5 transition">
+          <i class="fa-solid fa-bullhorn"></i> Updates দেখুন
+        </a>
+        <a href="{{ channel_url }}" target="_blank" rel="noopener" class="bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-900 py-3 px-3 rounded-2xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition">
+          <i class="fa-brands fa-telegram text-sky-600 text-sm"></i> Telegram Channel
+        </a>
+      </div>
+
+      <button onclick="closeWelcomePopup()" class="text-[11px] font-bold text-emerald-700 hover:text-emerald-950 underline">
+        বন্ধ করে ড্যাশবোর্ডে যান
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+function closeWelcomePopup() {
+  const modal = document.getElementById("welcome-notice-popup");
+  if (modal) modal.classList.add("hidden");
+}
+
+// 50% Chance to show Welcome Back + Global Notice Popup on entering /i
+document.addEventListener("DOMContentLoaded", () => {
+  if (Math.random() < 0.5) {
+    const splash = document.getElementById("iw-opening-screen");
+    const delay = (splash && !splash.classList.contains("hidden")) ? 1800 : 350;
+    setTimeout(() => {
+      const modal = document.getElementById("welcome-notice-popup");
+      if (modal) modal.classList.remove("hidden");
+    }, delay);
+  }
+});
+</script>
 {% endblock %}
