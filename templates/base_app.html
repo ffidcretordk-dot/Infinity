@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}InfinityWork{% endblock %}</title>
 
-  <!-- PWA & App Logos (Fixes 'V' icon & Enables Install) -->
+  <!-- PWA & App Logos -->
   <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#effcf4" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -49,24 +49,33 @@
     {% endfor %}
   </div>
 
-  <!-- Top Header (FontAwesome Icons) -->
-  <header class="sticky top-0 z-30 bg-white/85 backdrop-blur-md border-b border-emerald-100">
-    <div class="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between">
-      <a href="/i" class="flex items-center gap-2.5">
-        <div class="w-9 h-9 rounded-xl bg-emerald-900 text-white flex items-center justify-center shadow-sm">
+  <!-- Improved Modern App Header -->
+  <header class="sticky top-0 z-30 bg-white/85 backdrop-blur-xl border-b border-emerald-100/90 shadow-[0_6px_25px_-14px_rgba(13,74,43,0.16)]">
+    <div class="max-w-3xl mx-auto px-3.5 sm:px-4 h-16 flex items-center justify-between gap-2">
+      <!-- Brand Logo + Micro Tag -->
+      <a href="/i" class="flex items-center gap-2.5 min-w-0 group">
+        <div class="relative w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-700 to-emerald-950 text-white flex items-center justify-center shadow-md shadow-emerald-900/20 shrink-0 group-hover:scale-105 transition">
           <i class="fa-solid fa-infinity text-base"></i>
+          <span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-white"></span>
         </div>
-        <span class="font-extrabold text-lg tracking-tight text-emerald-950">InfinityWork</span>
+        <div class="leading-tight min-w-0">
+          <div class="font-extrabold text-base sm:text-lg tracking-tight text-emerald-950 truncate">InfinityWork</div>
+          <div class="text-[10px] font-bold text-emerald-600 hidden xs:block sm:block">Trusted Income</div>
+        </div>
       </a>
 
-      <div class="flex items-center gap-2">
-        <a href="/payout" class="hidden sm:inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-900 px-3 py-1.5 rounded-full text-xs font-bold">
-          <i class="fa-solid fa-wallet text-emerald-700"></i>
-          <span>ব্যালেন্স:</span>
-          <span class="text-emerald-700">৳{{ "%.2f"|format(user.balance) }}</span>
+      <!-- Right Action Pills -->
+      <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <!-- Live Balance Pill (Visible on Mobile & Desktop) -->
+        <a href="/payout" class="inline-flex items-center gap-1.5 bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 border border-emerald-200 text-emerald-950 px-2.5 sm:px-3.5 py-1.5 rounded-full text-xs font-extrabold shadow-xs transition">
+          <span class="w-5 h-5 rounded-full bg-emerald-800 text-yellow-300 flex items-center justify-center text-[10px]">
+            <i class="fa-solid fa-wallet"></i>
+          </span>
+          <span>৳{{ "%.2f"|format(user.balance) }}</span>
         </a>
 
-        <a href="/profile" title="Profile" class="w-10 h-10 rounded-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 flex items-center justify-center text-emerald-900 transition overflow-hidden">
+        <!-- Profile Avatar / Icon -->
+        <a href="/profile" title="Profile" class="w-10 h-10 rounded-full bg-emerald-50 hover:bg-emerald-100 ring-2 ring-emerald-200/80 flex items-center justify-center text-emerald-900 transition overflow-hidden shadow-xs">
           {% if user and user.avatar_url %}
           <img src="{{ user.avatar_url }}" alt="{{ user.name }}" class="w-full h-full object-cover" />
           {% else %}
@@ -74,8 +83,9 @@
           {% endif %}
         </a>
 
-        <button onclick="toggleMenuDrawer()" aria-label="Menu" class="w-10 h-10 rounded-full bg-emerald-900 hover:bg-emerald-800 text-white flex items-center justify-center shadow transition">
-          <i class="fa-solid fa-bars text-sm"></i>
+        <!-- Toggle Menu Icon -->
+        <button onclick="toggleMenuDrawer()" aria-label="Menu" class="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-800 to-emerald-950 hover:opacity-95 text-white flex items-center justify-center shadow-md shadow-emerald-900/20 transition active:scale-95">
+          <i class="fa-solid fa-bars-staggered text-sm"></i>
         </button>
       </div>
     </div>
@@ -89,17 +99,17 @@
   <!-- Toggle Drawer Backdrop -->
   <div id="iw-drawer-backdrop" onclick="toggleMenuDrawer(true)" class="hidden fixed inset-0 bg-emerald-950/35 backdrop-blur-xs z-40"></div>
 
-  <!-- Toggle Menu Drawer -->
+  <!-- Toggle Menu Drawer (Important Nav excluding Bottom Nav items + Logout at bottom) -->
   <aside id="iw-drawer" class="fixed top-0 right-0 h-full w-72 bg-white z-50 shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col justify-between border-l border-emerald-100 overflow-y-auto">
     <div>
       <div class="p-5 border-b border-emerald-100 flex items-center justify-between bg-emerald-50/60">
-        <span class="font-bold text-emerald-950"><i class="fa-solid fa-layer-group mr-1.5 text-emerald-700"></i>মেনু ও কাজসমূহ</span>
+        <span class="font-extrabold text-emerald-950"><i class="fa-solid fa-layer-group mr-1.5 text-emerald-700"></i>কুইক মেনু</span>
         <button onclick="toggleMenuDrawer(true)" class="w-8 h-8 rounded-full bg-white border border-emerald-200 flex items-center justify-center text-emerald-900">
           <i class="fa-solid fa-xmark text-sm"></i>
         </button>
       </div>
 
-      <nav class="p-4 space-y-1.5 text-sm font-semibold text-emerald-900">
+      <nav class="p-4 space-y-1 text-sm font-semibold text-emerald-900">
         <button id="pwa-install-btn" onclick="installInfinityPWA()" class="hidden w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-emerald-900 text-white font-bold shadow-sm mb-2">
           <span><i class="fa-solid fa-download w-5"></i> অ্যাপ ইন্সটল করুন</span>
           <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded-full">PWA</span>
@@ -108,34 +118,54 @@
         <a href="/task" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-emerald-50">
           <span><i class="fa-solid fa-list-check w-5 text-emerald-700"></i> মাইক্রো টাস্ক</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
         </a>
-        <a href="/history" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-emerald-50/70 hover:bg-emerald-100">
-          <span><i class="fa-solid fa-clock-rotate-left w-5 text-emerald-700"></i> আয়ের হিস্টোরি</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
+        <a href="/work/ai-image" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-emerald-50">
+          <span><i class="fa-solid fa-wand-magic-sparkles w-5 text-purple-600"></i> ChatGPT ইমেজ</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
         </a>
         <a href="/work/typing" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-emerald-50">
-          <span><i class="fa-solid fa-keyboard w-5 text-emerald-700"></i> টাইপিং টাস্ক</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
-        </a>
-        <a href="/work/survey" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-emerald-50">
-          <span><i class="fa-solid fa-square-poll-vertical w-5 text-emerald-700"></i> সার্ভে করে আয়</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
-        </a>
-        <a href="/work/ai-image" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-emerald-50">
-          <span><i class="fa-solid fa-wand-magic-sparkles w-5 text-emerald-700"></i> ChatGPT ইমেজ</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
+          <span><i class="fa-solid fa-keyboard w-5 text-sky-600"></i> টাইপিং টাস্ক</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
         </a>
         <a href="/work/cube-game" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-emerald-50">
-          <span><i class="fa-solid fa-cubes w-5 text-emerald-700"></i> ২,৪,৮ কিউব গেম</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
+          <span><i class="fa-solid fa-cubes w-5 text-amber-600"></i> ২,৪,৮ কিউব গেম</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
         </a>
-        <a href="/work/tiktok-sell" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-emerald-50">
-          <span><i class="fa-brands fa-tiktok w-5 text-emerald-700"></i> TikTok অ্যাকাউন্ট সেল</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
+
+        <div class="my-2 border-t border-emerald-100"></div>
+
+        <a href="/refer" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-emerald-50">
+          <span><i class="fa-solid fa-users w-5 text-teal-600"></i> রেফার ও আয়</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
         </a>
+        <a href="/event" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-950">
+          <span><i class="fa-solid fa-fire w-5 text-amber-600"></i> ৳৮,০০০ ইভেন্ট</span><span class="text-[9px] bg-red-600 text-white px-2 py-0.5 rounded-full font-extrabold">LIVE</span>
+        </a>
+        <a href="/leaderboard" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-emerald-50">
+          <span><i class="fa-solid fa-trophy w-5 text-amber-500"></i> লিডারবোর্ড</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
+        </a>
+        <a href="/history" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-emerald-50">
+          <span><i class="fa-solid fa-clock-rotate-left w-5 text-emerald-700"></i> আয়ের হিস্টোরি</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
+        </a>
+        <a href="/notice" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-emerald-50">
+          <span><i class="fa-solid fa-bullhorn w-5 text-rose-600"></i> অফিশিয়াল নোটিশ</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
+        </a>
+        <a href="/review" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-emerald-50">
+          <span><i class="fa-solid fa-star w-5 text-amber-500"></i> রিভিউ ও প্রুফ</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
+        </a>
+        <a href="/about" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-emerald-50">
+          <span><i class="fa-solid fa-circle-info w-5 text-emerald-700"></i> আমাদের সম্পর্কে</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
+        </a>
+        <a href="/contact" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-emerald-50">
+          <span><i class="fa-solid fa-envelope-open-text w-5 text-sky-700"></i> যোগাযোগ ও প্রমোশন</span><i class="fa-solid fa-chevron-right text-[10px] text-emerald-600"></i>
+        </a>
+
         {% if user and user.is_admin %}
-        <a href="/admin" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-amber-50 text-amber-900 border border-amber-200">
+        <a href="/admin" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-amber-50 text-amber-950 border border-amber-200 mt-1">
           <span><i class="fa-solid fa-gear w-5"></i> অ্যাডমিন প্যানেল</span><i class="fa-solid fa-chevron-right text-[10px]"></i>
         </a>
         {% endif %}
-        <div class="pt-3 border-t border-emerald-100 space-y-1.5">
-          <a href="{{ channel_url }}" target="_blank" class="flex items-center gap-2 px-3.5 py-2.5 rounded-xl hover:bg-emerald-50 text-emerald-700">
+
+        <div class="pt-3 mt-2 border-t border-emerald-100 space-y-1">
+          <a href="{{ channel_url }}" target="_blank" class="flex items-center gap-2 px-3.5 py-2 rounded-xl hover:bg-emerald-50 text-emerald-700">
             <i class="fa-brands fa-telegram w-5"></i> অফিশিয়াল চ্যানেল
           </a>
-          <a href="{{ support_url }}" target="_blank" class="flex items-center gap-2 px-3.5 py-2.5 rounded-xl hover:bg-emerald-50 text-emerald-700">
+          <a href="{{ support_url }}" target="_blank" class="flex items-center gap-2 px-3.5 py-2 rounded-xl hover:bg-emerald-50 text-emerald-700">
             <i class="fa-solid fa-headset w-5"></i> লাইভ সাপোর্ট
           </a>
         </div>
@@ -143,7 +173,10 @@
     </div>
 
     <div class="p-4 border-t border-emerald-100 bg-emerald-50/40 space-y-2">
-      <div class="text-xs text-emerald-700 font-medium px-1">Menu • {{ user.name }}</div>
+      <div class="flex items-center justify-between text-xs text-emerald-800 font-bold px-1">
+        <span>Menu • {{ user.name }}</span>
+        <a href="/menu" class="text-emerald-700 underline">Site Map</a>
+      </div>
       <a href="/logout" class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm shadow transition">
         <i class="fa-solid fa-right-from-bracket"></i> লগআউট করুন
       </a>
@@ -159,7 +192,7 @@
     সাপোর্ট
   </a>
 
-  <!-- Bottom Navigation Bar (Unchanged) -->
+  <!-- Bottom Navigation Bar (Unchanged Design & Icons) -->
   <nav class="fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-emerald-100 shadow-[0_-8px_25px_rgba(13,74,43,0.06)]">
     <div class="max-w-3xl mx-auto px-2 h-16 grid grid-cols-5 items-center text-[11px] font-bold">
       <a href="/i" class="flex flex-col items-center gap-1 {% if active_nav == 'home' %}text-emerald-700{% else %}text-slate-500{% endif %}">
@@ -172,6 +205,7 @@
         <span>Withdraw</span>
       </a>
 
+      <!-- Highlighted Work Center Button -->
       <a href="/work" class="flex flex-col items-center -mt-6">
         <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-900 text-white flex items-center justify-center shadow-lg shadow-emerald-900/30 ring-4 ring-white transition transform active:scale-95">
           <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 01-.673-.38m0 0A2.18 2.18 0 013 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387m7.5 0V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v.894m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
@@ -184,10 +218,10 @@
         <span>Profile</span>
       </a>
 
-      <button onclick="toggleMenuDrawer()" class="flex flex-col items-center gap-1 text-slate-500">
+      <a href="/menu" class="flex flex-col items-center gap-1 {% if active_nav == 'menu' %}text-emerald-700{% else %}text-slate-500{% endif %}">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
         <span>Menu</span>
-      </button>
+      </a>
     </div>
   </nav>
 
