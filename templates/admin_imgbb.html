@@ -1,0 +1,114 @@
+{% extends "base_app.html" %}
+{% block title %}ImgBB Load Balancer - Admin{% endblock %}
+{% block content %}
+<div class="space-y-5">
+  <!-- Header -->
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h1 class="text-xl font-extrabold text-emerald-950">
+        <i class="fa-solid fa-images text-emerald-700 mr-1.5"></i>ImgBB API Load Balancer
+      </h1>
+      <p class="text-xs text-emerald-700">একাধিক ImgBB Key দিলে একটি একটি করে অটো লোড ব্যালেন্সিং হবে</p>
+    </div>
+    <a href="/admin" class="bg-white border border-emerald-200 px-4 py-2 rounded-full text-xs font-bold text-emerald-900">← মেইন অ্যাডমিন</a>
+  </div>
+
+  <!-- Live Status Banner -->
+  <div class="rounded-3xl p-5 text-white shadow-lg flex flex-wrap items-center justify-between gap-4
+    {% if active_count > 0 %}bg-gradient-to-br from-emerald-800 to-emerald-950{% else %}bg-gradient-to-br from-amber-600 to-amber-800{% endif %}">
+    <div class="space-y-1">
+      <span class="inline-flex items-center gap-1.5 bg-white/15 px-3 py-1 rounded-full text-[11px] font-bold">
+        {% if active_count > 0 %}
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> Load Balancer সক্রিয়
+        {% else %}
+        <span class="w-2 h-2 rounded-full bg-yellow-300 animate-pulse"></span> Dummy Submit মোড চালু
+        {% endif %}
+      </span>
+      <h2 class="text-lg font-extrabold">
+        {% if active_count > 0 %}
+        {{ active_count }} টি সক্রিয় ImgBB API Key কাজ করছে
+        {% else %}
+        কোনো সক্রিয় ImgBB API Key নেই — এখন Dummy Submit চলছে
+        {% endif %}
+      </h2>
+    </div>
+
+    <div class="flex items-center gap-2.5 text-center text-xs">
+      <div class="bg-white/15 rounded-2xl px-3.5 py-2">
+        <div class="text-[10px] opacity-80">মোট আপলোড</div>
+        <div class="text-base font-extrabold">{{ total_uploads }}</div>
+      </div>
+      <div class="bg-white/15 rounded-2xl px-3.5 py-2">
+        <div class="text-[10px] opacity-80">ফেইল</div>
+        <div class="text-base font-extrabold">{{ total_fails }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add New ImgBB API Key -->
+  <div class="soft-card rounded-3xl p-5 space-y-3">
+    <h2 class="font-extrabold text-sm text-emerald-950">
+      <i class="fa-solid fa-key text-emerald-700 mr-1.5"></i>নতুন ImgBB API Key যোগ করুন
+    </h2>
+    <form action="/admin/imgbb/add" method="POST" class="grid sm:grid-cols-12 gap-2.5 text-sm">
+      <input type="text" name="label" required placeholder="Key Name (যেমন: ImgBB-1)"
+             class="sm:col-span-4 px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white" />
+      <input type="text" name="api_key" required placeholder="আপনার ImgBB API Key পেস্ট করুন"
+             class="sm:col-span-6 px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white font-mono text-xs" />
+      <button type="submit" class="sm:col-span-2 bg-emerald-900 hover:bg-emerald-800 text-white py-2.5 px-4 rounded-xl font-extrabold shadow">
+        <i class="fa-solid fa-plus mr-1"></i> Add
+      </button>
+    </form>
+  </div>
+
+  <!-- Keys Pool List -->
+  <div class="soft-card rounded-3xl p-5 space-y-3">
+    <h2 class="font-extrabold text-sm text-emerald-950">সকল ImgBB API Keys ({{ imgbb_keys|length }})</h2>
+
+    {% if imgbb_keys %}
+    <div class="space-y-2.5 text-xs">
+      {% for k in imgbb_keys %}
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-white border border-emerald-100 p-3.5 rounded-2xl">
+        <div class="space-y-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <span class="font-extrabold text-sm text-emerald-950">{{ k.label }}</span>
+            {% if k.is_active %}
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Active</span>
+            {% else %}
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-700">Paused</span>
+            {% endif %}
+          </div>
+          <div class="font-mono text-[11px] text-emerald-700">
+            Key: {{ k.api_key[:6] }}••••••••{{ k.api_key[-4:] if k.api_key|length > 10 else '' }}
+          </div>
+          <div class="text-[11px] text-slate-500 font-semibold">
+            Used: <b>{{ k.usage_count or 0 }}</b> • Fails: <b class="text-red-600">{{ k.fail_count or 0 }}</b>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0">
+          <form action="/admin/imgbb/{{ k.id }}/toggle" method="POST">
+            <button class="px-3 py-1.5 rounded-xl font-bold border transition
+              {% if k.is_active %}bg-amber-50 border-amber-200 text-amber-900 hover:bg-amber-100{% else %}bg-emerald-50 border-emerald-200 text-emerald-900 hover:bg-emerald-100{% endif %}">
+              {{ 'Pause' if k.is_active else 'Enable' }}
+            </button>
+          </form>
+          <form action="/admin/imgbb/{{ k.id }}/delete" method="POST" onsubmit="return confirm('API Key টি ডিলিট করতে চান?')">
+            <button class="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 px-3 py-1.5 rounded-xl font-bold">
+              Delete
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-6 space-y-1.5 text-xs">
+      <div class="text-2xl text-amber-500"><i class="fa-solid fa-triangle-exclamation"></i></div>
+      <p class="font-bold text-emerald-950">এখনো কোনো ImgBB API Key যোগ করা হয়নি।</p>
+      <p class="text-emerald-700">Key না থাকায় ইউজার সাবমিশনগুলোতে অটোমেটিক Dummy Submit চালু আছে।</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
