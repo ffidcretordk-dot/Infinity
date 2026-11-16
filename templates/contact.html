@@ -1,0 +1,321 @@
+{% extends "base_public.html" %}
+{% block title %}যোগাযোগ করুন (Contact Us) - InfinityWork{% endblock %}
+{% block content %}
+<style>
+  @keyframes floatSoft {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-7px); }
+  }
+  .float-soft { animation: floatSoft 4s ease-in-out infinite; }
+</style>
+
+<div class="max-w-6xl mx-auto px-4 pt-5 pb-14 space-y-12">
+  <!-- Top Navbar Pill (Matching Root / Page) -->
+  <header class="glass-card rounded-full px-5 py-3 flex items-center justify-between sticky top-3 z-30">
+    <a href="/" class="flex items-center gap-2.5">
+      <div class="w-9 h-9 rounded-xl bg-emerald-900 text-white flex items-center justify-center shadow-sm">
+        <i class="fa-solid fa-infinity text-base"></i>
+      </div>
+      <span class="font-extrabold text-lg text-emerald-950">Infinity Work</span>
+    </a>
+
+    <nav class="hidden md:flex items-center gap-2 text-sm font-semibold text-emerald-900">
+      <a href="/" class="px-3 py-1.5 hover:text-emerald-700">হোম</a>
+      <a href="/about" class="px-3 py-1.5 hover:text-emerald-700">আমাদের সম্পর্কে</a>
+      <a href="/event" class="px-3 py-1.5 hover:text-emerald-700">ইভেন্ট</a>
+      <a href="/contact" class="bg-emerald-600/20 text-emerald-950 px-4 py-1.5 rounded-full">যোগাযোগ</a>
+    </nav>
+
+    {% if user %}
+    <a href="/i" class="btn-primary-green text-white px-5 py-2 rounded-full text-xs sm:text-sm font-bold shadow">ড্যাশবোর্ড →</a>
+    {% else %}
+    <a href="/login" class="btn-primary-green text-white px-5 py-2 rounded-full text-xs sm:text-sm font-bold shadow">লগইন</a>
+    {% endif %}
+  </header>
+
+  <!-- 1. HERO SECTION (Feedback, Questions, Report, Contact) -->
+  <section class="grid md:grid-cols-12 gap-8 items-center pt-2">
+    <div class="md:col-span-7 space-y-5 text-center md:text-left">
+      <span class="inline-flex items-center gap-2 bg-emerald-100/90 border border-emerald-200 text-emerald-900 px-4 py-1.5 rounded-full text-xs font-extrabold">
+        <i class="fa-solid fa-headset text-emerald-700"></i> ২৪/৭ সাপোর্ট ও বিজনেস হেল্পডেস্ক
+      </span>
+      <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight text-emerald-950">
+        কোনো মতামত, প্রশ্ন বা রিপোর্ট? <br/>
+        <span class="text-emerald-700">সরাসরি যোগাযোগ করুন</span>
+      </h1>
+      <p class="text-sm md:text-base text-emerald-800/90 leading-relaxed max-w-xl mx-auto md:mx-0">
+        আপনি যদি নতুন কিছু জানতে চান, কাজের কোনো সমস্যা বা বাগ রিপোর্ট করতে চান, কিংবা আপনার মূল্যবান মতামত জানাতে চান — আমাদের টিম সবসময় আপনার কথা শুনতে প্রস্তুত।
+      </p>
+
+      <!-- 4 Mini Reason Pills -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1 text-xs font-bold text-emerald-950">
+        <div class="glass-card rounded-2xl p-3 text-center space-y-1">
+          <div class="text-emerald-700 text-base"><i class="fa-solid fa-comment-dots"></i></div>
+          <div>মতামত দিন</div>
+        </div>
+        <div class="glass-card rounded-2xl p-3 text-center space-y-1">
+          <div class="text-sky-600 text-base"><i class="fa-solid fa-circle-question"></i></div>
+          <div>কিছু জানুন</div>
+        </div>
+        <div class="glass-card rounded-2xl p-3 text-center space-y-1">
+          <div class="text-rose-600 text-base"><i class="fa-solid fa-flag"></i></div>
+          <div>রিপোর্ট করুন</div>
+        </div>
+        <div class="glass-card rounded-2xl p-3 text-center space-y-1">
+          <div class="text-amber-600 text-base"><i class="fa-solid fa-bullhorn"></i></div>
+          <div>প্রমোশন নিন</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Flat Infographic SVG Illustration -->
+    <div class="md:col-span-5 flex justify-center">
+      <div class="float-soft w-full max-w-xs glass-card rounded-[2rem] p-5">
+        <svg viewBox="0 0 300 260" class="w-full h-auto" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="150" cy="130" r="105" fill="#d1fae5" />
+          <rect x="48" y="55" width="204" height="140" rx="22" fill="#064e3b" />
+          <rect x="64" y="74" width="110" height="18" rx="9" fill="#34d399" />
+          <rect x="64" y="102" width="160" height="12" rx="6" fill="#a7f3d0" opacity="0.6" />
+          <rect x="64" y="122" width="130" height="12" rx="6" fill="#a7f3d0" opacity="0.4" />
+          <rect x="64" y="150" width="90" height="26" rx="13" fill="#fde047" />
+          <text x="109" y="167" text-anchor="middle" fill="#064e3b" font-size="11" font-weight="800" font-family="sans-serif">24/7 HELP</text>
+          <!-- Floating Support Badge -->
+          <circle cx="238" cy="64" r="28" fill="#ffffff" stroke="#10b981" stroke-width="4" />
+          <path d="M226 65l9-9 8 8 10-10" fill="none" stroke="#065f46" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+          <!-- Bottom Pill -->
+          <rect x="75" y="210" width="150" height="32" rx="16" fill="#ffffff" stroke="#a7f3d0" stroke-width="2" />
+          <text x="150" y="230" text-anchor="middle" fill="#065f46" font-size="11" font-weight="800" font-family="sans-serif">FAST RESPONSE</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. STATS / INFOGRAPHIC BAR (Matching Root / Page) -->
+  <section class="glass-card rounded-3xl p-5 grid grid-cols-2 md:grid-cols-4 gap-4 divide-y md:divide-y-0 md:divide-x divide-emerald-100 text-center">
+    <div class="pt-2 md:pt-0">
+      <div class="text-xl font-extrabold text-emerald-950"><i class="fa-solid fa-bolt text-amber-500 mr-1"></i>১৫–৩০ মিঃ</div>
+      <div class="text-xs text-emerald-700 font-semibold">গড় রেসপন্স সময়</div>
+    </div>
+    <div class="pt-2 md:pt-0">
+      <div class="text-xl font-extrabold text-emerald-950"><i class="fa-solid fa-users text-emerald-600 mr-1"></i>50K+</div>
+      <div class="text-xs text-emerald-700 font-semibold">অ্যাক্টিভ কমিউনিটি</div>
+    </div>
+    <div class="pt-2 md:pt-0">
+      <div class="text-xl font-extrabold text-emerald-950"><i class="fa-solid fa-shield-halved text-teal-600 mr-1"></i>১০০%</div>
+      <div class="text-xs text-emerald-700 font-semibold">নিরাপদ ও বিশ্বস্ত ডিল</div>
+    </div>
+    <div class="pt-2 md:pt-0">
+      <div class="text-xl font-extrabold text-emerald-950"><i class="fa-solid fa-headset text-emerald-700 mr-1"></i>২৪/৭</div>
+      <div class="text-xs text-emerald-700 font-semibold">সাপোর্ট চালু</div>
+    </div>
+  </section>
+
+  <!-- 3. PROMOTIONAL & BUSINESS SERVICES INFOGRAPHIC -->
+  <section class="space-y-6">
+    <div class="text-center space-y-2">
+      <span class="inline-block bg-amber-100 text-amber-900 px-3.5 py-1 rounded-full text-xs font-extrabold">
+        <i class="fa-solid fa-rocket mr-1"></i> প্রমোশনাল ও বিজনেস সার্ভিস
+      </span>
+      <h2 class="text-2xl md:text-3xl font-extrabold text-emerald-950">আপনার বিজনেস বা পেজ গ্রো করতে চান?</h2>
+      <p class="text-xs md:text-sm text-emerald-800 max-w-xl mx-auto">
+        সাধারণ সাপোর্টের পাশাপাশি আপনি চাইলে আমাদের প্ল্যাটফর্মের মাধ্যমে পেজ বুস্ট, অ্যাকাউন্ট ক্রয় ও ব্র্যান্ড প্রমোশন করতে পারেন।
+      </p>
+    </div>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Promo 1: Page Boost -->
+      <div class="glass-card rounded-3xl p-5 space-y-3 border-t-4 border-t-emerald-600 hover:-translate-y-1 transition">
+        <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-rocket"></i>
+        </div>
+        <h3 class="font-extrabold text-base text-emerald-950">পেজ / চ্যানেল বুস্ট</h3>
+        <p class="text-xs text-emerald-800/85 leading-relaxed">
+          আপনার Facebook পেজ, YouTube চ্যানেল, TikTok আইডি বা Telegram চ্যানেলে রিয়েল বাংলা ও আন্তর্জাতিক অডিয়েন্স দিয়ে দ্রুত বুস্ট করুন।
+        </p>
+      </div>
+
+      <!-- Promo 2: Account Buy -->
+      <div class="glass-card rounded-3xl p-5 space-y-3 border-t-4 border-t-sky-600 hover:-translate-y-1 transition">
+        <div class="w-12 h-12 rounded-2xl bg-sky-100 text-sky-700 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-bag-shopping"></i>
+        </div>
+        <h3 class="font-extrabold text-base text-emerald-950">ভেরিফায়েড অ্যাকাউন্ট ক্রয়</h3>
+        <p class="text-xs text-emerald-800/85 leading-relaxed">
+          বিজনেস বা মার্কেটিংয়ের জন্য পুরোনো ও অরগানিক TikTok, Facebook, Instagram অথবা Gmail অ্যাকাউন্ট কিনতে চাইলে নিরাপদে ডিল করুন।
+        </p>
+      </div>
+
+      <!-- Promo 3: Sponsored Micro Task & App Review -->
+      <div class="glass-card rounded-3xl p-5 space-y-3 border-t-4 border-t-amber-500 hover:-translate-y-1 transition">
+        <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-bullhorn"></i>
+        </div>
+        <h3 class="font-extrabold text-base text-emerald-950">স্পন্সরড টাস্ক ও অ্যাপ প্রমো</h3>
+        <p class="text-xs text-emerald-800/85 leading-relaxed">
+          আপনার Android অ্যাপ ইনস্টল, Play Store রিভিউ, ওয়েবসাইট ভিজিট বা সার্ভে ক্যাম্পেইন আমাদের ৫০K+ মেম্বারের মাঝে চালান।
+        </p>
+      </div>
+
+      <!-- Promo 4: Brand Partnership & Ads -->
+      <div class="glass-card rounded-3xl p-5 space-y-3 border-t-4 border-t-purple-600 hover:-translate-y-1 transition">
+        <div class="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-handshake"></i>
+        </div>
+        <h3 class="font-extrabold text-base text-emerald-950">ব্র্যান্ড স্পন্সরশিপ ও অ্যাড</h3>
+        <p class="text-xs text-emerald-800/85 leading-relaxed">
+          আমাদের সাইটে ব্যানার বিজ্ঞাপন, ইভেন্ট স্পন্সরশিপ বা দীর্ঘমেয়াদি বিজনেস পার্টনারশিপের জন্য সরাসরি অ্যাডমিনের সাথে কথা বলুন।
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. HOW OUR SUPPORT & PROMO PROCESS WORKS (Infographic Strip) -->
+  <section class="rounded-3xl bg-gradient-to-r from-emerald-100/85 to-emerald-50/90 border border-emerald-200 p-6 md:p-8 grid md:grid-cols-12 gap-6 items-center">
+    <div class="md:col-span-4 space-y-2">
+      <h2 class="text-xl font-extrabold text-emerald-950">কীভাবে দ্রুত সমাধান পাবেন?</h2>
+      <p class="text-xs text-emerald-800">মাত্র ৩টি সহজ ধাপেই আপনার রিপোর্ট বা প্রমোশনাল কাজ শুরু হয়ে যাবে!</p>
+    </div>
+    <div class="md:col-span-8 grid grid-cols-3 gap-3 text-center">
+      <div class="space-y-2">
+        <div class="w-12 h-12 mx-auto rounded-full bg-white shadow flex items-center justify-center text-emerald-800 text-lg"><i class="fa-solid fa-pen-to-square"></i></div>
+        <div class="text-xs font-bold">১. ফর্মে বিস্তারিত লিখুন</div>
+      </div>
+      <div class="space-y-2">
+        <div class="w-12 h-12 mx-auto rounded-full bg-white shadow flex items-center justify-center text-emerald-800 text-lg"><i class="fa-solid fa-magnifying-glass"></i></div>
+        <div class="text-xs font-bold">২. টিম রিভিউ ও ভেরিফাই</div>
+      </div>
+      <div class="space-y-2">
+        <div class="w-12 h-12 mx-auto rounded-full bg-emerald-900 text-yellow-300 shadow flex items-center justify-center text-lg"><i class="fa-solid fa-circle-check"></i></div>
+        <div class="text-xs font-bold">৩. দ্রুত সমাধান / ডিল সম্পন্ন</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. CONTACT US FORM + QUICK CONTACT SIDE BY SIDE -->
+  <section id="contact-form-section" class="grid md:grid-cols-12 gap-6 items-start">
+    <!-- Left: Contact Us Form -->
+    <div class="md:col-span-7 glass-card rounded-[2rem] p-6 sm:p-8 space-y-5">
+      <div>
+        <h2 class="text-2xl font-extrabold text-emerald-950 flex items-center gap-2">
+          <i class="fa-solid fa-paper-plane text-emerald-700"></i> Contact Us ফর্ম
+        </h2>
+        <p class="text-xs text-emerald-700 mt-1">নিচের ফর্মটি পূরণ করে পাঠিয়ে দিন, আমরা দ্রুত আপনার সাথে যোগাযোগ করবো।</p>
+      </div>
+
+      <form action="/contact" method="POST" class="space-y-4">
+        <div class="grid sm:grid-cols-2 gap-3.5">
+          <div>
+            <label class="text-xs font-bold block mb-1 text-emerald-900">আপনার নাম</label>
+            <input type="text" name="name" required value="{{ user.name if user else '' }}" placeholder="আপনার পূর্ণ নাম"
+                   class="w-full px-4 py-3 rounded-2xl border border-emerald-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          </div>
+          <div>
+            <label class="text-xs font-bold block mb-1 text-emerald-900">ইমেইল অথবা Telegram</label>
+            <input type="text" name="contact_info" required value="{{ user.email if user else '' }}" placeholder="@username বা email"
+                   class="w-full px-4 py-3 rounded-2xl border border-emerald-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs font-bold block mb-1 text-emerald-900">বিষয় নির্বাচন করুন</label>
+          <select name="topic" class="w-full px-4 py-3 rounded-2xl border border-emerald-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <option value="মতামত / প্রশ্ন">💬 সাধারণ মতামত বা কিছু জানতে চাই</option>
+            <option value="রিপোর্ট / সমস্যা">🚩 কোনো সমস্যা বা রিপোর্ট করতে চাই</option>
+            <option value="পেজ বুস্ট / প্রমোশন">🚀 পেজ বুস্ট বা প্রমোশন নিতে চাই</option>
+            <option value="অ্যাকাউন্ট ক্রয়">🛒 ভেরিফায়েড অ্যাকাউন্ট কিনতে চাই</option>
+            <option value="বিজনেস / স্পন্সরশিপ">🤝 বিজনেস পার্টনারশিপ / বিজ্ঞাপন</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="text-xs font-bold block mb-1 text-emerald-900">বিস্তারিত বার্তা</label>
+          <textarea name="message" rows="4" required placeholder="আপনার মতামত, রিপোর্ট বা প্রমোশনাল বিস্তারিত এখানে লিখুন..."
+                    class="w-full px-4 py-3 rounded-2xl border border-emerald-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+        </div>
+
+        <button type="submit" class="w-full btn-primary-green text-white py-3.5 rounded-full font-extrabold text-sm shadow-lg hover:opacity-95 transition">
+          <i class="fa-solid fa-paper-plane mr-1.5"></i> মেসেজ পাঠান →
+        </button>
+      </form>
+    </div>
+
+    <!-- Right: Quick Contact Box -->
+    <div class="md:col-span-5 space-y-4">
+      <div class="rounded-[2rem] bg-gradient-to-br from-emerald-800 to-emerald-950 text-white p-6 sm:p-7 shadow-xl space-y-5">
+        <div>
+          <span class="inline-flex items-center gap-1.5 bg-white/15 px-3 py-1 rounded-full text-[11px] font-bold text-yellow-300">
+            <i class="fa-solid fa-bolt"></i> ইনস্ট্যান্ট যোগাযোগ
+          </span>
+          <h3 class="text-xl font-extrabold mt-2">Quick Contact</h3>
+          <p class="text-xs text-emerald-200 mt-1">জরুরি সাপোর্ট, পেজ বুস্ট বা অ্যাকাউন্ট ডিলের জন্য সরাসরি টেলিগ্রামে মেসেজ দিন:</p>
+        </div>
+
+        <div class="space-y-3">
+          <a href="{{ support_url }}" target="_blank" rel="noopener"
+             class="flex items-center justify-between bg-white text-emerald-950 p-4 rounded-2xl font-extrabold text-sm shadow hover:bg-emerald-50 transition">
+            <div class="flex items-center gap-3">
+              <span class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-lg">
+                <i class="fa-brands fa-telegram"></i>
+              </span>
+              <div>
+                <div>লাইভ সাপোর্ট (Admin)</div>
+                <div class="text-[11px] text-emerald-700 font-semibold">@help_Infinity_work</div>
+              </div>
+            </div>
+            <i class="fa-solid fa-arrow-up-right-from-square text-xs text-emerald-700"></i>
+          </a>
+
+          <a href="{{ channel_url }}" target="_blank" rel="noopener"
+             class="flex items-center justify-between bg-white/10 hover:bg-white/15 border border-white/20 text-white p-4 rounded-2xl font-extrabold text-sm transition">
+            <div class="flex items-center gap-3">
+              <span class="w-10 h-10 rounded-xl bg-white/15 text-yellow-300 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-bullhorn"></i>
+              </span>
+              <div>
+                <div>অফিশিয়াল চ্যানেল</div>
+                <div class="text-[11px] text-emerald-200 font-semibold">@InfinityWork_Official</div>
+              </div>
+            </div>
+            <i class="fa-solid fa-arrow-up-right-from-square text-xs text-emerald-200"></i>
+          </a>
+        </div>
+
+        <div class="pt-2 border-t border-emerald-700/60 flex items-center justify-between text-xs">
+          <span class="text-emerald-200">সাপোর্ট হ্যান্ডেল কপি করুন:</span>
+          <button id="copy-tg-btn" onclick="copyText('@help_Infinity_work', 'copy-tg-btn')"
+                  class="bg-yellow-300 text-emerald-950 px-3 py-1.5 rounded-xl font-extrabold">
+            <i class="fa-solid fa-copy mr-1"></i> কপি
+          </button>
+        </div>
+      </div>
+
+      <!-- Trust Note -->
+      <div class="glass-card rounded-3xl p-5 flex items-start gap-3 text-xs">
+        <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-lg shrink-0">
+          <i class="fa-solid fa-shield-check"></i>
+        </div>
+        <div>
+          <div class="font-extrabold text-emerald-950">প্রতারক থেকে সাবধান থাকুন!</div>
+          <p class="text-emerald-800/85 mt-0.5 leading-relaxed">
+            আমাদের অফিশিয়াল সাপোর্ট <b>@help_Infinity_work</b> ছাড়া অন্য কারো সাথে কোনো লেনদেন করবেন না।
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="pt-6 border-t border-emerald-200/70 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-emerald-800">
+    <div class="flex items-center gap-2 font-bold">
+      <span class="text-emerald-950"><i class="fa-solid fa-infinity mr-1"></i>Infinity Work</span>
+      <span>|</span>
+      <span>© 2026 Infinity Work. All rights reserved.</span>
+    </div>
+    <div class="flex items-center gap-4 font-bold">
+      <a href="/" class="hover:text-emerald-950">হোম</a>
+      <a href="/about" class="hover:text-emerald-950">আমাদের সম্পর্কে</a>
+      <a href="/contact" class="text-emerald-950 underline">যোগাযোগ</a>
+    </div>
+  </footer>
+</div>
+{% endblock %}
