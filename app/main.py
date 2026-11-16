@@ -973,7 +973,38 @@ async def history_page(request: Request, status: str = "all"):
     ctx.update({"items": filtered, "counts": counts, "status_filter": status_filter})
     return templates.TemplateResponse("history.html", ctx)
 
+@app.get("/leaderboard", response_class=HTMLResponse)
+async def leaderboard_page(request: Request):
+    user = await get_current_user(request)
+    all_users = await db.select("users", order="total_earned.desc,id.asc")
 
+    leaders = []
+    my_rank = None
+    for idx, u in enumerate(all_users, start=1):
+        earned = float(u.get("total_earned") or 0)
+        lvl = get_earning_level(earned)
+        is_me = bool(user and u["id"] == user["id"])
+        if is_me:
+            my_rank = idx
+        if idx <= 30:
+            leaders.append({
+                "rank": idx,
+                "name": u.get("name") or "User",
+                "avatar_url": u.get("avatar_url"),
+                "amount": earned,
+                "level": lvl,
+                "is_me": is_me,
+            })
+
+    ctx = base_ctx(request, user, "leaderboard")
+    ctx.update({
+        "top3": leaders[:3],
+        "leaders": leaders,
+        "my_rank": my_rank,
+        "my_earned": float(user.get("total_earned") or 0) if user else 0.0,
+    })
+    return templates.TemplateResponse("leaderboard.html", ctx)
+    
 
 
 @app.post("/payout")
