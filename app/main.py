@@ -393,6 +393,24 @@ async def work_typing_detail(request: Request, task_id: int):
     ctx["task"] = task
     return templates.TemplateResponse("work_typing_detail.html", ctx)
 
+@app.get("/refer", response_class=HTMLResponse)
+@app.get("/reffer", response_class=HTMLResponse)
+async def refer_page(request: Request):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+
+    referrals = await db.select("users", filters={"referred_by": user["referral_code"]}, order="created_at.desc")
+    total_ref_earned = len(referrals) * REFERRAL_OWNER_BONUS
+
+    ctx = base_ctx(request, user, "refer")
+    ctx["referrals"] = referrals
+    ctx["referral_count"] = len(referrals)
+    ctx["total_ref_earned"] = total_ref_earned
+    ctx["owner_bonus"] = REFERRAL_OWNER_BONUS
+    ctx["friend_bonus"] = REFERRAL_NEW_USER_BONUS
+    return templates.TemplateResponse("refer.html", ctx)
+
 
 @app.post("/work/typing/{task_id}/submit")
 async def work_typing_submit(
