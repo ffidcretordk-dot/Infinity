@@ -1153,7 +1153,148 @@ async def profile_page(request: Request):
     ctx["total_earned"] = total_earned
     return templates.TemplateResponse("profile.html", ctx)
 
+# ---------------- REVIEW SYSTEM (/review & /admin/r) ----------------
 
+@app.get("/review", response_class=HTMLResponse)
+async def review_page(request: Request):
+    user = await get_current_user(request)
+    try:
+        all_reviews = await db.select("reviews", order="display_date.desc,created_at.desc")
+    except Exception:
+        all_reviews = []
+
+    # Show all Admin reviews to everyone + show a normal user's review ONLY to that same user
+    visible_reviews = []
+    for r in all_reviews:
+        if r.get("is_admin_post"):
+            visible_reviews.append(r)
+        elif user and r.get("user_id") == user["id"]:
+            visible_reviews.append(r)
+
+    avg_rating = round(sum(int(r.get("rating") or 5) for r in visible_reviews) / len(visible_reviews), 1) if visible_reviews else 4.9
+
+    ctx = base_ctx(request, user, "review")
+    ctx.update({
+        "reviews": visible_reviews,
+        "avg_rating": avg_rating,
+        "total_reviews": len(visible_reviews),
+    })
+    return templates.TemplateResponse("review.html", ctx)
+
+
+@app.post("/review/add")
+async def user_review_submit(
+    request: Request,
+    rating: int = Form(5),
+    comment: str = Form(...),
+    proof_file: UploadFile = File(None),
+):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "রিভিউ দেওয়ার জন্য অনুগ্রহ করে লগইন করুন।", "error")
+
+    clean_rating = max(1, min(5, int(rating)))
+    proof_url = None
+    if proof_file and proof_file.filename:
+        img_bytes = await proof_file.read()
+        if img_bytes:
+            uploaded, is_dummy = await upload_with_load_balancer(img_bytes)
+            if uploaded and not is_dummy:
+                proof_url = uploaded
+
+    await db.insert(
+        "reviews",
+        {
+            "user_id": user["id"],
+            "reviewer_name": user["name"],
+            "reviewer_avatar": user.get("avatar_url"),
+            "rating": clean_rating,
+            "comment": comment.strip(),
+            "proof_image": proof_url,
+            "display_date": get_bd_today_str(),
+            "is_admin_post": False,
+        },
+    )
+    return redirect_with_flash(request, "/review", "আপনার মূল্যবান রিভিউয়ের জন্য ধন্যবাদ!", "success")
+
+
+@app.get("/admin/r", response_class=HTMLResponse)
+async def admin_review_panel(request: Request):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অ্যাডমিন অ্যাক্সেস অনুমোদিত নয়!", "error")
+
+    try:
+        reviews = await db.select("reviews", order="display_date.desc,created_at.desc")
+    except Exception:
+        reviews = []
+
+    ctx = base_ctx(request, user, "admin")
+    ctx.update({"reviews": reviews, "today_str": get_bd_today_str()})
+    return templates.TemplateResponse("admin_review.html", ctx)
+
+
+@app.post("/admin/r/add")
+async def admin_review_add(
+    request: Request,
+    reviewer_name: str = Form(...),
+    rating: int = Form(5),
+    display_date: str = Form(""),
+    comment: str = Form(...),
+    avatar_url_input: str = Form(""),
+    proof_url_input: str = Form(""),
+    avatar_file: UploadFile = File(None),
+    proof_file: UploadFile = File(None),
+):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
+
+    # Fake Profile Pic (ImgBB upload or URL)
+    final_avatar = avatar_url_input.strip() or None
+    if avatar_file and avatar_file.filename:
+        av_bytes = await avatar_file.read()
+        if av_bytes:
+            up_av, is_dummy = await upload_with_load_balancer(av_bytes)
+            if up_av and not is_dummy:
+                final_avatar = up_av
+
+    # Proof Image (ImgBB upload or URL)
+    final_proof = proof_url_input.strip() or None
+    if proof_file and proof_file.filename:
+        pr_bytes = await proof_file.read()
+        if pr_bytes:
+            up_pr, is_dummy = await upload_with_load_balancer(pr_bytes)
+            if up_pr and not is_dummy:
+                final_proof = up_pr
+
+    final_date = display_date.strip() or get_bd_today_str()
+    clean_rating = max(1, min(5, int(rating)))
+
+    await db.insert(
+        "reviews",
+        {
+            "user_id": user["id"],
+            "reviewer_name": reviewer_name.strip(),
+            "reviewer_avatar": final_avatar,
+            "rating": clean_rating,
+            "comment": comment.strip(),
+            "proof_image": final_proof,
+            "display_date": final_date,
+            "is_admin_post": True,
+        },
+    )
+    return redirect_with_flash(request, "/admin/r", "কাস্টম রিভিউ সফলভাবে পাবলিশ হয়েছে!", "success")
+
+
+@app.post("/admin/r/{review_id}/delete")
+async def admin_review_delete(request: Request, review_id: int):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
+    await db.delete("reviews", {"id": review_id})
+    return redirect_with_flash(request, "/admin/r", "রিভিউটি ডিলিট করা হয়েছে।", "info")
+    
 @app.post("/profile/avatar")
 async def profile_avatar_upload(request: Request, avatar: UploadFile = File(...)):
     user = await get_current_user(request)
