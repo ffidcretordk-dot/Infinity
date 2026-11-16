@@ -1,0 +1,167 @@
+{% extends "base_app.html" %}
+{% block title %}Micro Task Submissions - Admin{% endblock %}
+{% block content %}
+<div class="space-y-5">
+  <!-- Header -->
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h1 class="text-xl font-extrabold text-emerald-950">
+        <i class="fa-solid fa-list-check text-emerald-700 mr-1.5"></i>Micro Task Submissions
+      </h1>
+      <p class="text-xs text-emerald-700">একসাথে ৫০+ Bulk Approve ও Random ৫টি Reject করার সুবিধা</p>
+    </div>
+    <a href="/admin" class="bg-white border border-emerald-200 px-4 py-2 rounded-full text-xs font-bold text-emerald-900">← মেইন অ্যাডমিন</a>
+  </div>
+
+  <!-- Filter Tabs -->
+  <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-bold">
+    <a href="/admin/submiton?status=pending" class="px-4 py-2 rounded-full shrink-0 {% if status_filter == 'pending' %}bg-emerald-900 text-white shadow{% else %}bg-white border border-emerald-200 text-emerald-900{% endif %}">
+      Pending ({{ counts.pending }})
+    </a>
+    <a href="/admin/submiton?status=approved" class="px-4 py-2 rounded-full shrink-0 {% if status_filter == 'approved' %}bg-emerald-900 text-white shadow{% else %}bg-white border border-emerald-200 text-emerald-900{% endif %}">
+      Approved ({{ counts.approved }})
+    </a>
+    <a href="/admin/submiton?status=rejected" class="px-4 py-2 rounded-full shrink-0 {% if status_filter == 'rejected' %}bg-emerald-900 text-white shadow{% else %}bg-white border border-emerald-200 text-emerald-900{% endif %}">
+      Rejected ({{ counts.rejected }})
+    </a>
+    <a href="/admin/submiton?status=all" class="px-4 py-2 rounded-full shrink-0 {% if status_filter == 'all' %}bg-emerald-900 text-white shadow{% else %}bg-white border border-emerald-200 text-emerald-900{% endif %}">
+      All ({{ counts.all }})
+    </a>
+  </div>
+
+  <!-- Smart Bulk Action Bar (Shown on Pending / All) -->
+  {% if counts.pending > 0 %}
+  <form id="bulk-form" action="/admin/submiton/bulk" method="POST" class="soft-card rounded-3xl p-5 space-y-4 border-2 border-emerald-300 bg-gradient-to-br from-emerald-50 to-white">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <div class="font-extrabold text-sm text-emerald-950">
+        <i class="fa-solid fa-bolt text-amber-500 mr-1"></i> Bulk Approve Control (50+ & Random Reject)
+      </div>
+      <span class="text-xs font-extrabold bg-emerald-900 text-yellow-300 px-3 py-1 rounded-full">
+        মোট Pending: {{ counts.pending }} টি
+      </span>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+      <div>
+        <label class="font-bold text-emerald-900 block mb-1">একসাথে কয়টি প্রসেস (50+)</label>
+        <input type="number" name="batch_limit" value="60" min="1" max="500"
+               class="w-full px-3 py-2 rounded-xl border border-emerald-200 bg-white font-bold" />
+      </div>
+      <div>
+        <label class="font-bold text-red-700 block mb-1">Random Reject সংখ্যা</label>
+        <input type="number" name="random_reject" value="5" min="0" max="100"
+               class="w-full px-3 py-2 rounded-xl border border-red-200 bg-white font-bold text-red-700" />
+      </div>
+      <div class="col-span-2 sm:col-span-1 flex items-end">
+        <button type="submit" name="mode" value="smart_bulk"
+                onclick="return confirm('আপনি কি Bulk Approve ও Random Reject চালাতে চান?')"
+                class="w-full bg-emerald-900 hover:bg-emerald-800 text-white py-2.5 px-4 rounded-xl font-extrabold shadow transition">
+          <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Bulk Approve চালান
+        </button>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-emerald-200/60 text-xs">
+      <label class="inline-flex items-center gap-2 font-bold text-emerald-950 cursor-pointer">
+        <input type="checkbox" id="select-all-subs" onchange="toggleAllSubs(this)" class="w-4 h-4 accent-emerald-800 rounded" />
+        <span>সবগুলো সিলেক্ট করুন (<span id="selected-count">0</span> সিলেক্টেড)</span>
+      </label>
+
+      <div class="flex gap-2">
+        <button type="submit" name="mode" value="approve_selected" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl font-bold">
+          সিলেক্টেড Approve
+        </button>
+        <button type="submit" name="mode" value="reject_selected" class="bg-red-600 hover:bg-red-700 text-white px-3.5 py-1.5 rounded-xl font-bold">
+          সিলেক্টেড Reject
+        </button>
+      </div>
+    </div>
+  </form>
+  {% endif %}
+
+  <!-- Submissions List -->
+  <div class="space-y-2.5">
+    {% for s in submissions %}
+    <div class="soft-card rounded-3xl p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div class="flex items-start gap-3 min-w-0">
+        {% if s.status == 'pending' %}
+        <input type="checkbox" form="bulk-form" name="selected_ids" value="{{ s.id }}" onchange="updateSelectedCount()"
+               class="sub-checkbox mt-1 w-4 h-4 accent-emerald-800 rounded shrink-0" />
+        {% endif %}
+
+        <div class="space-y-1 min-w-0">
+          <div class="flex flex-wrap items-center gap-1.5">
+            <span class="font-extrabold text-sm text-emerald-950">{{ s.task_title }}</span>
+            <span class="bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded-full text-[10px] font-bold">৳{{ "%.2f"|format(s.reward) }}</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold
+              {% if s.status == 'approved' %}bg-emerald-100 text-emerald-800
+              {% elif s.status == 'rejected' %}bg-red-100 text-red-700
+              {% else %}bg-amber-100 text-amber-800{% endif %}">
+              {{ s.status|upper }}
+            </span>
+          </div>
+
+          <div class="text-emerald-800 font-semibold">
+            <i class="fa-solid fa-user mr-1 text-emerald-600"></i>{{ s.user_name }} (#{{ s.user_id }})
+            <span class="text-slate-400 mx-1">•</span>
+            <span>{{ (s.created_at or '')[:16].replace('T', ' ') }}</span>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            {% if s.proof_note %}
+            <span class="text-emerald-700">Note: {{ s.proof_note }}</span>
+            {% endif %}
+            {% if s.is_dummy %}
+            <span class="text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-md">(Dummy Submit)</span>
+            {% endif %}
+            {% if s.proof_image_url %}
+            <button type="button" onclick="openSubLightbox('{{ s.proof_image_url }}')" class="text-sky-600 font-bold underline">
+              <i class="fa-solid fa-image mr-0.5"></i> স্ক্রিনশট দেখুন
+            </button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      {% if s.status == 'pending' %}
+      <div class="flex items-center gap-2 shrink-0">
+        <form action="/admin/submiton/{{ s.id }}/approve" method="POST">
+          <button class="bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 rounded-xl font-bold">Approve</button>
+        </form>
+        <form action="/admin/submiton/{{ s.id }}/reject" method="POST">
+          <button class="bg-red-600 hover:bg-red-700 text-white px-3.5 py-2 rounded-xl font-bold">Reject</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+    {% else %}
+    <div class="soft-card rounded-3xl p-8 text-center text-sm font-bold text-emerald-700">
+      এই ফিল্টারে কোনো সাবমিশন নেই।
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Screenshot Lightbox -->
+<div id="sub-lightbox" onclick="this.classList.add('hidden')" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4">
+  <img id="sub-lightbox-img" src="" class="max-w-full max-h-[88vh] rounded-2xl shadow-2xl object-contain" onclick="event.stopPropagation()" />
+</div>
+
+<script>
+function toggleAllSubs(master) {
+  document.querySelectorAll(".sub-checkbox").forEach((cb) => (cb.checked = master.checked));
+  updateSelectedCount();
+}
+
+function updateSelectedCount() {
+  const count = document.querySelectorAll(".sub-checkbox:checked").length;
+  const el = document.getElementById("selected-count");
+  if (el) el.innerText = count;
+}
+
+function openSubLightbox(url) {
+  document.getElementById("sub-lightbox-img").src = url;
+  document.getElementById("sub-lightbox").classList.remove("hidden");
+}
+</script>
+{% endblock %}
