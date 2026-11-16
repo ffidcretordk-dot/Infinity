@@ -1,6 +1,11 @@
 import math
 import struct
 import zlib
+
+import asyncio
+import random
+import httpx
+
 from datetime import datetime, timezone, timedelta
 from fastapi import FastAPI, Request, Form, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, Response
@@ -389,6 +394,174 @@ async def task_submit(
     return redirect_with_flash(request, "/task", "আপনার কাজ সফলভাবে জমা হয়েছে! ভেরিফিকেশনের পর পেমেন্ট যুক্ত হবে।", "success")
 
 
+
+@app.get("/admin/submiton", response_class=HTMLResponse)
+@app.get("/admin/submissions", response_class=HTMLResponse)
+async def admin_submissions_page(request: Request, status: str = "pending"):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অ্যাডমিন অ্যাক্সেস অনুমোদিত নয়!", "error")
+
+    all_subs = await db.select("task_submissions", order="created_at.desc", limit=300)
+    all_tasks = await db.select("tasks")
+    all_users = await db.select("users")
+
+    task_map = {t["id"]: t for t in all_tasks}
+    user_map = {u["id"]: u for u in all_users}
+
+    counts = {
+        "all": len(all_subs),
+        "pending": sum(1 for s in all_subs if s.get("status") == "pending"),
+        "approved": sum(1 for s in all_subs if s.get("status") == "approved"),
+        "rejected": sum(1 for s in all_subs if s.get("status") == "rejected"),
+    }
+
+    status_filter = status if status in ("pending", "approved", "rejected", "all") else "pending"
+    filtered = all_subs if status_filter == "all" else [s for s in all_subs if s.get("status") == status_filter]
+
+    for s in filtered:
+        t = task_map.get(s["task_id"], {})
+        u = user_map.get(s["user_id"], {})
+        s["task_title"] = t.get("title") or f"Task #{s['task_id']}"
+        s["task_category"] = t.get("category") or "Micro Task"
+        s["user_name"] = u.get("name") or f"User #{s['user_id']}"
+
+    ctx = base_ctx(request, user, "admin")
+    ctx.update({
+        "submissions": filtered,
+        "counts": counts,
+        "status_filter": status_filter,
+    })
+    return templates.TemplateResponse("admin_submissions.html", ctx)
+
+
+@app.post("/admin/submiton/bulk")
+async def admin_submissions_bulk(
+    request: Request,
+    mode: str = Form("smart_bulk"),          # smart_bulk, approve_selected, reject_selected
+    batch_limit: int = Form(60),             # 50+ batch size when no checkboxes picked
+    random_reject: int = Form(5),            # Default: randomly reject 5
+    selected_ids: list[int] = Form(default=[]),
+):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
+
+    pending_subs = await db.select("task_submissions", filters={"status": "pending"}, order="created_at.asc", limit=500)
+    if not pending_subs:
+        return redirect_with_flash(request, "/admin/submiton", "প্রসেস করার মতো কোনো Pending সাবমিশন নেই।", "info")
+
+    pending_map = {s["id"]: s for s in pending_subs}
+
+    # Determine target batch (either checked IDs or top N pending up to batch_limit)
+    if selected_ids:
+        target_subs = [pending_map[sid] for sid in selected_ids if sid in pending_map]
+    else:
+        limit_n = max(1, min(int(batch_limit), 500))
+        target_subs = pending_subs[:limit_n]
+
+    if not target_subs:
+        return redirect_with_flash(request, "/admin/submiton", "কোনো বৈধ Pending সাবমিশন সিলেক্ট করা হয়নি।", "error")
+
+    if mode == "reject_selected":
+        reject_subs = target_subs
+        approve_subs = []
+    elif mode == "approve_selected":
+        approve_subs = target_subs
+        reject_subs = []
+    else:
+        # Smart Bulk: Approve batch & randomly reject N (default 5)
+        rj_n = max(0, int(random_reject))
+        if rj_n > 0 and len(target_subs) > 1:
+            actual_rj = min(rj_n, len(target_subs) - 1) if len(target_subs) <= rj_n else rj_n
+            reject_subs = random.sample(target_subs, actual_rj)
+            reject_id_set = {s["id"] for s in reject_subs}
+            approve_subs = [s for s in target_subs if s["id"] not in reject_id_set]
+        else:
+            reject_subs = []
+            approve_subs = target_subs
+
+    approve_ids = [s["id"] for s in approve_subs]
+    reject_ids = [s["id"] for s in reject_subs]
+
+    # 1. Fast bulk status updates in Supabase PostgREST
+    async with httpx.AsyncClient(timeout=25.0) as client:
+        if approve_ids:
+            await client.patch(
+                f"{db.base_url}/task_submissions",
+                headers=db.headers,
+                params={"id": f"in.({','.join(map(str, approve_ids))})"},
+                json={"status": "approved"},
+            )
+        if reject_ids:
+            await client.patch(
+                f"{db.base_url}/task_submissions",
+                headers=db.headers,
+                params={"id": f"in.({','.join(map(str, reject_ids))})"},
+                json={"status": "rejected"},
+            )
+
+    # 2. Group rewards by user_id & credit balances concurrently
+    user_rewards: dict[int, float] = {}
+    for s in approve_subs:
+        uid = s["user_id"]
+        user_rewards[uid] = user_rewards.get(uid, 0.0) + float(s.get("reward") or 0)
+
+    if user_rewards:
+        all_users = await db.select("users")
+        user_lookup = {u["id"]: u for u in all_users}
+
+        async def credit_user(uid: int, add_amt: float):
+            u = user_lookup.get(uid)
+            if not u:
+                return
+            await db.update(
+                "users",
+                {"id": uid},
+                {
+                    "balance": float(u.get("balance") or 0) + add_amt,
+                    "total_earned": float(u.get("total_earned") or 0) + add_amt,
+                },
+            )
+
+        await asyncio.gather(*(credit_user(uid, amt) for uid, amt in user_rewards.items()))
+
+    return redirect_with_flash(
+        request,
+        "/admin/submiton",
+        f"Bulk সম্পন্ন! {len(approve_ids)}টি Approved ও {len(reject_ids)}টি Random Rejected হয়েছে।",
+        "success",
+    )
+
+
+@app.post("/admin/submiton/{sub_id}/{action}")
+async def admin_submissions_single(request: Request, sub_id: int, action: str):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
+
+    sub = await db.select("task_submissions", filters={"id": sub_id}, single=True)
+    if not sub or sub["status"] != "pending":
+        return redirect_with_flash(request, "/admin/submiton", "সাবমিশনটি আগেই প্রসেস করা আছে।", "info")
+
+    if action == "approve":
+        await db.update("task_submissions", {"id": sub_id}, {"status": "approved"})
+        target_user = await db.select("users", filters={"id": sub["user_id"]}, single=True)
+        if target_user:
+            reward = float(sub["reward"])
+            await db.update(
+                "users",
+                {"id": target_user["id"]},
+                {
+                    "balance": float(target_user["balance"]) + reward,
+                    "total_earned": float(target_user["total_earned"]) + reward,
+                },
+            )
+        return redirect_with_flash(request, "/admin/submiton", "সাবমিশন Approved হয়েছে ও টাকা যোগ হয়েছে!", "success")
+    else:
+        await db.update("task_submissions", {"id": sub_id}, {"status": "rejected"})
+        return redirect_with_flash(request, "/admin/submiton", "সাবমিশন Rejected করা হয়েছে।", "info")
+        
 # ---------------- SPECIALIZED WORK MODULES ----------------
 
 # ---------------- TYPING TASK SYSTEM (/work/typing & /admin/t) ----------------
