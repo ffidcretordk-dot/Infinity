@@ -1539,6 +1539,28 @@ async def admin_delete_task(request: Request, task_id: int):
     await db.delete("tasks", {"id": task_id})
     return redirect_with_flash(request, "/admin", "টাস্ক মুছে ফেলা হয়েছে।", "info")
 
+# ---------------- ADMIN PANEL: IMGBB LOAD BALANCER (/admin/imgbb) ----------------
+
+@app.get("/admin/imgbb", response_class=HTMLResponse)
+async def admin_imgbb_page(request: Request):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অ্যাডমিন অ্যাক্সেস অনুমোদিত নয়!", "error")
+
+    keys = await db.select("imgbb_keys", order="id.asc")
+    active_count = sum(1 for k in keys if k.get("is_active"))
+    total_uploads = sum(int(k.get("usage_count") or 0) for k in keys)
+    total_fails = sum(int(k.get("fail_count") or 0) for k in keys)
+
+    ctx = base_ctx(request, user, "admin")
+    ctx.update({
+        "imgbb_keys": keys,
+        "active_count": active_count,
+        "total_uploads": total_uploads,
+        "total_fails": total_fails,
+    })
+    return templates.TemplateResponse("admin_imgbb.html", ctx)
+
 
 @app.post("/admin/imgbb/add")
 async def admin_add_imgbb(request: Request, label: str = Form(...), api_key: str = Form(...)):
@@ -1546,7 +1568,19 @@ async def admin_add_imgbb(request: Request, label: str = Form(...), api_key: str
     if not user or not user.get("is_admin"):
         return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
     await db.insert("imgbb_keys", {"label": label.strip(), "api_key": api_key.strip(), "is_active": True})
-    return redirect_with_flash(request, "/admin", "ImgBB API Key লোড ব্যালেন্সারে যুক্ত হয়েছে!", "success")
+    return redirect_with_flash(request, "/admin/imgbb", "নতুন ImgBB API Key লোড ব্যালেন্সারে যুক্ত হয়েছে!", "success")
+
+
+@app.post("/admin/imgbb/{key_id}/toggle")
+async def admin_toggle_imgbb(request: Request, key_id: int):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
+    row = await db.select("imgbb_keys", filters={"id": key_id}, single=True)
+    if row:
+        new_state = not bool(row.get("is_active"))
+        await db.update("imgbb_keys", {"id": key_id}, {"is_active": new_state})
+    return redirect_with_flash(request, "/admin/imgbb", "API Key স্ট্যাটাস পরিবর্তন হয়েছে।", "info")
 
 
 @app.post("/admin/imgbb/{key_id}/delete")
@@ -1555,8 +1589,8 @@ async def admin_delete_imgbb(request: Request, key_id: int):
     if not user or not user.get("is_admin"):
         return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
     await db.delete("imgbb_keys", {"id": key_id})
-    return redirect_with_flash(request, "/admin", "API Key ডিলিট হয়েছে।", "info")
-
+    return redirect_with_flash(request, "/admin/imgbb", "API Key ডিলিট হয়েছে।", "info")
+    
 @app.get("/contact", response_class=HTMLResponse)
 async def contact_page(request: Request):
     user = await get_current_user(request)
