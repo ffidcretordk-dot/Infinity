@@ -298,7 +298,48 @@ async def task_list(request: Request):
     ctx["submitted_ids"] = submitted_ids
     return templates.TemplateResponse("tasks.html", ctx)
 
+@app.get("/event", response_class=HTMLResponse)
+async def refer_event_page(request: Request):
+    user = await get_current_user(request)
+    all_users = await db.select("users")
 
+    ref_counts: dict[str, int] = {}
+    active_ref_counts: dict[str, int] = {}
+
+    for u in all_users:
+        rb = u.get("referred_by")
+        if rb:
+            ref_counts[rb] = ref_counts.get(rb, 0) + 1
+            # Active member = referred user who earned beyond the 10৳ welcome bonus (doing regular tasks/games)
+            if float(u.get("total_earned") or 0) > REFERRAL_NEW_USER_BONUS:
+                active_ref_counts[rb] = active_ref_counts.get(rb, 0) + 1
+
+    leaderboard = []
+    for u in all_users:
+        code = u.get("referral_code")
+        total_cnt = ref_counts.get(code, 0)
+        act_cnt = active_ref_counts.get(code, 0)
+        if total_cnt > 0:
+            leaderboard.append({
+                "name": u.get("name", "User"),
+                "total": total_cnt,
+                "active": act_cnt,
+                "is_me": bool(user and u["id"] == user["id"]),
+            })
+
+    leaderboard.sort(key=lambda x: (x["active"], x["total"]), reverse=True)
+
+    my_total_refs = ref_counts.get(user.get("referral_code"), 0) if user else 0
+    my_active_refs = active_ref_counts.get(user.get("referral_code"), 0) if user else 0
+
+    ctx = base_ctx(request, user, "refer")
+    ctx.update({
+        "leaderboard": leaderboard[:10],
+        "my_total_refs": my_total_refs,
+        "my_active_refs": my_active_refs,
+    })
+    return templates.TemplateResponse("event.html", ctx)
+    
 @app.get("/task/{task_id}", response_class=HTMLResponse)
 async def task_detail(request: Request, task_id: int):
     user = await get_current_user(request)
