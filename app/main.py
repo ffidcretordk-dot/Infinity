@@ -674,6 +674,90 @@ async def work_ai_image_submit(
     )
     return redirect_with_flash(request, "/work/ai-image", f"{task['title']} সফলভাবে জমা হয়েছে! ভেরিফিকেশনের পর টাকা যোগ হবে।", "success")
 
+# ---------------- NOTICE BOARD (/notice & /admin/n) ----------------
+
+@app.get("/notice", response_class=HTMLResponse)
+async def notice_page(request: Request):
+    user = await get_current_user(request)
+    try:
+        notices = await db.select("notices", order="is_pinned.desc,created_at.desc")
+    except Exception:
+        notices = []
+
+    ctx = base_ctx(request, user, "notice")
+    ctx["notices"] = notices
+    return templates.TemplateResponse("notice.html", ctx)
+
+
+@app.get("/admin/n", response_class=HTMLResponse)
+async def admin_notice_panel(request: Request):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অ্যাডমিন অ্যাক্সেস অনুমোদিত নয়!", "error")
+
+    try:
+        notices = await db.select("notices", order="is_pinned.desc,created_at.desc")
+    except Exception:
+        notices = []
+
+    ctx = base_ctx(request, user, "admin")
+    ctx["notices"] = notices
+    return templates.TemplateResponse("admin_notice.html", ctx)
+
+
+@app.post("/admin/n/add")
+async def admin_notice_add(
+    request: Request,
+    title: str = Form(...),
+    category: str = Form("সাধারণ"),
+    content: str = Form(...),
+    is_pinned: str = Form(""),
+    extra_image_urls: str = Form(""),
+    images: list[UploadFile] = File(default=[]),
+):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
+
+    uploaded_urls: list[str] = []
+
+    # Upload 1+ selected image files via ImgBB Load Balancer
+    for img in images:
+        if img and img.filename:
+            img_bytes = await img.read()
+            if img_bytes:
+                img_url, is_dummy = await upload_with_load_balancer(img_bytes)
+                if img_url and not is_dummy:
+                    uploaded_urls.append(img_url)
+
+    # Optional manual URLs (comma or newline separated)
+    if extra_image_urls.strip():
+        for raw in extra_image_urls.replace(",", "\n").splitlines():
+            u = raw.strip()
+            if u.startswith("http"):
+                uploaded_urls.append(u)
+
+    await db.insert(
+        "notices",
+        {
+            "title": title.strip(),
+            "category": category.strip(),
+            "content": content.strip(),
+            "image_urls": uploaded_urls,
+            "is_pinned": is_pinned == "on",
+        },
+    )
+    return redirect_with_flash(request, "/admin/n", "নতুন নোটিশ সফলভাবে পাবলিশ হয়েছে!", "success")
+
+
+@app.post("/admin/n/{notice_id}/delete")
+async def admin_notice_delete(request: Request, notice_id: int):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
+    await db.delete("notices", {"id": notice_id})
+    return redirect_with_flash(request, "/admin/n", "নোটিশটি ডিলিট করা হয়েছে।", "info")
+    
 
 # ---------------- ADMIN PANEL: CHATGPT IMAGE (/admin/c) ----------------
 
