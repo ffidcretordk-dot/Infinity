@@ -797,6 +797,24 @@ async def work_cube_claim(request: Request, score: int = Form(...)):
     )
     return JSONResponse({"ok": True, "reward": reward, "message": f"দারুণ! ৳{reward:.2f} আপনার ব্যালেন্সে যোগ হয়েছে।"})
 
+
+
+@app.get("/payout", response_class=HTMLResponse)
+async def payout_page(request: Request):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+
+    payouts = await db.select("payouts", filters={"user_id": user["id"]}, order="created_at.desc")
+    referrals = await db.select("users", filters={"referred_by": user["referral_code"]})
+    ctx = base_ctx(request, user, "payout")
+    ctx["payouts"] = payouts
+    ctx["referral_count"] = len(referrals)
+    return templates.TemplateResponse("payout.html", ctx)
+
+
+
+
 COMING_SOON_TASKS = {
     "gmail-sell": {
         "title": "Gmail Account Sell",
@@ -955,18 +973,6 @@ async def history_page(request: Request, status: str = "all"):
     return templates.TemplateResponse("history.html", ctx)
 
 
-@app.get("/payout", response_class=HTMLResponse)
-async def payout_page(request: Request):
-    user = await get_current_user(request)
-    if not user:
-        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
-
-    payouts = await db.select("payouts", filters={"user_id": user["id"]}, order="created_at.desc")
-    referrals = await db.select("users", filters={"referred_by": user["referral_code"]})
-    ctx = base_ctx(request, user, "payout")
-    ctx["payouts"] = payouts
-    ctx["referral_count"] = len(referrals)
-    return templates.TemplateResponse("payout.html", ctx)
 
 
 @app.post("/payout")
