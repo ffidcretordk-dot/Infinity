@@ -1,0 +1,215 @@
+{% extends "base_app.html" %}
+{% block title %}রেফার ও আয় - InfinityWork{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-5">
+  <!-- Hero Section with Running Refer Event Button -->
+  <div class="rounded-[2rem] bg-gradient-to-br from-emerald-800 via-emerald-900 to-emerald-950 text-white p-6 sm:p-7 shadow-xl relative overflow-hidden">
+    <div class="absolute -right-8 -bottom-8 text-white/5 text-9xl pointer-events-none">
+      <i class="fa-solid fa-users"></i>
+    </div>
+    <div class="relative z-10 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <span class="inline-flex items-center gap-1.5 bg-white/15 px-3 py-1 rounded-full text-[11px] font-bold text-emerald-100">
+          <i class="fa-solid fa-gift text-yellow-300"></i> প্রতি রেফারে {{ "%.0f"|format(owner_bonus) }}৳ + বন্ধু পাবে {{ "%.0f"|format(friend_bonus) }}৳
+        </span>
+        <!-- Rules Popup Trigger -->
+        <button onclick="toggleRulesModal(true)" class="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 border border-white/25 px-3.5 py-1.5 rounded-full text-xs font-bold transition">
+          <i class="fa-solid fa-scale-balanced text-yellow-300"></i> রেফার নিয়মাবলি
+        </button>
+      </div>
+
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold leading-tight">বন্ধুদের আমন্ত্রণ জানান, <span class="text-yellow-300">আনলিমিটেড আয় করুন!</span></h1>
+        <p class="text-xs sm:text-sm text-emerald-100/90 mt-1.5">আপনার লিংকে কেউ জয়েন করলেই সাথে সাথে আপনার অ্যাকাউন্টে বোনাস যোগ হবে।</p>
+      </div>
+
+      <!-- Mini Stats + Running Refer Event Button -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+        <div class="flex items-center gap-3">
+          <div class="bg-white/10 border border-white/15 rounded-2xl px-4 py-2.5 text-center">
+            <div class="text-[10px] text-emerald-200 font-bold">মোট রেফার</div>
+            <div class="text-lg font-extrabold">{{ referral_count }} জন</div>
+          </div>
+          <div class="bg-white/10 border border-white/15 rounded-2xl px-4 py-2.5 text-center">
+            <div class="text-[10px] text-emerald-200 font-bold">রেফার থেকে আয়</div>
+            <div class="text-lg font-extrabold text-yellow-300">৳{{ "%.2f"|format(total_ref_earned) }}</div>
+          </div>
+        </div>
+
+        <a href="/event" class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-yellow-300 hover:opacity-95 text-emerald-950 px-5 py-3 rounded-full text-xs sm:text-sm font-extrabold shadow-lg transition transform hover:-translate-y-0.5">
+          <i class="fa-solid fa-fire text-red-600 animate-pulse"></i>
+          <span>Running Refer Event</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Copy Referral Link & Code Card -->
+  <div class="soft-card rounded-3xl p-5 space-y-3">
+    <div class="flex items-center justify-between">
+      <h2 class="font-extrabold text-sm text-emerald-950"><i class="fa-solid fa-link text-emerald-700 mr-1.5"></i>আপনার রেফারেল লিংক ও কোড</h2>
+      <span class="text-xs font-extrabold text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full">কোড: {{ user.referral_code }}</span>
+    </div>
+
+    <div class="flex flex-col sm:flex-row gap-2">
+      <input id="ref-link-box" type="text" readonly value="{{ request.base_url }}signup?ref={{ user.referral_code }}"
+             class="flex-1 bg-emerald-50 border border-emerald-200 rounded-2xl px-3.5 py-2.5 text-xs font-semibold text-emerald-950 focus:outline-none" />
+      <button id="refer-copy-btn" onclick="copyText(document.getElementById('ref-link-box').value, 'refer-copy-btn')"
+              class="bg-emerald-900 hover:bg-emerald-800 text-white px-5 py-2.5 rounded-2xl text-xs font-extrabold shrink-0 shadow transition">
+        <i class="fa-solid fa-copy mr-1"></i> লিংক কপি
+      </button>
+    </div>
+
+    <div class="flex items-center gap-2 pt-1">
+      <a href="https://wa.me/?text={{ ('InfinityWork-এ জয়েন করে ফ্রি ১০৳ বোনাস নিন ও প্রতিদিন আয় করুন: ' ~ request.base_url ~ 'signup?ref=' ~ user.referral_code)|urlencode }}" target="_blank"
+         class="flex-1 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-900 py-2 rounded-xl text-xs font-bold text-center">
+        <i class="fa-brands fa-whatsapp text-green-600 mr-1"></i> WhatsApp শেয়ার
+      </a>
+      <a href="https://t.me/share/url?url={{ (request.base_url ~ 'signup?ref=' ~ user.referral_code)|urlencode }}&text={{ 'InfinityWork-এ জয়েন করে ১০৳ বোনাস নিন!'|urlencode }}" target="_blank"
+         class="flex-1 bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-900 py-2 rounded-xl text-xs font-bold text-center">
+        <i class="fa-brands fa-telegram text-sky-600 mr-1"></i> Telegram শেয়ার
+      </a>
+    </div>
+  </div>
+
+  <!-- How to Refer: Step by Step -->
+  <div class="soft-card rounded-3xl p-5 space-y-4">
+    <h2 class="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
+      <i class="fa-solid fa-shoe-prints text-emerald-700"></i> কীভাবে রেফার করবেন? (Step by Step)
+    </h2>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+      <div class="bg-emerald-50/70 border border-emerald-100 rounded-2xl p-3.5 flex items-start gap-3">
+        <span class="w-7 h-7 rounded-full bg-emerald-900 text-white font-extrabold flex items-center justify-center shrink-0">১</span>
+        <div>
+          <div class="font-extrabold text-emerald-950">লিংক কপি করুন</div>
+          <p class="text-emerald-800/85 mt-0.5">ওপরের "লিংক কপি" বাটনে ক্লিক করে আপনার ইউনিক রেফারেল লিংকটি কপি করুন।</p>
+        </div>
+      </div>
+      <div class="bg-emerald-50/70 border border-emerald-100 rounded-2xl p-3.5 flex items-start gap-3">
+        <span class="w-7 h-7 rounded-full bg-emerald-900 text-white font-extrabold flex items-center justify-center shrink-0">২</span>
+        <div>
+          <div class="font-extrabold text-emerald-950">বন্ধুদের শেয়ার করুন</div>
+          <p class="text-emerald-800/85 mt-0.5">আপনার বন্ধু, ফেসবুক গ্রুপ, হোয়াটসঅ্যাপ বা টেলিগ্রামে লিংকটি শেয়ার করুন।</p>
+        </div>
+      </div>
+      <div class="bg-emerald-50/70 border border-emerald-100 rounded-2xl p-3.5 flex items-start gap-3">
+        <span class="w-7 h-7 rounded-full bg-emerald-900 text-white font-extrabold flex items-center justify-center shrink-0">৩</span>
+        <div>
+          <div class="font-extrabold text-emerald-950">সাইনআপ করলেই বোনাস</div>
+          <p class="text-emerald-800/85 mt-0.5">আপনার বন্ধু লিংক থেকে অ্যাকাউন্ট খুললেই আপনি <b>{{ "%.0f"|format(owner_bonus) }}৳</b> এবং বন্ধু <b>{{ "%.0f"|format(friend_bonus) }}৳</b> পাবে।</p>
+        </div>
+      </div>
+      <div class="bg-emerald-50/70 border border-emerald-100 rounded-2xl p-3.5 flex items-start gap-3">
+        <span class="w-7 h-7 rounded-full bg-emerald-900 text-white font-extrabold flex items-center justify-center shrink-0">৪</span>
+        <div>
+          <div class="font-extrabold text-emerald-950">উইথড্র আনলক করুন</div>
+          <p class="text-emerald-800/85 mt-0.5">মোট ৪টি রেফার ও ৩৫০৳ ব্যালেন্স হলেই ০% চার্জে টাকা উত্তোলন করতে পারবেন।</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Refer Tips Card -->
+  <div class="soft-card rounded-3xl p-5 space-y-3 bg-gradient-to-br from-amber-50/70 to-white border-amber-200/70">
+    <h2 class="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
+      <i class="fa-solid fa-lightbulb text-amber-500"></i> দ্রুত রেফার বাড়ানোর প্রো টিপস
+    </h2>
+    <ul class="space-y-2 text-xs text-emerald-900 font-medium">
+      <li class="flex items-start gap-2">
+        <i class="fa-solid fa-check-circle text-emerald-600 mt-0.5"></i>
+        <span><b>ফ্রেন্ড ও স্টুডেন্ট সার্কেল:</b> আপনার পরিচিত সহপাঠী বা বন্ধুদের জানান যে জয়েন করলেই ১০৳ ফ্রি বোনাস পাওয়া যায়।</span>
+      </li>
+      <li class="flex items-start gap-2">
+        <i class="fa-solid fa-check-circle text-emerald-600 mt-0.5"></i>
+        <span><b>সোশ্যাল মিডিয়া শর্টস/রিলস:</b> TikTok বা Facebook Reels-এ কাজ করার স্ক্রিন রেকর্ডিং দিয়ে কমেন্ট বা বায়োতে রেফার লিংক দিন।</span>
+      </li>
+      <li class="flex items-start gap-2">
+        <i class="fa-solid fa-check-circle text-emerald-600 mt-0.5"></i>
+        <span><b>আর্নিং গ্রুপ ও স্ট্যাটাস:</b> WhatsApp স্ট্যাটাস এবং Facebook অনলাইন ইনকাম গ্রুপে আপনার ইনকাম হিস্টোরির স্ক্রিনশটসহ পোস্ট করুন।</span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Refer History List -->
+  <div class="soft-card rounded-3xl p-5 space-y-3">
+    <div class="flex items-center justify-between">
+      <h2 class="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
+        <i class="fa-solid fa-clock-rotate-left text-emerald-700"></i> রেফার হিস্টোরি (Refer History)
+      </h2>
+      <span class="text-xs font-bold text-emerald-700">{{ referral_count }} জন</span>
+    </div>
+
+    {% if referrals %}
+    <div class="divide-y divide-emerald-100">
+      {% for r in referrals %}
+      <div class="py-3 flex items-center justify-between gap-3 text-xs">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-900 font-extrabold flex items-center justify-center shrink-0">
+            {{ r.name[0]|upper }}
+          </div>
+          <div class="min-w-0">
+            <div class="font-extrabold text-emerald-950 truncate">{{ r.name }}</div>
+            <div class="text-[11px] text-emerald-700">জয়েন: {{ r.created_at[:10] }}</div>
+          </div>
+        </div>
+        <div class="text-right shrink-0">
+          <div class="font-extrabold text-emerald-700">+৳{{ "%.2f"|format(owner_bonus) }}</div>
+          <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Verified</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="py-6 text-center space-y-1.5">
+      <div class="text-2xl text-emerald-600"><i class="fa-solid fa-user-plus"></i></div>
+      <p class="text-xs font-bold text-emerald-900">এখনো কেউ আপনার রেফারে জয়েন করেনি।</p>
+      <p class="text-[11px] text-emerald-700">উপরের লিংকটি কপি করে শেয়ার করা শুরু করুন!</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Refer Rules Popup Modal -->
+<div id="refer-rules-modal" class="hidden fixed inset-0 z-50 bg-emerald-950/55 backdrop-blur-xs flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-emerald-100 space-y-4">
+    <div class="flex items-center justify-between border-b border-emerald-100 pb-3">
+      <h3 class="font-extrabold text-base text-emerald-950">
+        <i class="fa-solid fa-scale-balanced text-emerald-700 mr-1.5"></i> রেফার করার নিয়মাবলি
+      </h3>
+      <button onclick="toggleRulesModal(false)" class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-900 flex items-center justify-center font-bold">✕</button>
+    </div>
+
+    <div class="space-y-2.5 text-xs text-emerald-900 leading-relaxed">
+      <div class="bg-emerald-50/70 p-3 rounded-2xl flex items-start gap-2.5">
+        <i class="fa-solid fa-mobile-screen-button text-emerald-700 mt-0.5"></i>
+        <span><b>এক ডিভাইসে একটি অ্যাকাউন্ট:</b> একই মোবাইল বা ডিভাইস দিয়ে একাধিক অ্যাকাউন্ট খুলে সেলফ-রেফার করা সম্পূর্ণ নিষিদ্ধ।</span>
+      </div>
+      <div class="bg-emerald-50/70 p-3 rounded-2xl flex items-start gap-2.5">
+        <i class="fa-solid fa-gift text-emerald-700 mt-0.5"></i>
+        <span><b>রেফার বোনাস:</b> আপনার লিংক বা কোড ব্যবহার করে নতুন ইউজার সাইনআপ করলেই আপনি <b>{{ "%.0f"|format(owner_bonus) }}৳</b> এবং নতুন ইউজার <b>{{ "%.0f"|format(friend_bonus) }}৳</b> পাবেন।</span>
+      </div>
+      <div class="bg-emerald-50/70 p-3 rounded-2xl flex items-start gap-2.5">
+        <i class="fa-solid fa-wallet text-emerald-700 mt-0.5"></i>
+        <span><b>উইথড্র শর্ত:</b> উইথড্র আনলক করতে কমপক্ষে ৪টি ভেরিফায়েড রেফার থাকতে হবে।</span>
+      </div>
+      <div class="bg-red-50 p-3 rounded-2xl flex items-start gap-2.5 text-red-800">
+        <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
+        <span><b>ফেক রেফার শাস্তি:</b> বট, টেম্প-মেইল বা ভুয়া পদ্ধতিতে রেফার করলে অ্যাকাউন্ট সাসপেন্ড করা হতে পারে।</span>
+      </div>
+    </div>
+
+    <button onclick="toggleRulesModal(false)" class="w-full bg-emerald-900 text-white py-3 rounded-full font-bold text-xs shadow">
+      নিয়মাবলি বুঝেছি ✓
+    </button>
+  </div>
+</div>
+
+<script>
+function toggleRulesModal(show) {
+  const modal = document.getElementById("refer-rules-modal");
+  if (modal) modal.classList.toggle("hidden", !show);
+}
+</script>
+{% endblock %}
