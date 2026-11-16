@@ -14,18 +14,35 @@
   .welcome-popup-card {
     animation: popupSpring 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards, shimmerBorder 3s infinite ease-in-out;
   }
+  .app-glass {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(14px);
+    border: 1px solid #d1fae5;
+    box-shadow: 0 12px 32px -10px rgba(13, 74, 43, 0.08);
+  }
+  .app-tile {
+    background: #ffffff;
+    border: 1px solid #dcfce7;
+    box-shadow: 0 8px 20px -10px rgba(13, 74, 43, 0.08);
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .app-tile:hover {
+    transform: translateY(-2px);
+    border-color: #6ee7b7;
+    box-shadow: 0 14px 26px -10px rgba(13, 74, 43, 0.14);
+  }
 </style>
 
 <div class="space-y-5">
-  <!-- 1. PREMIUM WALLET HERO CARD -->
-  <div class="rounded-[2rem] bg-gradient-to-br from-emerald-800 via-emerald-900 to-emerald-950 text-white p-6 shadow-2xl relative overflow-hidden">
-    <div class="absolute -right-10 -top-10 w-44 h-44 rounded-full bg-emerald-400/15 blur-2xl pointer-events-none"></div>
-    <div class="absolute -left-8 -bottom-10 w-36 h-36 rounded-full bg-teal-400/10 blur-2xl pointer-events-none"></div>
+  <!-- 1. LIGHT MINT SAAS HERO WALLET CARD (Matching Root / Theme + Vector SVG) -->
+  <section class="app-glass rounded-[2rem] p-5 sm:p-6 relative overflow-hidden bg-gradient-to-br from-white via-emerald-50/60 to-teal-50/70">
+    <div class="w-56 h-56 rounded-full bg-emerald-200/35 blur-3xl -top-16 -right-12 absolute pointer-events-none"></div>
 
-    <div class="relative z-10 space-y-4">
-      <div class="flex items-start justify-between gap-3">
-        <div class="flex items-center gap-3 min-w-0">
-          <div class="w-12 h-12 rounded-2xl bg-white/15 border border-white/25 overflow-hidden flex items-center justify-center font-extrabold text-lg shrink-0">
+    <div class="relative z-10 grid grid-cols-12 gap-4 items-center">
+      <div class="col-span-8 sm:col-span-8 space-y-3">
+        <!-- User Greeting + Level Pill -->
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="w-9 h-9 rounded-full overflow-hidden border-2 border-emerald-300 bg-emerald-900 text-white flex items-center justify-center font-extrabold text-sm shrink-0">
             {% if user.avatar_url %}
             <img src="{{ user.avatar_url }}" alt="{{ user.name }}" class="w-full h-full object-cover" />
             {% else %}
@@ -33,183 +50,272 @@
             {% endif %}
           </div>
           <div class="min-w-0">
-            <p class="text-xs text-emerald-200 font-semibold">স্বাগতম ফিরে আসায়,</p>
-            <h1 class="text-lg font-extrabold truncate">{{ user.name }}</h1>
+            <div class="text-[11px] font-bold text-emerald-700 leading-none">স্বাগতম,</div>
+            <div class="font-extrabold text-sm sm:text-base text-emerald-950 truncate">{{ user.name }}</div>
           </div>
+          <a href="/profile" class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-900 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold">
+            <i class="fa-solid {{ level.icon }} text-emerald-700"></i> {{ level.name }}
+          </a>
         </div>
 
-        <a href="/profile" class="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 border border-white/20 px-3 py-1.5 rounded-full text-[11px] font-extrabold text-yellow-300 shrink-0">
-          <i class="fa-solid {{ level.icon }}"></i> {{ level.name }}
-        </a>
+        <!-- Balance Display -->
+        <div>
+          <span class="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">বর্তমান ব্যালেন্স</span>
+          <h1 class="text-3xl sm:text-4xl font-extrabold text-emerald-950 tracking-tight">৳{{ "%.2f"|format(user.balance) }}</h1>
+        </div>
+
+        <!-- Primary Pill Actions -->
+        <div class="flex flex-wrap items-center gap-2 pt-0.5">
+          <a href="/payout" class="bg-gradient-to-r from-emerald-700 to-emerald-950 text-white px-5 py-2.5 rounded-full text-xs font-extrabold shadow-md shadow-emerald-900/20 inline-flex items-center gap-1.5">
+            <i class="fa-solid fa-wallet"></i> উইথড্র করুন
+          </a>
+          <a href="/work" class="bg-white border border-emerald-200 hover:bg-emerald-50 text-emerald-950 px-4 py-2.5 rounded-full text-xs font-extrabold inline-flex items-center gap-1.5">
+            <i class="fa-solid fa-bolt text-amber-500"></i> কাজ করুন
+          </a>
+        </div>
       </div>
 
-      <div class="flex flex-wrap items-end justify-between gap-4 pt-1">
-        <div>
-          <div class="text-[11px] text-emerald-200 font-semibold uppercase tracking-wider">বর্তমান ব্যালেন্স</div>
-          <div class="text-3xl sm:text-4xl font-extrabold tracking-tight mt-0.5">৳{{ "%.2f"|format(user.balance) }}</div>
-          <div class="text-xs text-emerald-200/90 mt-1 flex items-center gap-3">
-            <span><i class="fa-solid fa-coins text-yellow-300 mr-1"></i>মোট আয়: ৳{{ "%.2f"|format(user.total_earned) }}</span>
-            <span><i class="fa-solid fa-users text-emerald-300 mr-1"></i>রেফার: {{ referral_count }}</span>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <a href="/history" class="bg-white/15 hover:bg-white/25 border border-white/20 text-white px-4 py-2.5 rounded-full text-xs font-extrabold transition">
-            <i class="fa-solid fa-clock-rotate-left mr-1"></i> হিস্টোরি
-          </a>
-          <a href="/payout" class="bg-yellow-300 hover:bg-yellow-200 text-emerald-950 px-5 py-2.5 rounded-full text-xs font-extrabold shadow-lg transition">
-            <i class="fa-solid fa-wallet mr-1"></i> উইথড্র
-          </a>
-        </div>
+      <!-- Right Flat Vector SVG Wallet Graphic -->
+      <div class="col-span-4 flex justify-end">
+        <svg viewBox="0 0 140 140" class="w-24 h-24 sm:w-32 sm:h-32 drop-shadow-sm" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="70" cy="70" r="62" fill="#d1fae5" />
+          <rect x="26" y="42" width="88" height="62" rx="16" fill="#064e3b" />
+          <rect x="26" y="42" width="88" height="20" rx="12" fill="#059669" />
+          <rect x="78" y="62" width="40" height="24" rx="10" fill="#10b981" />
+          <circle cx="92" cy="74" r="5" fill="#fde047" />
+          <!-- Floating Taka Coin -->
+          <circle cx="52" cy="34" r="18" fill="#fde047" stroke="#ffffff" stroke-width="3" />
+          <text x="52" y="40" text-anchor="middle" fill="#064e3b" font-size="18" font-weight="800" font-family="sans-serif">৳</text>
+        </svg>
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- 2. RUNNING ৳8,000 EVENT PROMO STRIP -->
-  <a href="/event" class="block rounded-3xl bg-gradient-to-r from-amber-100 via-yellow-50 to-emerald-50 border border-amber-300 p-4 shadow-sm hover:shadow-md transition">
-    <div class="flex items-center justify-between gap-3">
-      <div class="flex items-center gap-3 min-w-0">
-        <div class="w-11 h-11 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-lg shrink-0 shadow">
-          <i class="fa-solid fa-fire animate-pulse"></i>
+  <!-- 2. INFOGRAPHIC STATS STRIP (Matching Root / Stats Bar) -->
+  <section class="app-glass rounded-3xl p-4 grid grid-cols-3 divide-x divide-emerald-100 text-center">
+    <div class="px-1">
+      <div class="text-xs sm:text-sm font-extrabold text-emerald-950">৳{{ "%.2f"|format(user.total_earned) }}</div>
+      <div class="text-[10px] sm:text-[11px] text-emerald-700 font-semibold mt-0.5"><i class="fa-solid fa-coins text-amber-500 mr-1"></i>মোট আয়</div>
+    </div>
+    <div class="px-1">
+      <div class="text-xs sm:text-sm font-extrabold text-emerald-950">{{ referral_count }} জন</div>
+      <div class="text-[10px] sm:text-[11px] text-emerald-700 font-semibold mt-0.5"><i class="fa-solid fa-users text-emerald-600 mr-1"></i>সফল রেফার</div>
+    </div>
+    <div class="px-1">
+      <div class="text-xs sm:text-sm font-extrabold text-emerald-700">০% ফি</div>
+      <div class="text-[10px] sm:text-[11px] text-emerald-700 font-semibold mt-0.5"><i class="fa-solid fa-shield-check text-teal-600 mr-1"></i>ফ্রি পেমেন্ট</div>
+    </div>
+  </section>
+
+  <!-- 3. SLEEK MODERN APP QUICK NAV GRID (Important Routes) -->
+  <section class="space-y-3">
+    <div class="flex items-center justify-between px-1">
+      <h2 class="font-extrabold text-sm text-emerald-950 flex items-center gap-1.5">
+        <span class="w-2 h-5 rounded-full bg-emerald-700 inline-block"></span>
+        <span>কুইক মেনু ও কাজসমূহ</span>
+      </h2>
+      <a href="/work" class="text-xs font-extrabold text-emerald-700 hover:text-emerald-900">সব কাজ দেখুন →</a>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <a href="/task" class="app-tile rounded-2xl p-3.5 flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-lg shrink-0">
+          <i class="fa-solid fa-list-check"></i>
         </div>
         <div class="min-w-0">
-          <div class="flex items-center gap-1.5">
-            <span class="font-extrabold text-sm text-emerald-950 truncate">৳৮,০০০ মেগা রেফার ইভেন্ট!</span>
-            <span class="bg-red-600 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full">LIVE</span>
-          </div>
-          <p class="text-[11px] text-amber-900 font-semibold truncate">৭২ ঘণ্টায় ৭০+ অ্যাক্টিভ মেম্বার রেফারে ইনস্ট্যান্ট বোনাস</p>
+          <div class="font-extrabold text-xs text-emerald-950 truncate">Micro Task</div>
+          <div class="text-[10px] text-emerald-700 font-semibold truncate">সহজ ছোট কাজ</div>
         </div>
+      </a>
+
+      <a href="/work/ai-image" class="app-tile rounded-2xl p-3.5 flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center text-lg shrink-0">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="font-extrabold text-xs text-emerald-950 truncate">ChatGPT Img</div>
+          <div class="text-[10px] text-purple-700 font-semibold truncate">AI ছবি বানান</div>
+        </div>
+      </a>
+
+      <a href="/work/typing" class="app-tile rounded-2xl p-3.5 flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-sky-100 text-sky-700 flex items-center justify-center text-lg shrink-0">
+          <i class="fa-solid fa-keyboard"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="font-extrabold text-xs text-emerald-950 truncate">Typing Task</div>
+          <div class="text-[10px] text-sky-700 font-semibold truncate">দেখে টাইপ করুন</div>
+        </div>
+      </a>
+
+      <a href="/work/cube-game" class="app-tile rounded-2xl p-3.5 flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-lg shrink-0">
+          <i class="fa-solid fa-cubes"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="font-extrabold text-xs text-emerald-950 truncate">Cube Game</div>
+          <div class="text-[10px] text-amber-700 font-semibold truncate">খেলে আয় করুন</div>
+        </div>
+      </a>
+
+      <a href="/refer" class="app-tile rounded-2xl p-3.5 flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-teal-100 text-teal-700 flex items-center justify-center text-lg shrink-0">
+          <i class="fa-solid fa-users"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="font-extrabold text-xs text-emerald-950 truncate">Refer & Earn</div>
+          <div class="text-[10px] text-teal-700 font-semibold truncate">প্রতি রেফার ৮৳</div>
+        </div>
+      </a>
+
+      <a href="/leaderboard" class="app-tile rounded-2xl p-3.5 flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-yellow-100 text-amber-600 flex items-center justify-center text-lg shrink-0">
+          <i class="fa-solid fa-trophy"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="font-extrabold text-xs text-emerald-950 truncate">Leaderboard</div>
+          <div class="text-[10px] text-amber-700 font-semibold truncate">টপ আর্নার লিস্ট</div>
+        </div>
+      </a>
+
+      <a href="/notice" class="app-tile rounded-2xl p-3.5 flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-lg shrink-0">
+          <i class="fa-solid fa-bullhorn"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="font-extrabold text-xs text-emerald-950 truncate">Notice Board</div>
+          <div class="text-[10px] text-rose-600 font-semibold truncate">নতুন আপডেট</div>
+        </div>
+      </a>
+
+      <a href="/history" class="app-tile rounded-2xl p-3.5 flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-center text-lg shrink-0">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="font-extrabold text-xs text-emerald-950 truncate">History</div>
+          <div class="text-[10px] text-emerald-700 font-semibold truncate">আয়ের হিসাব</div>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- 4. INFOGRAPHIC 3-STEP FLOW STRIP (Matching Root / "কিভাবে কাজ করবেন?") -->
+  <section class="rounded-3xl bg-gradient-to-r from-emerald-100/85 via-emerald-50 to-teal-100/75 border border-emerald-200 p-5 space-y-3">
+    <div class="flex items-center justify-between">
+      <h3 class="font-extrabold text-xs sm:text-sm text-emerald-950">কীভাবে দ্রুত আয় বাড়াবেন?</h3>
+      <span class="text-[10px] font-extrabold bg-white px-2.5 py-0.5 rounded-full text-emerald-800">৩ সহজ ধাপ</span>
+    </div>
+    <div class="grid grid-cols-3 gap-2 text-center text-[11px] font-bold text-emerald-950">
+      <div class="bg-white/90 rounded-2xl p-3 shadow-xs space-y-1.5">
+        <div class="w-8 h-8 mx-auto rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center"><i class="fa-solid fa-hand-pointer"></i></div>
+        <div>১. কাজ বাছুন</div>
       </div>
-      <span class="bg-emerald-900 text-white px-3.5 py-2 rounded-full text-[11px] font-extrabold shrink-0">দেখুন →</span>
+      <div class="bg-white/90 rounded-2xl p-3 shadow-xs space-y-1.5">
+        <div class="w-8 h-8 mx-auto rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center"><i class="fa-solid fa-check-double"></i></div>
+        <div>২. জমা দিন</div>
+      </div>
+      <div class="bg-emerald-900 text-white rounded-2xl p-3 shadow-xs space-y-1.5">
+        <div class="w-8 h-8 mx-auto rounded-full bg-white/15 text-yellow-300 flex items-center justify-center"><i class="fa-solid fa-wallet"></i></div>
+        <div>৩. ফ্রি পেমেন্ট</div>
+      </div>
     </div>
-  </a>
+  </section>
 
-  <!-- 3. ALL IMPORTANT QUICK NAV GRID -->
-  <div class="space-y-2.5">
-    <div class="flex items-center justify-between px-1">
-      <h2 class="font-extrabold text-sm text-emerald-950"><i class="fa-solid fa-grid-2 text-emerald-700 mr-1.5"></i>কুইক নেভিগেশন</h2>
-      <a href="/work" class="text-xs font-bold text-emerald-700">সব কাজ →</a>
-    </div>
-
-    <div class="grid grid-cols-4 gap-2.5 text-center">
-      <a href="/task" class="soft-card rounded-2xl p-3 hover:border-emerald-400 transition space-y-1.5">
-        <div class="w-10 h-10 mx-auto rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-base"><i class="fa-solid fa-list-check"></i></div>
-        <div class="text-[11px] font-extrabold text-emerald-950 truncate">Micro Task</div>
-      </a>
-
-      <a href="/work/ai-image" class="soft-card rounded-2xl p-3 hover:border-purple-400 transition space-y-1.5">
-        <div class="w-10 h-10 mx-auto rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center text-base"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
-        <div class="text-[11px] font-extrabold text-emerald-950 truncate">AI Image</div>
-      </a>
-
-      <a href="/work/typing" class="soft-card rounded-2xl p-3 hover:border-sky-400 transition space-y-1.5">
-        <div class="w-10 h-10 mx-auto rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center text-base"><i class="fa-solid fa-keyboard"></i></div>
-        <div class="text-[11px] font-extrabold text-emerald-950 truncate">Typing</div>
-      </a>
-
-      <a href="/work/cube-game" class="soft-card rounded-2xl p-3 hover:border-amber-400 transition space-y-1.5">
-        <div class="w-10 h-10 mx-auto rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-base"><i class="fa-solid fa-cubes"></i></div>
-        <div class="text-[11px] font-extrabold text-emerald-950 truncate">Cube Game</div>
-      </a>
-
-      <a href="/refer" class="soft-card rounded-2xl p-3 hover:border-teal-400 transition space-y-1.5">
-        <div class="w-10 h-10 mx-auto rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center text-base"><i class="fa-solid fa-users"></i></div>
-        <div class="text-[11px] font-extrabold text-emerald-950 truncate">Refer</div>
-      </a>
-
-      <a href="/leaderboard" class="soft-card rounded-2xl p-3 hover:border-amber-400 transition space-y-1.5">
-        <div class="w-10 h-10 mx-auto rounded-xl bg-yellow-100 text-amber-600 flex items-center justify-center text-base"><i class="fa-solid fa-trophy"></i></div>
-        <div class="text-[11px] font-extrabold text-emerald-950 truncate">Top Earners</div>
-      </a>
-
-      <a href="/notice" class="soft-card rounded-2xl p-3 hover:border-rose-300 transition space-y-1.5">
-        <div class="w-10 h-10 mx-auto rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-base"><i class="fa-solid fa-bullhorn"></i></div>
-        <div class="text-[11px] font-extrabold text-emerald-950 truncate">Notice</div>
-      </a>
-
-      <a href="/history" class="soft-card rounded-2xl p-3 hover:border-emerald-400 transition space-y-1.5">
-        <div class="w-10 h-10 mx-auto rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-center text-base"><i class="fa-solid fa-clock-rotate-left"></i></div>
-        <div class="text-[11px] font-extrabold text-emerald-950 truncate">History</div>
-      </a>
-    </div>
-  </div>
-
-  <!-- 4. REFERRAL QUICK SHARE CARD -->
-  <div class="soft-card rounded-3xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-    <div>
-      <h3 class="font-extrabold text-sm text-emerald-950"><i class="fa-solid fa-gift text-emerald-700 mr-1"></i>বন্ধুদের রেফার করে আয় করুন!</h3>
-      <p class="text-xs text-emerald-700">প্রতি রেফারে আপনি পাবেন <b>৮৳</b> এবং আপনার বন্ধু পাবে <b>১০৳</b></p>
+  <!-- 5. REFERRAL QUICK INVITE CARD -->
+  <section class="app-glass rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div class="flex items-center gap-3">
+      <div class="w-11 h-11 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-lg shrink-0">
+        <i class="fa-solid fa-share-nodes"></i>
+      </div>
+      <div>
+        <h3 class="font-extrabold text-sm text-emerald-950">বন্ধুকে রেফার করে আয় করুন!</h3>
+        <p class="text-xs text-emerald-700">আপনি পাবেন <b>৮৳</b> ও আপনার বন্ধু পাবে <b>১০৳</b></p>
+      </div>
     </div>
     <div class="flex items-center gap-2">
       <code class="bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl text-xs font-extrabold text-emerald-950">{{ user.referral_code }}</code>
       <button id="copy-ref-btn" onclick="copyText('{{ request.base_url }}signup?ref={{ user.referral_code }}', 'copy-ref-btn')"
-              class="bg-emerald-900 hover:bg-emerald-800 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold">লিংক কপি</button>
+              class="bg-emerald-900 hover:bg-emerald-800 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-xs">
+        <i class="fa-solid fa-copy mr-1"></i> কপি
+      </button>
     </div>
-  </div>
+  </section>
 
-  <!-- 5. RECENT ACTIVITY -->
-  <div class="soft-card rounded-3xl p-5 space-y-3">
+  <!-- 6. RECENT ACTIVITY -->
+  <section class="app-glass rounded-3xl p-5 space-y-3">
     <div class="flex items-center justify-between">
-      <h3 class="font-extrabold text-sm text-emerald-950"><i class="fa-solid fa-bolt text-amber-500 mr-1"></i>সাম্প্রতিক কার্যক্রম</h3>
-      <a href="/history" class="text-xs font-bold text-emerald-700">সব হিস্টোরি →</a>
+      <h3 class="font-extrabold text-sm text-emerald-950"><i class="fa-solid fa-bolt text-amber-500 mr-1.5"></i>সাম্প্রতিক কার্যক্রম</h3>
+      <a href="/history" class="text-xs font-extrabold text-emerald-700">সব হিস্টোরি →</a>
     </div>
     {% if recent_logs %}
     <div class="divide-y divide-emerald-100">
       {% for log in recent_logs %}
       <div class="py-2.5 flex items-center justify-between text-xs">
-        <div>
-          <div class="font-bold text-emerald-950">{{ log.work_type }}</div>
-          <div class="text-emerald-700/80">{{ log.details }}</div>
+        <div class="min-w-0 pr-2">
+          <div class="font-extrabold text-emerald-950 truncate">{{ log.work_type }}</div>
+          <div class="text-emerald-700/85 truncate">{{ log.details }}</div>
         </div>
-        <span class="font-extrabold text-emerald-700">+৳{{ "%.2f"|format(log.reward) }}</span>
+        <span class="font-extrabold text-emerald-700 shrink-0">+৳{{ "%.2f"|format(log.reward) }}</span>
       </div>
       {% endfor %}
     </div>
     {% else %}
-    <p class="text-xs text-emerald-700">এখনো কোনো কাজের হিস্টোরি নেই। ওপরের কাজগুলো দিয়ে শুরু করুন!</p>
+    <p class="text-xs text-emerald-700 py-2">এখনো কোনো কাজের হিস্টোরি নেই। ওপরের কাজগুলো দিয়ে শুরু করুন!</p>
     {% endif %}
-  </div>
+  </section>
 
-  <!-- 6. LAST AREA: 2 IMPORTANT CTAs (Review & How We Pay You) -->
-  <div class="grid sm:grid-cols-2 gap-3.5 pt-1">
-    <!-- CTA 1: Review -->
-    <a href="/review" class="soft-card rounded-3xl p-5 flex items-center justify-between gap-3 border-amber-200 bg-gradient-to-br from-amber-50/70 to-white hover:-translate-y-0.5 transition group">
-      <div class="flex items-center gap-3.5 min-w-0">
-        <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl shrink-0">
-          <i class="fa-solid fa-star"></i>
-        </div>
-        <div class="min-w-0">
-          <div class="font-extrabold text-sm text-emerald-950">ইউজার রিভিউ ও প্রুফ</div>
-          <p class="text-[11px] text-emerald-700 mt-0.5">সদস্যদের মতামত ও পেমেন্ট প্রুফ দেখুন</p>
+  <!-- 7. LAST 2 RICH CTAs WITH CUSTOM SVG GRAPHICS -->
+  <section class="grid sm:grid-cols-2 gap-4 pt-1">
+    <!-- CTA 1: Review (with Custom Star & Receipt SVG) -->
+    <a href="/review" class="app-glass rounded-3xl p-5 flex items-center justify-between gap-3 border-amber-200 bg-gradient-to-br from-white via-amber-50/50 to-emerald-50/40 hover:-translate-y-0.5 transition group">
+      <div class="space-y-1.5 min-w-0">
+        <span class="inline-block bg-amber-100 text-amber-900 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold">ভেরিফায়েড প্রুফ</span>
+        <h3 class="font-extrabold text-base text-emerald-950">ইউজার রিভিউ ও প্রুফ</h3>
+        <p class="text-[11px] text-emerald-800/80">সদস্যদের মতামত ও আসল পেমেন্ট প্রুফ দেখুন</p>
+        <div class="text-xs font-extrabold text-emerald-800 pt-1 inline-flex items-center gap-1 group-hover:translate-x-1 transition">
+          রিভিউ দেখুন <i class="fa-solid fa-arrow-right text-[10px]"></i>
         </div>
       </div>
-      <span class="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center text-xs shrink-0 group-hover:translate-x-0.5 transition">
-        <i class="fa-solid fa-arrow-right"></i>
-      </span>
+
+      <!-- Custom Review SVG -->
+      <svg viewBox="0 0 100 100" class="w-20 h-20 shrink-0" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="44" fill="#fef3c7" />
+        <rect x="24" y="24" width="52" height="56" rx="12" fill="#ffffff" stroke="#fbbf24" stroke-width="3" />
+        <path d="M50 32l4.5 9.2 10.1 1.5-7.3 7.1 1.7 10.1L50 55.1l-9 4.8 1.7-10.1-7.3-7.1 10.1-1.5z" fill="#f59e0b" />
+        <rect x="34" y="66" width="32" height="5" rx="2.5" fill="#d1fae5" />
+        <circle cx="76" cy="24" r="11" fill="#10b981" />
+        <path d="M71 24l3.5 3.5 6.5-6.5" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
     </a>
 
-    <!-- CTA 2: How We Pay You -->
-    <a href="/about" class="rounded-3xl p-5 flex items-center justify-between gap-3 bg-gradient-to-br from-emerald-800 to-emerald-950 text-white shadow-lg hover:-translate-y-0.5 transition group">
-      <div class="flex items-center gap-3.5 min-w-0">
-        <div class="w-12 h-12 rounded-2xl bg-white/15 text-yellow-300 flex items-center justify-center text-xl shrink-0">
-          <i class="fa-solid fa-hand-holding-dollar"></i>
-        </div>
-        <div class="min-w-0">
-          <div class="font-extrabold text-sm">আমরা কীভাবে আপনাদের টাকা দেবো?</div>
-          <p class="text-[11px] text-emerald-200 mt-0.5">আমাদের ইনকাম ও ফ্রি পেমেন্ট সিস্টেম জানুন</p>
+    <!-- CTA 2: How We Pay You (with Custom Taka Bag & Globe SVG) -->
+    <a href="/about" class="rounded-3xl p-5 flex items-center justify-between gap-3 bg-gradient-to-br from-emerald-800 via-emerald-900 to-emerald-950 text-white shadow-xl hover:-translate-y-0.5 transition group">
+      <div class="space-y-1.5 min-w-0">
+        <span class="inline-block bg-yellow-300 text-emerald-950 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold">১০০% স্বচ্ছ সিস্টেম</span>
+        <h3 class="font-extrabold text-base leading-snug">আমরা কীভাবে আপনাদের টাকা দেবো?</h3>
+        <p class="text-[11px] text-emerald-200">বিদেশি কাজ, ইনভেস্টমেন্ট ও ০% ফ্রি উইথড্র সম্পর্কে জানুন</p>
+        <div class="text-xs font-extrabold text-yellow-300 pt-1 inline-flex items-center gap-1 group-hover:translate-x-1 transition">
+          বিস্তারিত জানুন <i class="fa-solid fa-arrow-right text-[10px]"></i>
         </div>
       </div>
-      <span class="w-8 h-8 rounded-full bg-white text-emerald-950 flex items-center justify-center text-xs shrink-0 group-hover:translate-x-0.5 transition">
-        <i class="fa-solid fa-arrow-right"></i>
-      </span>
+
+      <!-- Custom Money & Trust SVG -->
+      <svg viewBox="0 0 100 100" class="w-20 h-20 shrink-0" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="44" fill="rgba(255,255,255,0.12)" />
+        <path d="M36 30h28l-4 10H40z" fill="#fbbf24" />
+        <path d="M38 40h24c12 10 14 28 8 36-4 5-10 6-20 6s-16-1-20-6c-6-8-4-26 8-36z" fill="#10b981" stroke="#a7f3d0" stroke-width="2.5" />
+        <text x="50" y="69" text-anchor="middle" fill="#fde047" font-size="24" font-weight="800" font-family="sans-serif">৳</text>
+        <circle cx="76" cy="72" r="12" fill="#fde047" />
+        <text x="76" y="76" text-anchor="middle" fill="#064e3b" font-size="11" font-weight="800" font-family="sans-serif">0%</text>
+      </svg>
     </a>
-  </div>
+  </section>
 </div>
 
 <!-- ANIMATED WELCOME BACK + GLOBAL NOTICE POPUP (50% Chance) -->
 <div id="welcome-notice-popup" class="hidden fixed inset-0 z-[70] bg-emerald-950/55 backdrop-blur-sm flex items-center justify-center p-4">
   <div class="welcome-popup-card relative bg-white rounded-[2rem] max-w-sm w-full overflow-hidden border border-emerald-200">
-    <!-- Top Animated Gradient Header -->
     <div class="bg-gradient-to-br from-emerald-700 via-emerald-800 to-emerald-950 p-6 text-white text-center relative overflow-hidden">
       <div class="w-36 h-36 rounded-full bg-emerald-400/20 blur-2xl -top-10 -right-10 absolute pointer-events-none"></div>
       <button onclick="closeWelcomePopup()" class="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center text-sm font-bold transition">
@@ -225,13 +331,11 @@
       <h2 class="text-xl font-extrabold mt-2">Welcome Back, {{ user.name }}!</h2>
     </div>
 
-    <!-- Body: Global Notice from Admin Panel -->
     <div class="p-6 space-y-4 text-center">
       <div class="bg-emerald-50/90 border border-emerald-200 rounded-2xl p-4 text-xs sm:text-sm text-emerald-950 font-semibold leading-relaxed whitespace-pre-line">
         {{ global_notice }}
       </div>
 
-      <!-- 2 Action Buttons: Updates দেখুন & Telegram Channel -->
       <div class="grid grid-cols-2 gap-2.5">
         <a href="/notice" class="bg-emerald-900 hover:bg-emerald-800 text-white py-3 px-3 rounded-2xl text-xs font-extrabold shadow flex items-center justify-center gap-1.5 transition">
           <i class="fa-solid fa-bullhorn"></i> Updates দেখুন
