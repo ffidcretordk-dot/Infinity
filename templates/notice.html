@@ -1,0 +1,147 @@
+{% extends "base_app.html" if user else "base_public.html" %}
+{% block title %}অফিশিয়াল নোটিশ - InfinityWork{% endblock %}
+{% block content %}
+<style>
+  .notice-clamped {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+</style>
+
+<div class="max-w-2xl mx-auto px-3 sm:px-0 pt-2 pb-12 space-y-5">
+  <!-- Header Banner -->
+  <div class="rounded-[2rem] bg-gradient-to-br from-emerald-800 via-emerald-900 to-emerald-950 text-white p-6 shadow-xl relative overflow-hidden">
+    <div class="absolute -right-6 -bottom-6 text-white/5 text-8xl pointer-events-none">
+      <i class="fa-solid fa-bullhorn"></i>
+    </div>
+    <div class="relative z-10 flex items-center justify-between gap-4">
+      <div>
+        <span class="inline-flex items-center gap-1.5 bg-white/15 px-3 py-1 rounded-full text-[11px] font-bold text-yellow-300">
+          <i class="fa-solid fa-bell"></i> অফিশিয়াল ঘোষণা
+        </span>
+        <h1 class="text-2xl font-extrabold mt-2">নোটিশ বোর্ড</h1>
+        <p class="text-xs text-emerald-200 mt-0.5">সকল গুরুত্বপূর্ণ আপডেট, পেমেন্ট ও কাজের নির্দেশনা এখানে পাবেন</p>
+      </div>
+      {% if user and user.is_admin %}
+      <a href="/admin/n" class="bg-white text-emerald-950 px-4 py-2 rounded-full text-xs font-extrabold shadow shrink-0">
+        <i class="fa-solid fa-plus mr-1"></i> পোস্ট করুন
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Notices Feed -->
+  <div class="space-y-4">
+    {% for n in notices %}
+    <article class="soft-card rounded-3xl p-5 sm:p-6 space-y-3.5 {% if n.is_pinned %}border-2 border-emerald-400 bg-gradient-to-b from-emerald-50/60 to-white{% endif %}">
+      <!-- Meta Top Row -->
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          {% if n.is_pinned %}
+          <span class="inline-flex items-center gap-1 bg-emerald-900 text-yellow-300 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold">
+            <i class="fa-solid fa-thumbtack"></i> পিন করা
+          </span>
+          {% endif %}
+          <span class="px-3 py-0.5 rounded-full text-[11px] font-extrabold
+            {% if n.category == 'জরুরি' %}bg-red-100 text-red-700
+            {% elif n.category == 'পেমেন্ট আপডেট' %}bg-amber-100 text-amber-900
+            {% elif n.category == 'নতুন কাজ' %}bg-sky-100 text-sky-900
+            {% else %}bg-emerald-100 text-emerald-900{% endif %}">
+            {{ n.category }}
+          </span>
+        </div>
+
+        <span class="text-[11px] font-semibold text-emerald-700">
+          <i class="fa-regular fa-clock mr-1"></i>{{ (n.created_at or '')[:16].replace('T', ' ') }}
+        </span>
+      </div>
+
+      <!-- Title -->
+      <h2 class="text-lg font-extrabold text-emerald-950 leading-snug">{{ n.title }}</h2>
+
+      <!-- Content with Read More Option -->
+      <div class="space-y-1.5">
+        <p id="notice-text-{{ n.id }}" class="notice-text-el text-xs sm:text-sm text-emerald-900/90 leading-relaxed whitespace-pre-line notice-clamped">{{ n.content }}</p>
+        <button id="notice-btn-{{ n.id }}" onclick="toggleNoticeReadMore({{ n.id }})"
+                class="hidden text-xs font-extrabold text-emerald-700 hover:text-emerald-900 inline-flex items-center gap-1 pt-0.5">
+          <span>আরও পড়ুন</span>
+          <i class="fa-solid fa-chevron-down text-[10px]"></i>
+        </button>
+      </div>
+
+      <!-- Attached Images (1 or Multiple) -->
+      {% if n.image_urls and n.image_urls|length > 0 %}
+      <div class="pt-1">
+        {% if n.image_urls|length == 1 %}
+        <div onclick="openNoticeLightbox('{{ n.image_urls[0] }}')" class="cursor-pointer rounded-2xl overflow-hidden border border-emerald-100 bg-emerald-50">
+          <img src="{{ n.image_urls[0] }}" alt="{{ n.title }}" class="w-full max-h-80 object-cover hover:scale-[1.01] transition" />
+        </div>
+        {% else %}
+        <div class="grid grid-cols-2 gap-2">
+          {% for img_url in n.image_urls %}
+          <div onclick="openNoticeLightbox('{{ img_url }}')" class="cursor-pointer rounded-2xl overflow-hidden border border-emerald-100 bg-emerald-50 h-40">
+            <img src="{{ img_url }}" alt="{{ n.title }}" class="w-full h-full object-cover hover:scale-105 transition duration-300" />
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <div class="text-[10px] text-emerald-700 font-semibold mt-1.5 flex items-center gap-1">
+          <i class="fa-solid fa-magnifying-glass-plus"></i> বড় করে দেখতে ছবির ওপর ট্যাপ করুন ({{ n.image_urls|length }} টি ছবি)
+        </div>
+      </div>
+      {% endif %}
+    </article>
+    {% else %}
+    <div class="soft-card rounded-3xl p-10 text-center space-y-2">
+      <div class="text-3xl text-emerald-600"><i class="fa-solid fa-bell-slash"></i></div>
+      <p class="text-sm font-extrabold text-emerald-950">এই মুহূর্তে কোনো নতুন নোটিশ নেই</p>
+      <p class="text-xs text-emerald-700">নতুন কোনো ঘোষণা এলে এখানে দেখতে পাবেন।</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Image Zoom Lightbox Modal -->
+<div id="notice-lightbox" onclick="closeNoticeLightbox()" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-xs flex items-center justify-center p-4">
+  <button onclick="closeNoticeLightbox()" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 text-white font-bold text-lg">✕</button>
+  <img id="notice-lightbox-img" src="" alt="Preview" class="max-w-full max-h-[88vh] rounded-2xl shadow-2xl object-contain" onclick="event.stopPropagation()" />
+</div>
+
+<script>
+// Show "আরও পড়ুন" button only on notices whose text actually overflows 3 lines
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll(".notice-text-el").forEach((el) => {
+    const id = el.id.replace("notice-text-", "");
+    const btn = document.getElementById(`notice-btn-${id}`);
+    if (btn && el.scrollHeight > el.clientHeight + 4) {
+      btn.classList.remove("hidden");
+    }
+  });
+});
+
+function toggleNoticeReadMore(id) {
+  const el = document.getElementById(`notice-text-${id}`);
+  const btn = document.getElementById(`notice-btn-${id}`);
+  if (!el || !btn) return;
+
+  const isClamped = el.classList.contains("notice-clamped");
+  if (isClamped) {
+    el.classList.remove("notice-clamped");
+    btn.innerHTML = '<span>সংক্ষেপ করুন</span> <i class="fa-solid fa-chevron-up text-[10px]"></i>';
+  } else {
+    el.classList.add("notice-clamped");
+    btn.innerHTML = '<span>আরও পড়ুন</span> <i class="fa-solid fa-chevron-down text-[10px]"></i>';
+  }
+}
+
+function openNoticeLightbox(src) {
+  document.getElementById("notice-lightbox-img").src = src;
+  document.getElementById("notice-lightbox").classList.remove("hidden");
+}
+function closeNoticeLightbox() {
+  document.getElementById("notice-lightbox").classList.add("hidden");
+}
+</script>
+{% endblock %}
