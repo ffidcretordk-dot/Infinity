@@ -1,0 +1,357 @@
+{% extends "base_app.html" if user else "base_public.html" %}
+{% block title %}৳৮,০০০ মেগা রেফার ইভেন্ট (৭২ ঘণ্টার চ্যালেঞ্জ) - InfinityWork{% endblock %}
+{% block content %}
+<style>
+  @keyframes floatFlat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-7px); }
+  }
+  .flat-float { animation: floatFlat 3.8s ease-in-out infinite; }
+  .flat-card {
+    background: #ffffff;
+    border: 2px solid #d1fae5;
+    box-shadow: 0 10px 0 #d1fae5;
+  }
+  .flat-card-amber {
+    background: #fffbeb;
+    border: 2px solid #fde68a;
+    box-shadow: 0 8px 0 #fde68a;
+  }
+  .flat-card-dark {
+    background: #064e3b;
+    border: 2px solid #047857;
+    box-shadow: 0 10px 0 #022c22;
+  }
+</style>
+
+<div class="max-w-5xl mx-auto px-3 sm:px-4 pt-3 pb-14 space-y-10">
+  <!-- Top Bar -->
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <a href="{{ '/refer' if user else '/' }}" class="inline-flex items-center gap-2 bg-white border-2 border-emerald-200 hover:bg-emerald-50 text-emerald-950 px-4 py-2 rounded-full text-xs font-extrabold transition">
+      <i class="fa-solid fa-arrow-left"></i> {{ 'রেফার পেজে ফিরুন' if user else 'হোমে ফিরুন' }}
+    </a>
+
+    <div class="inline-flex items-center gap-2 bg-emerald-950 text-white px-4 py-2 rounded-full text-xs font-extrabold">
+      <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
+      <span>চলমান মেগা ইভেন্ট • শেষ তারিখ: ২৬/১১/২০২৬</span>
+    </div>
+  </div>
+
+  <!-- HERO SECTION (Landing-Style Flat Infographic) -->
+  <section class="rounded-[2.2rem] bg-gradient-to-br from-emerald-50 via-white to-teal-50 border-2 border-emerald-200 p-6 sm:p-10 relative overflow-hidden">
+    <div class="grid md:grid-cols-12 gap-8 items-center">
+      <!-- Left Copy -->
+      <div class="md:col-span-7 space-y-5 text-center md:text-left">
+        <div class="inline-flex items-center gap-2 bg-amber-100 border-2 border-amber-300 text-amber-950 px-4 py-1.5 rounded-full text-xs font-extrabold">
+          <i class="fa-solid fa-bolt text-amber-600"></i> ৭২ ঘণ্টার স্পেশাল চ্যালেঞ্জ
+        </div>
+
+        <h1 class="text-3xl sm:text-4xl lg:text-[2.7rem] font-extrabold text-emerald-950 leading-tight">
+          ৭২ ঘণ্টায় <span class="text-emerald-600">৭০+ অ্যাক্টিভ মেম্বার</span> রেফার করলেই <br/>
+          <span class="inline-block mt-1 bg-emerald-900 text-yellow-300 px-4 py-1 rounded-2xl">৳৮,০০০ ইনস্ট্যান্ট!</span>
+        </h1>
+
+        <p class="text-xs sm:text-sm text-emerald-900/85 leading-relaxed max-w-xl">
+          আপনার রেফার লিংক দিয়ে মাত্র <b>৭২ ঘণ্টার</b> মধ্যে ৭০ জন অ্যাক্টিভ মেম্বার যুক্ত করতে পারলেই কোনো অপেক্ষা ছাড়াই সাথে সাথে <b>৮,০০০ টাকা</b> বোনাস পাবেন! এই মেগা ইভেন্টটি চলবে <b>২৬/১১/২০২৬</b> পর্যন্ত।
+        </p>
+
+        <!-- Live Countdown Timer to 26/11/2026 -->
+        <div class="space-y-1.5">
+          <div class="text-[11px] font-extrabold uppercase tracking-wider text-emerald-800">
+            <i class="fa-solid fa-hourglass-half mr-1 text-amber-600"></i> ইভেন্ট শেষ হতে বাকি (২৬/১১/২০২৬ পর্যন্ত):
+          </div>
+          <div class="grid grid-cols-4 gap-2 max-w-sm mx-auto md:mx-0 text-center">
+            <div class="bg-emerald-950 text-white rounded-2xl py-2.5 px-1">
+              <div id="cd-days" class="text-xl sm:text-2xl font-extrabold text-yellow-300">00</div>
+              <div class="text-[10px] font-bold text-emerald-200">দিন</div>
+            </div>
+            <div class="bg-emerald-950 text-white rounded-2xl py-2.5 px-1">
+              <div id="cd-hours" class="text-xl sm:text-2xl font-extrabold">00</div>
+              <div class="text-[10px] font-bold text-emerald-200">ঘণ্টা</div>
+            </div>
+            <div class="bg-emerald-950 text-white rounded-2xl py-2.5 px-1">
+              <div id="cd-mins" class="text-xl sm:text-2xl font-extrabold">00</div>
+              <div class="text-[10px] font-bold text-emerald-200">মিনিট</div>
+            </div>
+            <div class="bg-emerald-950 text-white rounded-2xl py-2.5 px-1">
+              <div id="cd-secs" class="text-xl sm:text-2xl font-extrabold text-emerald-300">00</div>
+              <div class="text-[10px] font-bold text-emerald-200">সেকেন্ড</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap justify-center md:justify-start gap-3 pt-1">
+          {% if user %}
+          <button id="event-copy-btn" onclick="copyText('{{ request.base_url }}signup?ref={{ user.referral_code }}', 'event-copy-btn')"
+                  class="bg-emerald-900 hover:bg-emerald-800 text-white px-7 py-3.5 rounded-full text-sm font-extrabold shadow-lg transition">
+            <i class="fa-solid fa-copy mr-1.5"></i> আমার রেফার লিংক কপি করুন
+          </button>
+          <a href="/refer" class="bg-white border-2 border-emerald-300 text-emerald-950 px-6 py-3.5 rounded-full text-sm font-extrabold hover:bg-emerald-50">
+            রেফার ড্যাশবোর্ড →
+          </a>
+          {% else %}
+          <a href="/signup" class="bg-emerald-900 hover:bg-emerald-800 text-white px-7 py-3.5 rounded-full text-sm font-extrabold shadow-lg">
+            অ্যাকাউন্ট খুলে চ্যালেঞ্জ নিন →
+          </a>
+          <a href="/login" class="bg-white border-2 border-emerald-300 text-emerald-950 px-6 py-3.5 rounded-full text-sm font-extrabold">
+            লগইন করুন
+          </a>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Right Flat Vector Infographic Illustration -->
+      <div class="md:col-span-5 flex justify-center">
+        <div class="flat-float w-full max-w-xs">
+          <svg viewBox="0 0 320 300" class="w-full h-auto drop-shadow-sm" xmlns="http://www.w3.org/2000/svg">
+            <!-- Soft Flat Backdrop Circle -->
+            <circle cx="160" cy="150" r="128" fill="#d1fae5" />
+            <circle cx="160" cy="150" r="102" fill="#ecfdf5" />
+
+            <!-- Network Nodes (Active Members) -->
+            <line x1="160" y1="140" x2="72" y2="85" stroke="#10b981" stroke-width="4" stroke-dasharray="6 4"/>
+            <line x1="160" y1="140" x2="248" y2="85" stroke="#10b981" stroke-width="4" stroke-dasharray="6 4"/>
+            <line x1="160" y1="140" x2="72" y2="215" stroke="#10b981" stroke-width="4" stroke-dasharray="6 4"/>
+            <line x1="160" y1="140" x2="248" y2="215" stroke="#10b981" stroke-width="4" stroke-dasharray="6 4"/>
+
+            <!-- Satellite Member Circles -->
+            <circle cx="72" cy="85" r="22" fill="#059669" />
+            <circle cx="72" cy="80" r="7" fill="#ffffff" />
+            <path d="M59 98c2-6 24-6 26 0" fill="#ffffff" />
+
+            <circle cx="248" cy="85" r="22" fill="#0d9488" />
+            <circle cx="248" cy="80" r="7" fill="#ffffff" />
+            <path d="M235 98c2-6 24-6 26 0" fill="#ffffff" />
+
+            <circle cx="72" cy="215" r="22" fill="#0284c7" />
+            <circle cx="72" cy="210" r="7" fill="#ffffff" />
+            <path d="M59 228c2-6 24-6 26 0" fill="#ffffff" />
+
+            <circle cx="248" cy="215" r="22" fill="#10b981" />
+            <circle cx="248" cy="210" r="7" fill="#ffffff" />
+            <path d="M235 228c2-6 24-6 26 0" fill="#ffffff" />
+
+            <!-- Center Trophy / Reward Badge -->
+            <rect x="108" y="88" width="104" height="104" rx="28" fill="#064e3b" />
+            <path d="M138 118h44v22c0 12-10 22-22 22s-22-10-22-22v-22z" fill="#fde047" />
+            <path d="M138 122h-10c0 12 6 18 10 18M182 122h10c0 12-6 18-10 18" fill="none" stroke="#fde047" stroke-width="4" stroke-linecap="round"/>
+            <rect x="155" y="160" width="10" height="14" fill="#fde047" />
+            <rect x="142" y="172" width="36" height="8" rx="4" fill="#fbbf24" />
+
+            <!-- Bottom Floating Price Pill -->
+            <rect x="75" y="238" width="170" height="40" rx="20" fill="#064e3b" />
+            <text x="160" y="264" text-anchor="middle" fill="#fde047" font-size="18" font-weight="800" font-family="sans-serif">৳8,000 INSTANT</text>
+
+            <!-- Top 72H Pill -->
+            <rect x="115" y="26" width="90" height="30" rx="15" fill="#f59e0b" />
+            <text x="160" y="46" text-anchor="middle" fill="#ffffff" font-size="13" font-weight="800" font-family="sans-serif">72 HOURS</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LIVE PERSONAL PROGRESS (For Logged-in User) -->
+  {% if user %}
+  <section class="flat-card-dark rounded-3xl p-6 text-white space-y-4">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h2 class="text-lg font-extrabold flex items-center gap-2">
+          <i class="fa-solid fa-gauge-high text-yellow-300"></i> আপনার লাইভ চ্যালেঞ্জ প্রগ্রেস
+        </h2>
+        <p class="text-xs text-emerald-200 mt-0.5">টার্গেট: ৭২ ঘণ্টায় ৭০+ অ্যাক্টিভ মেম্বার</p>
+      </div>
+      <div class="flex items-center gap-2.5 text-center">
+        <div class="bg-white/10 rounded-2xl px-4 py-2">
+          <div class="text-[10px] text-emerald-200 font-bold">মোট রেফার</div>
+          <div class="text-lg font-extrabold">{{ my_total_refs }}</div>
+        </div>
+        <div class="bg-yellow-300 text-emerald-950 rounded-2xl px-4 py-2">
+          <div class="text-[10px] font-extrabold">অ্যাক্টিভ মেম্বার</div>
+          <div class="text-lg font-extrabold">{{ my_active_refs }} / 70</div>
+        </div>
+      </div>
+    </div>
+
+    {% set act_pct = [((my_active_refs / 70) * 100)|round|int, 100]|min %}
+    <div class="space-y-1.5">
+      <div class="w-full h-4 bg-emerald-950 rounded-full p-1 border border-emerald-700">
+        <div class="h-full rounded-full bg-gradient-to-r from-yellow-300 to-emerald-400 transition-all duration-500" style="width: {{ act_pct }}%"></div>
+      </div>
+      <div class="flex justify-between text-[11px] font-bold text-emerald-200">
+        <span>০ অ্যাক্টিভ</span>
+        <span>{{ act_pct }}% সম্পন্ন</span>
+        <span class="text-yellow-300">৭০+ অ্যাক্টিভ (৳৮,০০০!)</span>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- INFOGRAPHIC 1: 72-HOUR FLAT ROADMAP -->
+  <section class="space-y-5">
+    <div class="text-center space-y-1">
+      <span class="text-xs font-extrabold uppercase tracking-widest text-emerald-700">72-Hour Blueprint</span>
+      <h2 class="text-2xl font-extrabold text-emerald-950">কীভাবে ৭২ ঘণ্টায় ৭০+ মেম্বার পূরণ করবেন?</h2>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-5">
+      <div class="flat-card rounded-3xl p-6 space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 text-xs font-extrabold">০ – ২৪ ঘণ্টা</span>
+          <div class="w-11 h-11 rounded-2xl bg-emerald-900 text-white flex items-center justify-center text-lg">
+            <i class="fa-solid fa-share-nodes"></i>
+          </div>
+        </div>
+        <h3 class="font-extrabold text-base text-emerald-950">১. দ্রুত শেয়ার ও প্রথম ২৫ জন</h3>
+        <p class="text-xs text-emerald-800 leading-relaxed">
+          প্রথম দিনেই আপনার বন্ধু, কলেজ/ভার্সিটি গ্রুপ এবং ফেসবুক আর্নিং গ্রুপে রেফার লিংক শেয়ার করে প্রথম ২০–২৫ জন মেম্বার যুক্ত করুন।
+        </p>
+      </div>
+
+      <div class="flat-card rounded-3xl p-6 space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="px-3 py-1 rounded-full bg-sky-100 text-sky-900 text-xs font-extrabold">২৪ – ৪৮ ঘণ্টা</span>
+          <div class="w-11 h-11 rounded-2xl bg-sky-600 text-white flex items-center justify-center text-lg">
+            <i class="fa-solid fa-list-check"></i>
+          </div>
+        </div>
+        <h3 class="font-extrabold text-base text-emerald-950">২. অ্যাক্টিভ কাজ ও ৫০+ মেম্বার</h3>
+        <p class="text-xs text-emerald-800 leading-relaxed">
+          যুক্ত হওয়া মেম্বারদের গাইড করুন যেন তারা প্রতিদিন অন্তত ১–২টি Micro Task, Typing বা Cube Game খেলে অ্যাক্টিভ থাকে।
+        </p>
+      </div>
+
+      <div class="flat-card-amber rounded-3xl p-6 space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="px-3 py-1 rounded-full bg-amber-200 text-amber-950 text-xs font-extrabold">৪৮ – ৭২ ঘণ্টা</span>
+          <div class="w-11 h-11 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-lg">
+            <i class="fa-solid fa-sack-dollar"></i>
+          </div>
+        </div>
+        <h3 class="font-extrabold text-base text-emerald-950">৩. ৭০+ পূর্ণ → ৳৮,০০০ ইনস্ট্যান্ট!</h3>
+        <p class="text-xs text-amber-950/90 leading-relaxed">
+          ৭০+ অ্যাক্টিভ মেম্বার ভেরিফাই হওয়া মাত্রই কোনো অপেক্ষা ছাড়াই আপনার অ্যাকাউন্টে <b>৮,০০০ টাকা</b> ইনস্ট্যান্ট ক্রেডিট হয়ে যাবে!
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- INFOGRAPHIC 2: What does "Active Member" mean? -->
+  <section class="flat-card rounded-[2rem] p-6 sm:p-8 space-y-5">
+    <div class="text-center space-y-1">
+      <h2 class="text-xl sm:text-2xl font-extrabold text-emerald-950">
+        <i class="fa-solid fa-user-check text-emerald-600 mr-1.5"></i> "Active Member" বলতে কী বোঝায়?
+      </h2>
+      <p class="text-xs sm:text-sm text-emerald-800">ভুয়া বা নিষ্ক্রিয় অ্যাকাউন্ট গ্রহণযোগ্য নয় — অ্যাক্টিভ মেম্বার হওয়ার নিয়মাবলি:</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4 text-xs">
+      <!-- Valid Active Member -->
+      <div class="rounded-2xl bg-emerald-50 border-2 border-emerald-300 p-5 space-y-2.5">
+        <div class="flex items-center gap-2 font-extrabold text-sm text-emerald-950">
+          <span class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center"><i class="fa-solid fa-check"></i></span>
+          <span>সঠিক Active Member (গণ্য হবে)</span>
+        </div>
+        <ul class="space-y-1.5 text-emerald-900 font-medium">
+          <li><i class="fa-solid fa-circle-check text-emerald-600 mr-1.5"></i>প্রতিদিন নিয়মিত সাইটে ভিজিট ও লগইন করে।</li>
+          <li><i class="fa-solid fa-circle-check text-emerald-600 mr-1.5"></i>Micro Task, Typing, AI Image বা Cube Game-এ কাজ করে।</li>
+          <li><i class="fa-solid fa-circle-check text-emerald-600 mr-1.5"></i>রিয়েল ও ভেরিফায়েড ডিভাইস থেকে অ্যাকাউন্ট ব্যবহার করে।</li>
+        </ul>
+      </div>
+
+      <!-- Invalid / Inactive -->
+      <div class="rounded-2xl bg-red-50 border-2 border-red-200 p-5 space-y-2.5">
+        <div class="flex items-center gap-2 font-extrabold text-sm text-red-900">
+          <span class="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center"><i class="fa-solid fa-xmark"></i></span>
+          <span>নিষ্ক্রিয় / ভুয়া (গণ্য হবে না)</span>
+        </div>
+        <ul class="space-y-1.5 text-red-800 font-medium">
+          <li><i class="fa-solid fa-circle-xmark text-red-500 mr-1.5"></i>শুধু সাইনআপ করে আর কখনো সাইটে আসে না বা কাজ করে না।</li>
+          <li><i class="fa-solid fa-circle-xmark text-red-500 mr-1.5"></i>বট, VPN বা একই ডিভাইস দিয়ে ভুয়া রেফার করা।</li>
+          <li><i class="fa-solid fa-circle-xmark text-red-500 mr-1.5"></i>অ্যাকাউন্টে ০ কাজের হিস্টোরি থাকা।</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- LIVE LEADERBOARD -->
+  <section class="flat-card rounded-[2rem] p-6 space-y-4">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h2 class="text-lg font-extrabold text-emerald-950 flex items-center gap-2">
+        <i class="fa-solid fa-ranking-star text-amber-500"></i> ইভেন্ট লাইভ লিডারবোর্ড
+      </h2>
+      <span class="text-xs font-bold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">Top 10 Challengers</span>
+    </div>
+
+    {% if leaderboard %}
+    <div class="space-y-2.5">
+      {% for row in leaderboard %}
+      <div class="flex items-center justify-between p-3.5 rounded-2xl border-2 text-xs
+        {% if row.is_me %}bg-emerald-50 border-emerald-400{% else %}bg-white border-emerald-100{% endif %}">
+        <div class="flex items-center gap-3">
+          <span class="w-8 h-8 rounded-xl font-extrabold flex items-center justify-center
+            {% if loop.index == 1 %}bg-amber-400 text-emerald-950
+            {% elif loop.index == 2 %}bg-slate-200 text-slate-800
+            {% elif loop.index == 3 %}bg-amber-700 text-white
+            {% else %}bg-emerald-100 text-emerald-900{% endif %}">
+            #{{ loop.index }}
+          </span>
+          <div>
+            <div class="font-extrabold text-emerald-950 text-sm">
+              {{ row.name }} {% if row.is_me %}<span class="text-[10px] bg-emerald-800 text-white px-2 py-0.5 rounded-full ml-1">আপনি</span>{% endif %}
+            </div>
+            <div class="text-[11px] text-emerald-700">মোট রেফার: {{ row.total }} জন</div>
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="font-extrabold text-sm text-emerald-700">{{ row.active }} / 70</div>
+          <div class="text-[10px] font-bold text-emerald-600">অ্যাক্টিভ মেম্বার</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-6 space-y-1">
+      <div class="text-2xl text-emerald-600"><i class="fa-solid fa-trophy"></i></div>
+      <p class="text-xs font-bold text-emerald-900">চ্যালেঞ্জ শুরু হয়ে গেছে! প্রথম অ্যাক্টিভ মেম্বার যুক্ত করে #১ স্থান দখল করুন।</p>
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- EVENT SCHEDULE FOOTER CARD (26/11/2026 -> Next Event) -->
+  <section class="rounded-[2rem] bg-emerald-950 text-white p-7 text-center space-y-3">
+    <span class="inline-flex items-center gap-1.5 bg-white/15 px-3.5 py-1 rounded-full text-xs font-bold text-yellow-300">
+      <i class="fa-solid fa-calendar-check"></i> ইভেন্ট সময়সীমা
+    </span>
+    <h2 class="text-xl sm:text-2xl font-extrabold">এই ইভেন্টটি চলবে ২৬/১১/২০২৬ পর্যন্ত!</h2>
+    <p class="text-xs sm:text-sm text-emerald-200 max-w-lg mx-auto">
+      ২৬ নভেম্বর ২০২৬-এর পর এই ৳৮,০০০ ইভেন্টটি সমাপ্ত হবে এবং এর পরপরই আরও বড় ও আকর্ষণীয় <b>নতুন ইভেন্ট</b> চালু হবে। দেরি না করে আজই আপনার ৭০+ অ্যাক্টিভ মেম্বারের লক্ষ্য পূরণ করুন!
+    </p>
+  </section>
+</div>
+
+<script>
+// Live Countdown to 26 Nov 2026, 23:59:59 Bangladesh Time (UTC+6)
+(function initEventCountdown() {
+  const target = new Date("2026-11-26T23:59:59+06:00").getTime();
+
+  function tick() {
+    const now = Date.now();
+    const diff = Math.max(0, target - now);
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+    const mins = Math.floor((diff / (1000 * 60)) % 60);
+    const secs = Math.floor((diff / 1000) % 60);
+
+    document.getElementById("cd-days").innerText = String(days).padStart(2, "0");
+    document.getElementById("cd-hours").innerText = String(hours).padStart(2, "0");
+    document.getElementById("cd-mins").innerText = String(mins).padStart(2, "0");
+    document.getElementById("cd-secs").innerText = String(secs).padStart(2, "0");
+  }
+
+  tick();
+  setInterval(tick, 1000);
+})();
+</script>
+{% endblock %}
