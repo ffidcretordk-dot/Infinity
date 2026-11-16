@@ -660,6 +660,17 @@ async def refer_page(request: Request):
     ctx["friend_bonus"] = REFERRAL_NEW_USER_BONUS
     return templates.TemplateResponse("refer.html", ctx)
 
+@app.get("/menu", response_class=HTMLResponse)
+async def menu_page(request: Request):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+
+    level_info = get_earning_level(float(user.get("total_earned") or 0))
+    ctx = base_ctx(request, user, "menu")
+    ctx["level"] = level_info
+    return templates.TemplateResponse("menu.html", ctx)
+    
 
 @app.post("/work/typing/{task_id}/submit")
 async def work_typing_submit(
