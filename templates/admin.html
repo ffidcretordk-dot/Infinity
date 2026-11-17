@@ -1,157 +1,221 @@
 {% extends "base_app.html" %}
-{% block title %}Admin Panel - InfinityWork{% endblock %}
+{% block title %}Admin Command Center - InfinityWork{% endblock %}
 {% block content %}
-<div class="space-y-6">
-  <!-- Admin Hero Header -->
-  <div class="rounded-3xl bg-gradient-to-br from-emerald-800 via-emerald-900 to-emerald-950 text-white p-6 shadow-xl relative overflow-hidden">
-    <div class="absolute -right-6 -bottom-6 text-white/5 text-8xl pointer-events-none">
-      <i class="fa-solid fa-shield-halved"></i>
-    </div>
-    <div class="relative z-10 space-y-4">
-      <div class="flex items-center justify-between gap-3">
-        <div>
-          <span class="inline-flex items-center gap-1.5 bg-yellow-300 text-emerald-950 px-3 py-0.5 rounded-full text-[10px] font-extrabold uppercase">
-            <i class="fa-solid fa-crown"></i> Control Center
-          </span>
-          <h1 class="text-2xl font-extrabold mt-1.5">InfinityWork অ্যাডমিন প্যানেল</h1>
+{% set st = stats|default({}) %}
+<style>
+  .adm-glass {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(14px);
+    border: 1px solid #d1fae5;
+    box-shadow: 0 12px 32px -10px rgba(13, 74, 43, 0.09);
+  }
+  .adm-tile {
+    background: #ffffff;
+    border: 1px solid #dcfce7;
+    box-shadow: 0 8px 20px -10px rgba(13, 74, 43, 0.08);
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .adm-tile:hover {
+    transform: translateY(-2px);
+    border-color: #6ee7b7;
+    box-shadow: 0 14px 26px -10px rgba(13, 74, 43, 0.14);
+  }
+</style>
+
+<div class="space-y-5">
+  <!-- 1. LIGHT-MINT ADMIN HERO CARD WITH SVG GRAPHIC -->
+  <section class="adm-glass rounded-[2rem] p-5 sm:p-6 bg-gradient-to-br from-white via-emerald-50/70 to-teal-50/70 relative overflow-hidden">
+    <div class="grid grid-cols-12 gap-4 items-center">
+      <div class="col-span-8 space-y-2.5">
+        <span class="inline-flex items-center gap-1.5 bg-emerald-900 text-yellow-300 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider">
+          <i class="fa-solid fa-shield-halved"></i> Admin Command Center
+        </span>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-emerald-950 leading-tight">InfinityWork অ্যাডমিন</h1>
+        <p class="text-xs text-emerald-800">এক জায়গা থেকেই সম্পূর্ণ সাইট, টাস্ক, পেমেন্ট ও ইউজার নিয়ন্ত্রণ করুন</p>
+        <div class="flex flex-wrap gap-2 pt-1">
+          <a href="/admin/status" class="bg-emerald-900 hover:bg-emerald-800 text-white px-4 py-2 rounded-full text-xs font-extrabold shadow">
+            <i class="fa-solid fa-chart-column mr-1"></i> ফুল সাইট স্ট্যাটাস
+          </a>
+          <a href="/i" class="bg-white border border-emerald-200 hover:bg-emerald-50 text-emerald-950 px-4 py-2 rounded-full text-xs font-extrabold">
+            ইউজার ড্যাশবোর্ড →
+          </a>
         </div>
-        <a href="/i" class="bg-white/15 hover:bg-white/25 border border-white/20 px-4 py-2 rounded-full text-xs font-bold shrink-0">
-          ইউজার ভিউ →
-        </a>
       </div>
 
-      <!-- 4 Live Admin Stats -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center text-xs">
-        <div class="bg-white/10 border border-white/15 rounded-2xl p-3">
-          <div class="text-emerald-200 text-[10px] font-bold">মোট ইউজার</div>
-          <div class="text-xl font-extrabold mt-0.5">{{ stats.users_count }}</div>
-        </div>
-        <div class="bg-white/10 border border-white/15 rounded-2xl p-3">
-          <div class="text-emerald-200 text-[10px] font-bold">Pending টাস্ক</div>
-          <div class="text-xl font-extrabold text-yellow-300 mt-0.5">{{ stats.pending_subs }}</div>
-        </div>
-        <div class="bg-white/10 border border-white/15 rounded-2xl p-3">
-          <div class="text-emerald-200 text-[10px] font-bold">Pending উইথড্র</div>
-          <div class="text-xl font-extrabold text-amber-300 mt-0.5">{{ stats.pending_payouts }}</div>
-        </div>
-        <div class="bg-white/10 border border-white/15 rounded-2xl p-3">
-          <div class="text-emerald-200 text-[10px] font-bold">Active ImgBB</div>
-          <div class="text-xl font-extrabold text-emerald-300 mt-0.5">{{ stats.active_imgbb }}</div>
-        </div>
+      <!-- Flat Vector Admin Shield SVG -->
+      <div class="col-span-4 flex justify-end">
+        <svg viewBox="0 0 140 140" class="w-24 h-24 sm:w-28 sm:h-28 drop-shadow-sm" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="70" cy="70" r="62" fill="#d1fae5" />
+          <path d="M70 24l36 14v28c0 24-15 41-36 50-21-9-36-26-36-50V38l36-14z" fill="#064e3b" />
+          <path d="M70 32l28 11v22c0 19-12 33-28 41-16-8-28-22-28-41V43l28-11z" fill="#10b981" />
+          <path d="M56 70l10 10 18-20" fill="none" stroke="#fde047" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- Admin Sub-Pages Grid -->
-  <div class="space-y-2.5">
-    <h2 class="font-extrabold text-sm text-emerald-950 px-1">
-      <i class="fa-solid fa-grid-2 text-emerald-700 mr-1.5"></i>অ্যাডমিন ম্যানেজমেন্ট মডিউল
-    </h2>
-    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs font-extrabold">
-      <a href="/admin/submiton" class="soft-card rounded-2xl p-4 flex items-center gap-3 hover:border-emerald-400 transition">
-        <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-base shrink-0"><i class="fa-solid fa-list-check"></i></div>
+  <!-- 2. LIVE METRICS STRIP -->
+  <section class="adm-glass rounded-3xl p-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+    <div class="bg-emerald-50/70 rounded-2xl p-3">
+      <div class="text-xl font-extrabold text-emerald-950">{{ st.get('users_count', 0) }}</div>
+      <div class="text-[11px] font-bold text-emerald-700"><i class="fa-solid fa-users mr-1"></i>মোট ইউজার</div>
+    </div>
+    <div class="bg-amber-50 rounded-2xl p-3">
+      <div class="text-xl font-extrabold text-amber-700">{{ st.get('pending_subs', 0) }}</div>
+      <div class="text-[11px] font-bold text-amber-800"><i class="fa-solid fa-clock mr-1"></i>Pending টাস্ক</div>
+    </div>
+    <div class="bg-rose-50 rounded-2xl p-3">
+      <div class="text-xl font-extrabold text-rose-700">{{ st.get('pending_payouts', 0) }}</div>
+      <div class="text-[11px] font-bold text-rose-800"><i class="fa-solid fa-wallet mr-1"></i>Pending উইথড্র</div>
+    </div>
+    <div class="bg-teal-50 rounded-2xl p-3">
+      <div class="text-xl font-extrabold text-teal-800">{{ st.get('active_imgbb', 0) }}</div>
+      <div class="text-[11px] font-bold text-teal-700"><i class="fa-solid fa-images mr-1"></i>Active ImgBB</div>
+    </div>
+  </section>
+
+  <!-- 3. ALL 9 ADMIN MODULES GRID -->
+  <section class="space-y-2.5">
+    <div class="flex items-center justify-between px-1">
+      <h2 class="font-extrabold text-sm text-emerald-950 flex items-center gap-1.5">
+        <span class="w-2 h-5 rounded-full bg-emerald-700 inline-block"></span>
+        <span>অ্যাডমিন কন্ট্রোল মডিউল (৯টি)</span>
+      </h2>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+      <!-- 1. Bulk Submissions -->
+      <a href="/admin/submiton" class="adm-tile rounded-2xl p-4 flex items-center gap-3 relative">
+        {% if st.get('pending_subs', 0) > 0 %}
+        <span class="absolute top-2.5 right-2.5 bg-amber-500 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full">{{ st.get('pending_subs', 0) }}</span>
+        {% endif %}
+        <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-base shrink-0">
+          <i class="fa-solid fa-list-check"></i>
+        </div>
         <div class="min-w-0">
-          <div class="text-emerald-950 truncate">Bulk Submissions</div>
-          <div class="text-[10px] text-emerald-700 font-semibold">৫০+ অ্যাপ্রুভ ও রিজেক্ট</div>
+          <div class="font-extrabold text-emerald-950 truncate">Bulk Review</div>
+          <div class="text-[10px] text-emerald-700 font-semibold truncate">৫০+ অ্যাপ্রুভ / রিজেক্ট</div>
         </div>
       </a>
 
-      <a href="/admin/c" class="soft-card rounded-2xl p-4 flex items-center gap-3 hover:border-purple-400 transition">
-        <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center text-base shrink-0"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+      <!-- 2. Micro Task Control -->
+      <a href="/admin/task" class="adm-tile rounded-2xl p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-900 text-yellow-300 flex items-center justify-center text-base shrink-0">
+          <i class="fa-solid fa-sliders"></i>
+        </div>
         <div class="min-w-0">
-          <div class="text-emerald-950 truncate">ChatGPT Image</div>
-          <div class="text-[10px] text-purple-700 font-semibold">প্রম্পট ও ইমেজ রিভিউ</div>
+          <div class="font-extrabold text-emerald-950 truncate">Task Control</div>
+          <div class="text-[10px] text-emerald-700 font-semibold truncate">Add, Edit & Delete</div>
         </div>
       </a>
 
-      <a href="/admin/t" class="soft-card rounded-2xl p-4 flex items-center gap-3 hover:border-sky-400 transition">
-        <div class="w-10 h-10 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center text-base shrink-0"><i class="fa-solid fa-keyboard"></i></div>
+      <!-- 3. ChatGPT Image Admin -->
+      <a href="/admin/c" class="adm-tile rounded-2xl p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center text-base shrink-0">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+        </div>
         <div class="min-w-0">
-          <div class="text-emerald-950 truncate">Typing Admin</div>
-          <div class="text-[10px] text-sky-700 font-semibold">ইমেজ টাইপিং টাস্ক</div>
+          <div class="font-extrabold text-emerald-950 truncate">ChatGPT Admin</div>
+          <div class="text-[10px] text-purple-700 font-semibold truncate">প্রম্পট ও ইমেজ রিভিউ</div>
         </div>
       </a>
 
-      <a href="/admin/n" class="soft-card rounded-2xl p-4 flex items-center gap-3 hover:border-rose-400 transition">
-        <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-base shrink-0"><i class="fa-solid fa-bullhorn"></i></div>
+      <!-- 4. Typing Task Admin -->
+      <a href="/admin/t" class="adm-tile rounded-2xl p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center text-base shrink-0">
+          <i class="fa-solid fa-keyboard"></i>
+        </div>
         <div class="min-w-0">
-          <div class="text-emerald-950 truncate">Notice Admin</div>
-          <div class="text-[10px] text-rose-600 font-semibold">১+ ছবি ও নোটিশ পোস্ট</div>
+          <div class="font-extrabold text-emerald-950 truncate">Typing Admin</div>
+          <div class="text-[10px] text-sky-700 font-semibold truncate">ইমেজ টাইপিং টাস্ক</div>
         </div>
       </a>
 
-      <a href="/admin/r" class="soft-card rounded-2xl p-4 flex items-center gap-3 hover:border-amber-400 transition">
-        <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-base shrink-0"><i class="fa-solid fa-star"></i></div>
+      <!-- 5. Notice Board Admin -->
+      <a href="/admin/n" class="adm-tile rounded-2xl p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-base shrink-0">
+          <i class="fa-solid fa-bullhorn"></i>
+        </div>
         <div class="min-w-0">
-          <div class="text-emerald-950 truncate">Review Admin</div>
-          <div class="text-[10px] text-amber-700 font-semibold">ফেক রিভিউ ও প্রুফ</div>
+          <div class="font-extrabold text-emerald-950 truncate">Notice Admin</div>
+          <div class="text-[10px] text-rose-600 font-semibold truncate">১+ ছবি ও নোটিশ</div>
         </div>
       </a>
 
-      <a href="/admin/imgbb" class="soft-card rounded-2xl p-4 flex items-center gap-3 hover:border-teal-400 transition">
-        <div class="w-10 h-10 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center text-base shrink-0"><i class="fa-solid fa-images"></i></div>
+      <!-- 6. Review & Proof Admin -->
+      <a href="/admin/r" class="adm-tile rounded-2xl p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-base shrink-0">
+          <i class="fa-solid fa-star"></i>
+        </div>
         <div class="min-w-0">
-          <div class="text-emerald-950 truncate">ImgBB Manager</div>
-          <div class="text-[10px] text-teal-700 font-semibold">API লোড ব্যালেন্সার</div>
+          <div class="font-extrabold text-emerald-950 truncate">Review Admin</div>
+          <div class="text-[10px] text-amber-700 font-semibold truncate">ফেক রিভিউ ও প্রুফ</div>
+        </div>
+      </a>
+
+      <!-- 7. ImgBB API Manager -->
+      <a href="/admin/imgbb" class="adm-tile rounded-2xl p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center text-base shrink-0">
+          <i class="fa-solid fa-images"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="font-extrabold text-emerald-950 truncate">ImgBB Keys</div>
+          <div class="text-[10px] text-teal-700 font-semibold truncate">লোড ব্যালেন্সার API</div>
+        </div>
+      </a>
+
+      <!-- 8. Full Site Status -->
+      <a href="/admin/status" class="adm-tile rounded-2xl p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-base shrink-0">
+          <i class="fa-solid fa-chart-column"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="font-extrabold text-emerald-950 truncate">Site Status</div>
+          <div class="text-[10px] text-indigo-700 font-semibold truncate">আজ/গতকালের রিপোর্ট</div>
+        </div>
+      </a>
+
+      <!-- 9. User Password Reset -->
+      <a href="/admin/reset" class="adm-tile rounded-2xl p-4 flex items-center gap-3 col-span-2 sm:col-span-1">
+        <div class="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center text-base shrink-0">
+          <i class="fa-solid fa-key"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="font-extrabold text-emerald-950 truncate">Password Reset</div>
+          <div class="text-[10px] text-red-600 font-semibold truncate">ইমেইল দিয়ে পাস রিসেট</div>
         </div>
       </a>
     </div>
-  </div>
+  </section>
 
-  <!-- Dashboard Global Popup Notice Editor -->
-  <div class="soft-card rounded-3xl p-5 space-y-3 border-emerald-300">
-    <h2 class="font-extrabold text-sm text-emerald-950">
-      <i class="fa-solid fa-window-restore text-emerald-700 mr-1.5"></i>Dashboard Global Popup Notice
-    </h2>
+  <!-- 4. GLOBAL DASHBOARD POPUP NOTICE EDITOR -->
+  <section class="adm-glass rounded-3xl p-5 space-y-3">
+    <div class="flex items-center justify-between">
+      <h2 class="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
+        <i class="fa-solid fa-window-restore text-emerald-700"></i> Dashboard Global Popup Notice
+      </h2>
+      <span class="text-[10px] font-bold bg-emerald-100 text-emerald-900 px-2.5 py-0.5 rounded-full">৫০% চান্স পপআপ</span>
+    </div>
     <form action="/admin/global-notice" method="POST" class="space-y-2.5 text-sm">
       <textarea name="global_notice" rows="2" required placeholder="ড্যাশবোর্ডে ঢুকলে পপআপে যে গ্লোবাল নোটিশ দেখাবে তা লিখুন..."
-                class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white">{{ global_notice|default('') }}</textarea>
-      <button type="submit" class="bg-emerald-900 hover:bg-emerald-800 text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow">
+                class="w-full px-3.5 py-2.5 rounded-2xl border border-emerald-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">{{ global_notice|default('') }}</textarea>
+      <button type="submit" class="bg-emerald-900 hover:bg-emerald-800 text-white px-5 py-2.5 rounded-full font-extrabold text-xs shadow">
         <i class="fa-solid fa-floppy-disk mr-1"></i> Global Notice সেভ করুন
       </button>
     </form>
-  </div>
+  </section>
 
-  <!-- Add Micro Task + Active Tasks List -->
-  <div class="soft-card rounded-3xl p-5 space-y-3">
-    <h2 class="font-extrabold text-sm text-emerald-950">
-      <i class="fa-solid fa-plus-circle text-emerald-700 mr-1.5"></i>নতুন মাইক্রো টাস্ক যোগ করুন
-    </h2>
-    <form action="/admin/task/add" method="POST" class="grid sm:grid-cols-2 gap-3 text-sm">
-      <input type="text" name="title" required placeholder="Task Title" class="px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white" />
-      <input type="text" name="category" required placeholder="Category (e.g. YouTube, Social)" class="px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white" />
-      <input type="number" step="0.5" name="rate" required placeholder="Rate (৳)" class="px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white" />
-      <input type="url" name="task_link" placeholder="Task Link (https://...)" class="px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white" />
-      <textarea name="description" rows="2" required placeholder="Task Description" class="sm:col-span-2 px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white"></textarea>
-      <button type="submit" class="sm:col-span-2 bg-emerald-900 hover:bg-emerald-800 text-white py-3 rounded-xl font-extrabold shadow">
-        টাস্ক পাবলিশ করুন
-      </button>
-    </form>
-
-    <div class="pt-3 space-y-2 text-xs">
-      {% for t in tasks %}
-      <div class="flex items-center justify-between gap-2 bg-emerald-50/70 border border-emerald-100 p-3 rounded-2xl">
-        <div class="min-w-0">
-          <div class="font-extrabold text-emerald-950 truncate">{{ t.title }}</div>
-          <div class="text-emerald-700">{{ t.category }} • ৳{{ "%.2f"|format(t.rate) }}</div>
-        </div>
-        <form action="/admin/task/{{ t.id }}/delete" method="POST" onsubmit="return confirm('টাস্কটি ডিলিট করবেন?')">
-          <button class="text-red-600 font-bold px-2.5 py-1 hover:bg-red-50 rounded-lg shrink-0">Delete</button>
-        </form>
-      </div>
-      {% else %}
-      <p class="text-emerald-700 text-center py-2">কোনো মাইক্রো টাস্ক নেই।</p>
-      {% endfor %}
+  <!-- 5. WITHDRAW / PAYOUT REQUESTS -->
+  <section class="adm-glass rounded-3xl p-5 space-y-3">
+    <div class="flex items-center justify-between">
+      <h2 class="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
+        <i class="fa-solid fa-money-bill-transfer text-emerald-700"></i> উইথড্র রিকুয়েস্ট
+      </h2>
+      <span class="text-xs font-extrabold text-amber-700">{{ st.get('pending_payouts', 0) }} টি Pending</span>
     </div>
-  </div>
 
-  <!-- Payout / Withdraw Requests Review -->
-  <div class="soft-card rounded-3xl p-5 space-y-3">
-    <h2 class="font-extrabold text-sm text-emerald-950">
-      <i class="fa-solid fa-wallet text-emerald-700 mr-1.5"></i>উইথড্র রিকুয়েস্ট সমূহ
-    </h2>
     <div class="space-y-2.5 text-xs">
-      {% for p in payouts %}
+      {% for p in payouts|default([]) %}
       <div class="flex flex-wrap items-center justify-between gap-2 bg-white border border-emerald-100 p-3.5 rounded-2xl">
         <div>
           <div class="font-extrabold text-emerald-950">
@@ -177,17 +241,17 @@
       <p class="text-emerald-700 text-center py-3">কোনো উইথড্র রিকুয়েস্ট নেই।</p>
       {% endfor %}
     </div>
-  </div>
+  </section>
 
-  <!-- Recent Contact Messages (/contact) -->
-  <div class="soft-card rounded-3xl p-5 space-y-3">
-    <h2 class="font-extrabold text-sm text-emerald-950">
-      <i class="fa-solid fa-envelope-open-text text-sky-700 mr-1.5"></i>যোগাযোগ ও প্রমোশনাল মেসেজ (/contact)
+  <!-- 6. CONTACT US MESSAGES INBOX -->
+  <section class="adm-glass rounded-3xl p-5 space-y-3">
+    <h2 class="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
+      <i class="fa-solid fa-envelope-open-text text-sky-700"></i> যোগাযোগ ও প্রমোশনাল মেসেজ (/contact)
     </h2>
     <div class="space-y-2.5 text-xs">
-      {% for c in contacts %}
+      {% for c in contacts|default([]) %}
       <div class="bg-white border border-emerald-100 p-3.5 rounded-2xl space-y-1">
-        <div class="flex items-center justify-between gap-2">
+        <div class="flex flex-wrap items-center justify-between gap-2">
           <span class="font-extrabold text-emerald-950">{{ c.name }} ({{ c.contact_info }})</span>
           <span class="bg-sky-100 text-sky-900 px-2.5 py-0.5 rounded-full text-[10px] font-bold">{{ c.topic }}</span>
         </div>
@@ -198,6 +262,6 @@
       <p class="text-emerald-700 text-center py-3">এখনো কোনো যোগাযোগ মেসেজ আসেনি।</p>
       {% endfor %}
     </div>
-  </div>
+  </section>
 </div>
 {% endblock %}
