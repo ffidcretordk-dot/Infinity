@@ -1,0 +1,190 @@
+{% extends "base_app.html" %}
+{% block title %}User Management - Admin{% endblock %}
+{% block content %}
+<div class="space-y-5">
+  <!-- Header Card -->
+  <div class="soft-card rounded-[2rem] p-5 sm:p-6 bg-gradient-to-br from-white via-emerald-50/50 to-teal-50/60 flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center gap-3.5">
+      <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-xl shadow-xs">
+        <i class="fa-solid fa-users-gear"></i>
+      </div>
+      <div>
+        <h1 class="text-xl font-extrabold text-emerald-950">User Management</h1>
+        <p class="text-xs text-emerald-700">মোট ইউজার: <b>{{ total_users }}</b> জন • পেজ {{ current_page }} / {{ total_pages }} (সর্বোচ্চ ২০/পেজ)</p>
+      </div>
+    </div>
+    <a href="/admin" class="bg-emerald-900 text-white px-4 py-2 rounded-full text-xs font-bold shadow-xs">← অ্যাডমিন</a>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="soft-card rounded-3xl p-4">
+    <form action="/admin/user" method="GET" class="flex flex-col sm:flex-row gap-2">
+      <div class="relative flex-1">
+        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-emerald-600 text-xs"></i>
+        <input type="text" name="q" value="{{ query }}" placeholder="নাম, ইমেইল বা রেফার কোড দিয়ে খুঁজুন..."
+               class="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-emerald-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+      </div>
+      <button type="submit" class="bg-emerald-900 hover:bg-emerald-800 text-white px-5 py-2.5 rounded-2xl text-xs font-extrabold shrink-0">সার্চ</button>
+      {% if query %}
+      <a href="/admin/user" class="bg-emerald-50 border border-emerald-200 text-emerald-900 px-4 py-2.5 rounded-2xl text-xs font-bold text-center shrink-0">ক্লিয়ার</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Users List (Max 20 per page) -->
+  <div class="space-y-3">
+    {% for u in users_list %}
+    <div class="soft-card rounded-3xl p-4 sm:p-5 space-y-3 text-xs">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-11 h-11 rounded-2xl overflow-hidden bg-emerald-900 text-white flex items-center justify-center font-extrabold text-base shrink-0">
+            {% if u.avatar_url %}
+            <img src="{{ u.avatar_url }}" class="w-full h-full object-cover" />
+            {% else %}
+            {{ u.name[0]|upper }}
+            {% endif %}
+          </div>
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="font-extrabold text-sm text-emerald-950 truncate">{{ u.name }}</span>
+              <span class="bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded-full text-[10px] font-bold">#{{ u.id }}</span>
+              {% if u.is_admin %}
+              <span class="bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full text-[10px] font-extrabold">ADMIN</span>
+              {% endif %}
+            </div>
+            <div class="text-emerald-700 font-semibold truncate"><i class="fa-solid fa-envelope mr-1"></i>{{ u.email }}</div>
+            <div class="text-[11px] text-slate-500 mt-0.5">
+              রেফার: <b>{{ u.ref_count }}</b> • কোড: <b>{{ u.referral_code }}</b> • জয়েন: {{ (u.created_at or '')[:10] }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Balance & Total Income Badges -->
+        <div class="flex items-center gap-2 shrink-0 text-right">
+          <div class="bg-emerald-50 border border-emerald-200 rounded-2xl px-3 py-1.5">
+            <div class="text-[9px] font-bold text-emerald-700">ব্যালেন্স</div>
+            <div class="font-extrabold text-sm text-emerald-950">৳{{ "%.2f"|format(u.balance) }}</div>
+          </div>
+          <div class="bg-amber-50 border border-amber-200 rounded-2xl px-3 py-1.5">
+            <div class="text-[9px] font-bold text-amber-800">মোট আয়</div>
+            <div class="font-extrabold text-sm text-amber-900">৳{{ "%.2f"|format(u.total_earned) }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inline Controls: Add Balance + Input Total Income + Delete -->
+      <div class="pt-3 border-t border-emerald-100 flex flex-wrap items-center justify-between gap-2">
+        <button type="button"
+                data-id="{{ u.id }}"
+                data-name="{{ u.name }}"
+                data-balance="{{ u.balance }}"
+                data-total="{{ u.total_earned }}"
+                onclick="openUserBalanceModal(this)"
+                class="bg-emerald-900 hover:bg-emerald-800 text-white px-4 py-2 rounded-xl font-extrabold shadow-xs inline-flex items-center gap-1.5">
+          <i class="fa-solid fa-coins text-yellow-300"></i> Add Balance & Total Income
+        </button>
+
+        {% if not u.is_admin %}
+        <form action="/admin/user/{{ u.id }}/delete" method="POST" onsubmit="return confirm('{{ u.name }} ({{ u.email }}) কে স্থায়ীভাবে ডিলিট করতে চান?')">
+          <input type="hidden" name="page" value="{{ current_page }}" />
+          <button class="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 px-3.5 py-2 rounded-xl font-bold">
+            <i class="fa-solid fa-trash mr-1"></i> Delete
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="soft-card rounded-3xl p-8 text-center text-sm font-bold text-emerald-700">
+      কোনো ইউজার পাওয়া যায়নি।
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination: Prev / Page Info / Next -->
+  {% if total_pages > 1 %}
+  <div class="soft-card rounded-3xl p-4 flex items-center justify-between text-xs font-extrabold">
+    {% if current_page > 1 %}
+    <a href="/admin/user?page={{ current_page - 1 }}{% if query %}&q={{ query|urlencode }}{% endif %}"
+       class="bg-emerald-900 hover:bg-emerald-800 text-white px-5 py-2.5 rounded-full shadow transition">
+      <i class="fa-solid fa-arrow-left mr-1"></i> Prev
+    </a>
+    {% else %}
+    <span class="bg-slate-100 text-slate-400 px-5 py-2.5 rounded-full cursor-not-allowed">
+      <i class="fa-solid fa-arrow-left mr-1"></i> Prev
+    </span>
+    {% endif %}
+
+    <span class="text-emerald-950">Page {{ current_page }} of {{ total_pages }}</span>
+
+    {% if current_page < total_pages %}
+    <a href="/admin/user?page={{ current_page + 1 }}{% if query %}&q={{ query|urlencode }}{% endif %}"
+       class="bg-emerald-900 hover:bg-emerald-800 text-white px-5 py-2.5 rounded-full shadow transition">
+      Next <i class="fa-solid fa-arrow-right ml-1"></i>
+    </a>
+    {% else %}
+    <span class="bg-slate-100 text-slate-400 px-5 py-2.5 rounded-full cursor-not-allowed">
+      Next <i class="fa-solid fa-arrow-right ml-1"></i>
+    </span>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Add Balance & Input Total Income Modal -->
+<div id="user-edit-modal" class="hidden fixed inset-0 z-50 bg-emerald-950/55 backdrop-blur-xs flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-emerald-100 space-y-4">
+    <div class="flex items-center justify-between border-b border-emerald-100 pb-3">
+      <div>
+        <h3 class="font-extrabold text-base text-emerald-950">ব্যালেন্স ও আয় আপডেট</h3>
+        <p id="u-modal-name" class="text-xs text-emerald-700 font-bold"></p>
+      </div>
+      <button onclick="closeUserModal()" class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-900 font-bold">✕</button>
+    </div>
+
+    <form id="u-edit-form" action="" method="POST" class="space-y-3.5 text-sm">
+      <input type="hidden" name="page" value="{{ current_page }}" />
+
+      <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 text-xs flex justify-between font-bold text-emerald-900">
+        <span>বর্তমান ব্যালেন্স:</span>
+        <span id="u-modal-cur-bal" class="font-extrabold">৳0.00</span>
+      </div>
+
+      <div>
+        <label class="text-[11px] font-bold text-emerald-800 block mb-1">Add Balance (+ / - ৳)</label>
+        <input id="u-add-bal" type="number" step="0.01" name="add_balance" value="0" required
+               placeholder="যেমন: 50 (অথবা কমাতে -50)"
+               class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        <span class="text-[10px] text-emerald-700">নতুন টাকা যোগ করতে সংখ্যা লিখুন (পরিবর্তন না চাইলে 0 রাখুন)</span>
+      </div>
+
+      <div>
+        <label class="text-[11px] font-bold text-emerald-800 block mb-1">Total Income (মোট আয় ৳ ইনপুট করুন)</label>
+        <input id="u-total-inc" type="number" step="0.01" min="0" name="total_income" required
+               class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+      </div>
+
+      <div class="flex gap-2 pt-1">
+        <button type="button" onclick="closeUserModal()" class="flex-1 bg-slate-100 text-slate-800 py-2.5 rounded-xl font-bold text-xs">বাতিল</button>
+        <button type="submit" class="flex-1 bg-emerald-900 hover:bg-emerald-800 text-white py-2.5 rounded-xl font-extrabold text-xs shadow">সেভ করুন ✓</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openUserBalanceModal(btn) {
+  const d = btn.dataset;
+  document.getElementById("u-edit-form").action = `/admin/user/${d.id}/update`;
+  document.getElementById("u-modal-name").innerText = `${d.name} (#${d.id})`;
+  document.getElementById("u-modal-cur-bal").innerText = `৳${parseFloat(d.balance || 0).toFixed(2)}`;
+  document.getElementById("u-add-bal").value = "0";
+  document.getElementById("u-total-inc").value = parseFloat(d.total || 0).toFixed(2);
+  document.getElementById("user-edit-modal").classList.remove("hidden");
+}
+
+function closeUserModal() {
+  document.getElementById("user-edit-modal").classList.add("hidden");
+}
+</script>
+{% endblock %}
