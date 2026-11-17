@@ -238,7 +238,112 @@ async def login_page(request: Request):
         return RedirectResponse("/i", status_code=303)
     return templates.TemplateResponse("login.html", base_ctx(request, None, "login"))
 
+# ---------------- ADMIN PANEL: USER MANAGEMENT (/admin/user) ----------------
 
+@app.get("/admin/user", response_class=HTMLResponse)
+async def admin_users_page(request: Request, page: int = 1, q: str = ""):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অ্যাডমিন অ্যাক্সেস অনুমোদিত নয়!", "error")
+
+    all_users = await db.select("users", order="id.desc")
+
+    # Referral count lookup
+    ref_counts: dict[str, int] = {}
+    for u in all_users:
+        rb = u.get("referred_by")
+        if rb:
+            ref_counts[rb] = ref_counts.get(rb, 0) + 1
+
+    query = q.strip().lower()
+    if query:
+        filtered = [
+            u for u in all_users
+            if query in (u.get("email") or "").lower()
+            or query in (u.get("name") or "").lower()
+            or query in (u.get("referral_code") or "").lower()
+        ]
+    else:
+        filtered = all_users
+
+    per_page = 20
+    total_filtered = len(filtered)
+    total_pages = max(1, (total_filtered + per_page - 1) // per_page)
+    current_page = max(1, min(page, total_pages))
+    start_idx = (current_page - 1) * per_page
+    paged_users = filtered[start_idx : start_idx + per_page]
+
+    for u in paged_users:
+        u["ref_count"] = ref_counts.get(u.get("referral_code"), 0)
+
+    ctx = base_ctx(request, user, "admin")
+    ctx.update({
+        "users_list": paged_users,
+        "current_page": current_page,
+        "total_pages": total_pages,
+        "total_users": len(all_users),
+        "total_filtered": total_filtered,
+        "query": q.strip(),
+    })
+    return templates.TemplateResponse("admin_users.html", ctx)
+
+
+@app.post("/admin/user/{target_id}/update")
+async def admin_user_update(
+    request: Request,
+    target_id: int,
+    add_balance: float = Form(0.0),
+    total_income: float = Form(...),
+    page: int = Form(1),
+):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
+
+    target = await db.select("users", filters={"id": target_id}, single=True)
+    if not target:
+        return redirect_with_flash(request, f"/admin/user?page={page}", "ইউজার পাওয়া যায়নি!", "error")
+
+    new_balance = max(0.0, float(target.get("balance") or 0) + float(add_balance))
+    new_total_earned = max(0.0, float(total_income))
+
+    await db.update(
+        "users",
+        {"id": target_id},
+        {"balance": new_balance, "total_earned": new_total_earned},
+    )
+
+    if add_balance != 0:
+        await db.insert(
+            "work_logs",
+            {
+                "user_id": target_id,
+                "work_type": "Admin Adjustment",
+                "details": f"অ্যাডমিন ব্যালেন্স আপডেট ({'+' if add_balance > 0 else ''}{add_balance:.2f}৳)",
+                "reward": float(add_balance) if add_balance > 0 else 0.0,
+            },
+        )
+
+    return redirect_with_flash(
+        request,
+        f"/admin/user?page={page}",
+        f"{target['name']}-এর ব্যালেন্স (৳{new_balance:.2f}) ও মোট আয় (৳{new_total_earned:.2f}) আপডেট হয়েছে!",
+        "success",
+    )
+
+
+@app.post("/admin/user/{target_id}/delete")
+async def admin_user_delete(request: Request, target_id: int, page: int = Form(1)):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
+
+    if target_id == user["id"]:
+        return redirect_with_flash(request, f"/admin/user?page={page}", "আপনার নিজের অ্যাডমিন অ্যাকাউন্ট ডিলিট করা যাবে না!", "error")
+
+    await db.delete("users", {"id": target_id})
+    return redirect_with_flash(request, f"/admin/user?page={page}", f"User #{target_id} ডিলিট করা হয়েছে।", "info")
+    
 @app.post("/login")
 async def login_submit(
     request: Request,
