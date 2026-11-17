@@ -1,0 +1,215 @@
+{% extends "base_app.html" %}
+{% block title %}Admin Notice Manager - InfinityWork{% endblock %}
+{% block content %}
+<div class="space-y-5">
+  <!-- Header Card -->
+  <div class="soft-card rounded-[2rem] p-5 sm:p-6 bg-gradient-to-br from-white via-rose-50/40 to-emerald-50/60 flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center gap-3.5">
+      <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-xl shadow-xs">
+        <i class="fa-solid fa-bullhorn"></i>
+      </div>
+      <div>
+        <h1 class="text-xl font-extrabold text-emerald-950">Notice Board Admin</h1>
+        <p class="text-xs text-emerald-700">নতুন নোটিশ ও ১ বা একাধিক (1+) ছবি পাবলিশ ও এডিট করুন</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="/notice" target="_blank" class="bg-emerald-50 border border-emerald-200 px-3.5 py-2 rounded-full text-xs font-bold text-emerald-900">
+        <i class="fa-solid fa-eye mr-1"></i> নোটিশ বোর্ড
+      </a>
+      <a href="/admin" class="bg-emerald-900 text-white px-4 py-2 rounded-full text-xs font-bold shadow-xs">← অ্যাডমিন</a>
+    </div>
+  </div>
+
+  <!-- Create Notice Form -->
+  <div class="soft-card rounded-3xl p-5 sm:p-6 space-y-4">
+    <div class="flex items-center justify-between">
+      <h2 class="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
+        <i class="fa-solid fa-plus-circle text-emerald-700"></i> নতুন নোটিশ পোস্ট করুন
+      </h2>
+      <span class="text-[10px] font-extrabold bg-emerald-100 text-emerald-900 px-2.5 py-1 rounded-full">শুধু অ্যাডমিন</span>
+    </div>
+
+    <form action="/admin/n/add" method="POST" enctype="multipart/form-data" class="space-y-3.5 text-sm">
+      <div class="grid sm:grid-cols-2 gap-3">
+        <div>
+          <label class="text-[11px] font-bold text-emerald-800 block mb-1">নোটিশ টাইটেল</label>
+          <input type="text" name="title" required placeholder="যেমন: নতুন পেমেন্ট আপডেট"
+                 class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        </div>
+        <div>
+          <label class="text-[11px] font-bold text-emerald-800 block mb-1">ক্যাটাগরি</label>
+          <select name="category" class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <option value="সাধারণ">সাধারণ</option>
+            <option value="জরুরি">জরুরি</option>
+            <option value="পেমেন্ট আপডেট">পেমেন্ট আপডেট</option>
+            <option value="নতুন কাজ">নতুন কাজ</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="text-[11px] font-bold text-emerald-800 block mb-1">বিস্তারিত নোটিশ</label>
+        <textarea name="content" rows="4" required placeholder="এখানে সম্পূর্ণ নোটিশ লিখুন (লম্বা হলে ইউজার পেজে Read More বাটন দেখাবে)..."
+                  class="w-full px-3.5 py-2.5 rounded-2xl border border-emerald-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+      </div>
+
+      <!-- 1+ Multi-Image Uploader with Live Thumbnail Preview -->
+      <div class="bg-emerald-50/70 border-2 border-dashed border-emerald-300 rounded-2xl p-4 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <label for="notice-images-input" class="inline-flex items-center gap-2 bg-white border border-emerald-200 hover:bg-emerald-100 text-emerald-950 px-4 py-2 rounded-xl text-xs font-extrabold cursor-pointer shadow-xs">
+            <i class="fa-solid fa-images text-emerald-700"></i>
+            <span>১ বা একাধিক ছবি সিলেক্ট করুন (ImgBB)</span>
+          </label>
+          <span id="notice-file-count" class="text-[11px] font-extrabold text-emerald-700"></span>
+        </div>
+
+        <input id="notice-images-input" type="file" name="images" accept="image/*" multiple class="hidden" onchange="previewNoticeFiles(this)" />
+
+        <!-- Live Thumbnail Strip -->
+        <div id="notice-thumb-strip" class="hidden flex flex-wrap gap-2"></div>
+
+        <input type="text" name="extra_image_urls" placeholder="অথবা সরাসরি Image URL দিন (একাধিক হলে কমা দিন)"
+               class="w-full px-3.5 py-2 rounded-xl border border-emerald-200 bg-white text-xs" />
+      </div>
+
+      <label class="inline-flex items-center gap-2 text-xs font-bold text-emerald-900 cursor-pointer">
+        <input type="checkbox" name="is_pinned" class="w-4 h-4 accent-emerald-800 rounded" />
+        <span><i class="fa-solid fa-thumbtack text-amber-600 mr-1"></i>সবার ওপরে Pin করে রাখুন</span>
+      </label>
+
+      <button type="submit" class="w-full bg-gradient-to-r from-emerald-700 to-emerald-950 hover:opacity-95 text-white py-3.5 rounded-full font-extrabold shadow-lg transition">
+        <i class="fa-solid fa-paper-plane mr-1.5"></i> নোটিশ পাবলিশ করুন
+      </button>
+    </form>
+  </div>
+
+  <!-- Published Notices Management List -->
+  <div class="soft-card rounded-3xl p-5 space-y-3">
+    <h2 class="font-extrabold text-sm text-emerald-950">প্রকাশিত নোটিশ সমূহ ({{ notices|length }})</h2>
+
+    <div class="space-y-3 text-xs">
+      {% for n in notices %}
+      <div class="bg-white border border-emerald-100 rounded-2xl p-4 space-y-2.5 {% if n.is_pinned %}ring-2 ring-emerald-200{% endif %}">
+        <div class="flex flex-wrap items-start justify-between gap-2">
+          <div class="space-y-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-1.5">
+              {% if n.is_pinned %}
+              <span class="bg-emerald-900 text-yellow-300 px-2 py-0.5 rounded-full text-[9px] font-extrabold"><i class="fa-solid fa-thumbtack mr-0.5"></i>PINNED</span>
+              {% endif %}
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900">{{ n.category }}</span>
+              <span class="text-[11px] text-slate-400">{{ (n.created_at or '')[:16].replace('T', ' ') }}</span>
+            </div>
+            <div class="font-extrabold text-sm text-emerald-950">{{ n.title }}</div>
+            <p class="text-emerald-800/85 line-clamp-2">{{ n.content }}</p>
+          </div>
+        </div>
+
+        {% if n.image_urls and n.image_urls|length > 0 %}
+        <div class="flex flex-wrap gap-2">
+          {% for img_url in n.image_urls %}
+          <a href="{{ img_url }}" target="_blank" class="w-14 h-14 rounded-xl overflow-hidden border border-emerald-200 block">
+            <img src="{{ img_url }}" class="w-full h-full object-cover" />
+          </a>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-emerald-50">
+          <button type="button"
+                  data-id="{{ n.id }}"
+                  data-title="{{ n.title }}"
+                  data-category="{{ n.category }}"
+                  data-content="{{ n.content }}"
+                  onclick="openEditNoticeModal(this)"
+                  class="bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 px-3 py-1.5 rounded-xl font-bold">
+            <i class="fa-solid fa-pen-to-square mr-1"></i> Edit
+          </button>
+
+          <form action="/admin/n/{{ n.id }}/toggle-pin" method="POST">
+            <button class="px-3 py-1.5 rounded-xl font-bold border
+              {% if n.is_pinned %}bg-amber-50 border-amber-200 text-amber-900{% else %}bg-emerald-50 border-emerald-200 text-emerald-900{% endif %}">
+              {{ 'Unpin' if n.is_pinned else 'Pin Top' }}
+            </button>
+          </form>
+
+          <form action="/admin/n/{{ n.id }}/delete" method="POST" onsubmit="return confirm('নোটিশটি ডিলিট করবেন?')">
+            <button class="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 px-3 py-1.5 rounded-xl font-bold">
+              Delete
+            </button>
+          </form>
+        </div>
+      </div>
+      {% else %}
+      <p class="text-emerald-700 text-center py-4">কোনো নোটিশ পোস্ট করা হয়নি।</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Edit Notice Modal -->
+<div id="edit-notice-modal" class="hidden fixed inset-0 z-50 bg-emerald-950/55 backdrop-blur-xs flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-emerald-100 space-y-4">
+    <div class="flex items-center justify-between border-b border-emerald-100 pb-3">
+      <h3 class="font-extrabold text-base text-emerald-950"><i class="fa-solid fa-pen-to-square text-emerald-700 mr-1.5"></i>নোটিশ এডিট করুন</h3>
+      <button onclick="document.getElementById('edit-notice-modal').classList.add('hidden')" class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-900 font-bold">✕</button>
+    </div>
+
+    <form id="edit-notice-form" action="" method="POST" class="space-y-3 text-sm">
+      <div>
+        <label class="text-[11px] font-bold text-emerald-800 block mb-1">টাইটেল</label>
+        <input id="edit-n-title" type="text" name="title" required class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white" />
+      </div>
+      <div>
+        <label class="text-[11px] font-bold text-emerald-800 block mb-1">ক্যাটাগরি</label>
+        <select id="edit-n-cat" name="category" class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white">
+          <option value="সাধারণ">সাধারণ</option>
+          <option value="জরুরি">জরুরি</option>
+          <option value="পেমেন্ট আপডেট">পেমেন্ট আপডেট</option>
+          <option value="নতুন কাজ">নতুন কাজ</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-[11px] font-bold text-emerald-800 block mb-1">বিস্তারিত</label>
+        <textarea id="edit-n-content" name="content" rows="4" required class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white"></textarea>
+      </div>
+      <button type="submit" class="w-full bg-emerald-900 text-white py-3 rounded-xl font-extrabold text-xs shadow">আপডেট সেভ করুন ✓</button>
+    </form>
+  </div>
+</div>
+
+<script>
+function previewNoticeFiles(input) {
+  const countEl = document.getElementById("notice-file-count");
+  const strip = document.getElementById("notice-thumb-strip");
+  strip.innerHTML = "";
+
+  if (input.files && input.files.length > 0) {
+    countEl.innerText = `✓ ${input.files.length} টি ছবি সিলেক্টেড`;
+    strip.classList.remove("hidden");
+    Array.from(input.files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = document.createElement("img");
+        img.src = e.target.result;
+        img.className = "w-14 h-14 rounded-xl object-cover border border-emerald-300 shadow-xs";
+        strip.appendChild(img);
+      };
+      reader.readAsDataURL(file);
+    });
+  } else {
+    countEl.innerText = "";
+    strip.classList.add("hidden");
+  }
+}
+
+function openEditNoticeModal(btn) {
+  const d = btn.dataset;
+  document.getElementById("edit-notice-form").action = `/admin/n/${d.id}/edit`;
+  document.getElementById("edit-n-title").value = d.title || "";
+  document.getElementById("edit-n-cat").value = d.category || "সাধারণ";
+  document.getElementById("edit-n-content").value = d.content || "";
+  document.getElementById("edit-notice-modal").classList.remove("hidden");
+}
+</script>
+{% endblock %}
