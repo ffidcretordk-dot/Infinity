@@ -724,6 +724,56 @@ async def admin_submissions_bulk(
         "success",
     )
 
+# ---------------- ADMIN PANEL: USER PASSWORD RESET (/admin/reset) ----------------
+
+@app.get("/admin/reset", response_class=HTMLResponse)
+async def admin_reset_page(request: Request, q: str = ""):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অ্যাডমিন অ্যাক্সেস অনুমোদিত নয়!", "error")
+
+    query = q.strip().lower()
+    all_users = await db.select("users", order="id.desc")
+
+    if query:
+        matched = [
+            u for u in all_users
+            if query in (u.get("email") or "").lower() or query in (u.get("name") or "").lower()
+        ]
+    else:
+        matched = all_users[:10]
+
+    ctx = base_ctx(request, user, "admin")
+    ctx.update({"matched_users": matched, "query": q.strip(), "total_users": len(all_users)})
+    return templates.TemplateResponse("admin_reset.html", ctx)
+
+
+@app.post("/admin/reset")
+async def admin_reset_submit(
+    request: Request,
+    user_id: int = Form(...),
+    new_password: str = Form(...),
+):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
+
+    clean_pw = new_password.strip()
+    if len(clean_pw) < 6:
+        return redirect_with_flash(request, "/admin/reset", "নতুন পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে!", "error")
+
+    target = await db.select("users", filters={"id": user_id}, single=True)
+    if not target:
+        return redirect_with_flash(request, "/admin/reset", "ইউজার পাওয়া যায়নি!", "error")
+
+    await db.update("users", {"id": user_id}, {"password_hash": hash_password(clean_pw)})
+    return redirect_with_flash(
+        request,
+        f"/admin/reset?q={target['email']}",
+        f"{target['email']}-এর পাসওয়ার্ড সফলভাবে রিসেট করা হয়েছে!",
+        "success",
+                                                                   )
+    
 
 @app.post("/admin/submiton/{sub_id}/{action}")
 async def admin_submissions_single(request: Request, sub_id: int, action: str):
