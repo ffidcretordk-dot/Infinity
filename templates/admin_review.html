@@ -1,0 +1,207 @@
+{% extends "base_app.html" %}
+{% block title %}Admin Add Review - InfinityWork{% endblock %}
+{% block content %}
+<div class="space-y-5">
+  <!-- Header Banner -->
+  <div class="soft-card rounded-[2rem] p-5 sm:p-6 bg-gradient-to-br from-white via-amber-50/40 to-emerald-50/60 flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center gap-3.5">
+      <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl shadow-xs">
+        <i class="fa-solid fa-star"></i>
+      </div>
+      <div>
+        <h1 class="text-xl font-extrabold text-emerald-950">Admin Add Review Page</h1>
+        <p class="text-xs text-emerald-700">কাস্টম নাম, DP, তারিখ ও পেমেন্ট প্রুফ দিয়ে পাবলিক রিভিউ যোগ করুন</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="/review" target="_blank" class="bg-emerald-50 border border-emerald-200 px-3.5 py-2 rounded-full text-xs font-bold text-emerald-900">
+        <i class="fa-solid fa-eye mr-1"></i> রিভিউ পেজ
+      </a>
+      <a href="/admin" class="bg-emerald-900 text-white px-4 py-2 rounded-full text-xs font-bold shadow-xs">← অ্যাডমিন</a>
+    </div>
+  </div>
+
+  <!-- Create Custom Review Card -->
+  <div class="soft-card rounded-3xl p-5 sm:p-6 space-y-4">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h2 class="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
+        <i class="fa-solid fa-plus-circle text-emerald-700"></i> নতুন কাস্টম রিভিউ তৈরি করুন
+      </h2>
+      <span class="text-[10px] font-extrabold bg-emerald-100 text-emerald-900 px-2.5 py-1 rounded-full">সবাই দেখতে পাবে</span>
+    </div>
+
+    <form action="/admin/r/add" method="POST" enctype="multipart/form-data" class="space-y-4 text-sm">
+      <!-- Reviewer Name + Date + Interactive Rating -->
+      <div class="grid sm:grid-cols-3 gap-3">
+        <div>
+          <label class="text-[11px] font-bold text-emerald-800 block mb-1">Reviewer Name (Fake Name)</label>
+          <input id="adm-rev-name" type="text" name="reviewer_name" required placeholder="যেমন: তানভীর আহমেদ"
+                 class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        </div>
+        <div>
+          <label class="text-[11px] font-bold text-emerald-800 block mb-1">Custom Date</label>
+          <input type="date" name="display_date" value="{{ today_str }}"
+                 class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        </div>
+        <div>
+          <label class="text-[11px] font-bold text-emerald-800 block mb-1">Star Rating</label>
+          <input type="hidden" name="rating" id="adm-rating-input" value="5" />
+          <div class="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-emerald-200 bg-white h-[42px]" id="adm-star-box">
+            {% for s in [1, 2, 3, 4, 5] %}
+            <button type="button" onclick="setAdmRating({{ s }})" class="adm-star-btn text-amber-400 text-base transition hover:scale-110">
+              <i class="fa-solid fa-star"></i>
+            </button>
+            {% endfor %}
+            <span id="adm-rating-text" class="ml-auto text-xs font-extrabold text-emerald-900">5★</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- DP & Proof Image Uploaders -->
+      <div class="grid sm:grid-cols-2 gap-3.5">
+        <!-- Fake Profile Pic -->
+        <div class="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-4 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-extrabold text-emerald-950"><i class="fa-solid fa-circle-user text-emerald-700 mr-1"></i>Fake Profile Pic</label>
+            <img id="dp-prev" src="" class="hidden w-8 h-8 rounded-full object-cover border border-emerald-300" />
+          </div>
+          <input type="file" name="avatar_file" accept="image/*" onchange="previewThumb(this, 'dp-prev')"
+                 class="w-full text-xs bg-white px-3 py-2 rounded-xl border border-emerald-200" />
+          <input type="url" name="avatar_url_input" placeholder="অথবা DP Image URL (https://...)"
+                 class="w-full px-3 py-2 rounded-xl border border-emerald-200 bg-white text-xs" />
+        </div>
+
+        <!-- Payment Proof Image -->
+        <div class="bg-amber-50/60 border border-amber-200 rounded-2xl p-4 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-extrabold text-amber-950"><i class="fa-solid fa-receipt text-amber-600 mr-1"></i>Payment Proof Image</label>
+            <img id="proof-prev" src="" class="hidden w-8 h-8 rounded-lg object-cover border border-amber-300" />
+          </div>
+          <input type="file" name="proof_file" accept="image/*" onchange="previewThumb(this, 'proof-prev')"
+                 class="w-full text-xs bg-white px-3 py-2 rounded-xl border border-amber-200" />
+          <input type="url" name="proof_url_input" placeholder="অথবা Proof Image URL (https://...)"
+                 class="w-full px-3 py-2 rounded-xl border border-amber-200 bg-white text-xs" />
+        </div>
+      </div>
+
+      <!-- Quick Sample Templates -->
+      <div class="space-y-1.5">
+        <div class="text-[11px] font-bold text-emerald-700">কুইক স্যাম্পল (ক্লিক করলে অটো ফিল হবে):</div>
+        <div class="flex flex-wrap gap-1.5 text-[11px]">
+          <button type="button" onclick="fillPreset('রাফি হাসান', 'আলহামদুলিল্লাহ! আজ ৩৫০ টাকা বিকাশে একদম ফ্রিতে পেমেন্ট পেলাম। সাইটটি ১০০% বিশ্বস্ত।')"
+                  class="bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-900 px-3 py-1 rounded-full font-bold">
+            + বিকাশ পেমেন্ট প্রুফ
+          </button>
+          <button type="button" onclick="fillPreset('সাদিয়া আক্তার', 'পড়াশোনার পাশাপাশি প্রতিদিন টাইপিং আর ChatGPT ইমেজের কাজ করে দারুণ আয় হচ্ছে। সাপোর্ট টিম অনেক ভালো।')"
+                  class="bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-900 px-3 py-1 rounded-full font-bold">
+            + স্টুডেন্ট রিভিউ
+          </button>
+          <button type="button" onclick="fillPreset('মেহেদী ইসলাম', 'কোনো ইনভেস্টমেন্ট ছাড়াই নগদে পেমেন্ট নিলাম। ধন্যবাদ InfinityWork টিমকে।')"
+                  class="bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-900 px-3 py-1 rounded-full font-bold">
+            + নগদ পেমেন্ট রিভিউ
+          </button>
+        </div>
+      </div>
+
+      <!-- Review Text -->
+      <div>
+        <label class="text-[11px] font-bold text-emerald-800 block mb-1">Review Text</label>
+        <textarea id="adm-rev-comment" name="comment" rows="3" required placeholder="এখানে রিভিউ লিখুন..."
+                  class="w-full px-3.5 py-2.5 rounded-2xl border border-emerald-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+      </div>
+
+      <button type="submit" class="w-full bg-gradient-to-r from-emerald-700 to-emerald-950 hover:opacity-95 text-white py-3.5 rounded-full font-extrabold shadow-lg transition">
+        <i class="fa-solid fa-paper-plane mr-1.5"></i> পাবলিক রিভিউ পোস্ট করুন
+      </button>
+    </form>
+  </div>
+
+  <!-- All Reviews Management List -->
+  <div class="soft-card rounded-3xl p-5 space-y-3">
+    <div class="flex items-center justify-between">
+      <h2 class="font-extrabold text-sm text-emerald-950">সকল রিভিউ ম্যানেজমেন্ট ({{ reviews|length }})</h2>
+    </div>
+
+    <div class="space-y-3 text-xs">
+      {% for r in reviews %}
+      <div class="bg-white border border-emerald-100 p-4 rounded-2xl space-y-2.5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-11 h-11 rounded-full overflow-hidden border border-emerald-200 bg-emerald-900 text-white flex items-center justify-center font-extrabold shrink-0">
+              {% if r.reviewer_avatar %}
+              <img src="{{ r.reviewer_avatar }}" class="w-full h-full object-cover" />
+              {% else %}
+              {{ r.reviewer_name[0]|upper }}
+              {% endif %}
+            </div>
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-1.5">
+                <span class="font-extrabold text-sm text-emerald-950">{{ r.reviewer_name }}</span>
+                <span class="text-amber-500 font-extrabold">{{ r.rating }}★</span>
+                {% if r.is_admin_post %}
+                <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full text-[9px] font-extrabold">Public (সবার জন্য)</span>
+                {% else %}
+                <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full text-[9px] font-extrabold">User Private (#{{ r.user_id }})</span>
+                {% endif %}
+              </div>
+              <div class="text-[11px] text-emerald-700 font-medium"><i class="fa-regular fa-calendar mr-1"></i>{{ r.display_date }}</div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-1.5 shrink-0">
+            <form action="/admin/r/{{ r.id }}/toggle-public" method="POST">
+              <button class="px-3 py-1.5 rounded-xl font-bold border text-[11px]
+                {% if r.is_admin_post %}bg-slate-50 border-slate-200 text-slate-700{% else %}bg-emerald-50 border-emerald-200 text-emerald-800{% endif %}">
+                {{ 'Make Private' if r.is_admin_post else 'Make Public' }}
+              </button>
+            </form>
+            <form action="/admin/r/{{ r.id }}/delete" method="POST" onsubmit="return confirm('রিভিউটি ডিলিট করবেন?')">
+              <button class="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 px-3 py-1.5 rounded-xl font-bold text-[11px]">Delete</button>
+            </form>
+          </div>
+        </div>
+
+        <p class="text-emerald-950/90 leading-relaxed">{{ r.comment }}</p>
+
+        {% if r.proof_image %}
+        <a href="{{ r.proof_image }}" target="_blank" class="inline-flex items-center gap-1.5 text-sky-700 font-bold underline">
+          <i class="fa-solid fa-image"></i> সংযুক্ত প্রুফ ছবি দেখুন
+        </a>
+        {% endif %}
+      </div>
+      {% else %}
+      <p class="text-emerald-700 text-center py-4">এখনো কোনো রিভিউ নেই।</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+function setAdmRating(val) {
+  document.getElementById("adm-rating-input").value = val;
+  document.getElementById("adm-rating-text").innerText = `${val}★`;
+  document.querySelectorAll("#adm-star-box .adm-star-btn").forEach((btn, idx) => {
+    btn.className = idx < val
+      ? "adm-star-btn text-amber-400 text-base transition hover:scale-110"
+      : "adm-star-btn text-slate-300 text-base transition hover:scale-110";
+  });
+}
+
+function previewThumb(input, imgId) {
+  const el = document.getElementById(imgId);
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      el.src = e.target.result;
+      el.classList.remove("hidden");
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function fillPreset(name, comment) {
+  document.getElementById("adm-rev-name").value = name;
+  document.getElementById("adm-rev-comment").value = comment;
+}
+</script>
+{% endblock %}
