@@ -2,6 +2,8 @@ import math
 import struct
 import zlib
 
+import secrets
+
 import asyncio
 import random
 import httpx
@@ -132,7 +134,6 @@ async def signup_page(request: Request, ref: str = ""):
     ctx["ref_code"] = ref
     return templates.TemplateResponse("signup.html", ctx)
 
-
 @app.post("/signup")
 async def signup_submit(
     request: Request,
@@ -141,20 +142,28 @@ async def signup_submit(
     password: str = Form(...),
     referral_code: str = Form(""),
     device_id: str = Form(""),
+    lock_token: str = Form(""),
 ):
     email_clean = email.strip().lower()
-    device_clean = device_id.strip() or request.cookies.get("iw_device") or ""
+    device_clean = device_id.strip()
+    lock_clean = lock_token.strip() or request.cookies.get("iw_lock_token") or ""
+    client_ip = get_client_ip(request)
 
-    if not device_clean or len(device_clean) < 8:
-        return redirect_with_flash(request, "/signup", "ডিভাইস ভেরিফিকেশন ব্যর্থ হয়েছে। অনুগ্রহ করে পুনরায় চেষ্টা করুন।", "error")
+    if not device_clean or len(device_clean) < 16:
+        return redirect_with_flash(request, "/signup", "ডিভাইস ভেরিফিকেশন ব্যর্থ হয়েছে। পুনরায় চেষ্টা করুন।", "error")
 
-    # 1 Device = 1 Account check
-    if request.cookies.get("iw_registered") == "1":
+    # 1. Cookie OR 4-Layer Recovered Lock Token check (Blocks cookie delete!)
+    if request.cookies.get("iw_registered") == "1" or lock_clean:
         return redirect_with_flash(request, "/signup", "এই ডিভাইস থেকে ইতিমধ্যেই একটি অ্যাকাউন্ট খোলা হয়েছে!", "error")
 
-    existing_device = await db.select("users", filters={"device_id": device_clean}, single=True)
-    if existing_device:
-        return redirect_with_flash(request, "/signup", "একটি ডিভাইসে একাধিক অ্যাকাউন্ট খোলা অনুমোদিত নয়!", "error")
+    # 2. Combined (Same Device Fingerprint + Same IP) check (Zero false positive on same phone model or same WiFi!)
+    if client_ip:
+        try:
+            same_ip_users = await db.select("users", filters={"signup_ip": client_ip})
+            if any(u.get("device_id") == device_clean for u in same_ip_users):
+                return redirect_with_flash(request, "/signup", "একই ডিভাইসে একাধিক অ্যাকাউন্ট খোলা অনুমোদিত নয়!", "error")
+        except Exception:
+            pass
 
     existing_email = await db.select("users", filters={"email": email_clean}, single=True)
     if existing_email:
@@ -173,6 +182,7 @@ async def signup_submit(
 
     new_ref_code = generate_referral_code(name)
     is_admin = email_clean == ADMIN_EMAIL
+    new_lock_token = secrets.token_hex(16)
 
     new_user = await db.insert(
         "users",
@@ -183,6 +193,8 @@ async def signup_submit(
             "referral_code": new_ref_code,
             "referred_by": ref_input if valid_referrer else None,
             "device_id": device_clean,
+            "signup_ip": client_ip or None,
+            "lock_token": new_lock_token,
             "balance": initial_balance,
             "total_earned": initial_balance,
             "is_admin": is_admin,
@@ -228,8 +240,9 @@ async def signup_submit(
     response.set_cookie("iw_auth", token, httponly=True, max_age=60 * 60 * 24 * 14, samesite="lax")
     response.set_cookie("iw_device", device_clean, max_age=60 * 60 * 24 * 365 * 5, samesite="lax")
     response.set_cookie("iw_registered", "1", max_age=60 * 60 * 24 * 365 * 5, samesite="lax")
+    response.set_cookie("iw_lock_token", new_lock_token, max_age=60 * 60 * 24 * 365 * 5, samesite="lax")
     return response
-
+    
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
