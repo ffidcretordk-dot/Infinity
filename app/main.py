@@ -386,16 +386,17 @@ async def get_global_notice() -> str:
         pass
     return "নতুন কাজ ও ইভেন্ট লাইভ হয়েছে! নিয়মিত কাজ করে দ্রুত পেমেন্ট নিন।"
 
-
 @app.get("/i", response_class=HTMLResponse)
 async def app_home(request: Request):
     user = await get_current_user(request)
     if not user:
         return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
 
-    recent_logs = await db.select("work_logs", filters={"user_id": user["id"]}, order="created_at.desc", limit=5)
-    referrals = await db.select("users", filters={"referred_by": user["referral_code"]})
-    global_notice = await get_global_notice()
+    recent_logs, referrals, global_notice = await asyncio.gather(
+        db.select("work_logs", filters={"user_id": user["id"]}, order="created_at.desc", limit=5),
+        db.select("users", filters={"referred_by": user["referral_code"]}),
+        get_global_notice(),
+    )
     level_info = get_earning_level(float(user.get("total_earned") or 0))
 
     ctx = base_ctx(request, user, "home")
@@ -404,7 +405,7 @@ async def app_home(request: Request):
     ctx["global_notice"] = global_notice
     ctx["level"] = level_info
     return templates.TemplateResponse("home.html", ctx)
-
+    
 @app.post("/admin/global-notice")
 async def admin_update_global_notice(request: Request, global_notice: str = Form(...)):
     user = await get_current_user(request)
