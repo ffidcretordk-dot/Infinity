@@ -1,0 +1,94 @@
+{% extends "base_app.html" %}
+{% block title %}Password Reset - Admin{% endblock %}
+{% block content %}
+<div class="space-y-5">
+  <!-- Header -->
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h1 class="text-xl font-extrabold text-emerald-950">
+        <i class="fa-solid fa-key text-emerald-700 mr-1.5"></i>User Password Reset
+      </h1>
+      <p class="text-xs text-emerald-700">ইমেইল দিয়ে ইউজার সার্চ করে নতুন পাসওয়ার্ড সেট করুন</p>
+    </div>
+    <a href="/admin" class="bg-white border border-emerald-200 px-4 py-2 rounded-full text-xs font-bold text-emerald-900">← মেইন অ্যাডমিন</a>
+  </div>
+
+  <!-- Search User by Email -->
+  <div class="soft-card rounded-3xl p-5 space-y-3">
+    <form action="/admin/reset" method="GET" class="flex flex-col sm:flex-row gap-2.5">
+      <div class="relative flex-1">
+        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-emerald-600 text-xs"></i>
+        <input type="text" name="q" value="{{ query }}" placeholder="ইউজারের ইমেইল বা নাম লিখে সার্চ করুন..."
+               class="w-full pl-10 pr-4 py-3 rounded-2xl border border-emerald-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+      </div>
+      <button type="submit" class="bg-emerald-900 hover:bg-emerald-800 text-white px-6 py-3 rounded-2xl text-xs font-extrabold shadow shrink-0">
+        সার্চ করুন
+      </button>
+      {% if query %}
+      <a href="/admin/reset" class="bg-emerald-50 border border-emerald-200 text-emerald-900 px-4 py-3 rounded-2xl text-xs font-bold text-center shrink-0">রিসেট</a>
+      {% endif %}
+    </form>
+    <div class="text-[11px] font-bold text-emerald-700">
+      {% if query %}
+        "{{ query }}" দিয়ে {{ matched_users|length }} জন ইউজার পাওয়া গেছে
+      {% else %}
+        সাম্প্রতিক ইউজার দেখানো হচ্ছে (মোট ইউজার: {{ total_users }} জন)
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Matched Users & Password Reset Form -->
+  <div class="space-y-3">
+    {% for u in matched_users %}
+    <div class="soft-card rounded-3xl p-5 space-y-3.5">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-11 h-11 rounded-2xl bg-emerald-900 text-white flex items-center justify-center font-extrabold text-base shrink-0">
+            {{ u.name[0]|upper }}
+          </div>
+          <div class="min-w-0">
+            <div class="font-extrabold text-sm text-emerald-950 truncate">{{ u.name }} <span class="text-xs text-emerald-700">(#{{ u.id }})</span></div>
+            <div class="text-xs font-semibold text-emerald-700 truncate"><i class="fa-solid fa-envelope mr-1"></i>{{ u.email }}</div>
+          </div>
+        </div>
+        <div class="text-right text-xs">
+          <div class="font-extrabold text-emerald-950">ব্যালেন্স: ৳{{ "%.2f"|format(u.balance) }}</div>
+          <div class="text-[11px] text-emerald-700">রেফার কোড: <b>{{ u.referral_code }}</b></div>
+        </div>
+      </div>
+
+      <form action="/admin/reset" method="POST" class="flex flex-col sm:flex-row gap-2 pt-2 border-t border-emerald-100">
+        <input type="hidden" name="user_id" value="{{ u.id }}" />
+        <div class="relative flex-1">
+          <input id="pw-input-{{ u.id }}" type="text" name="new_password" required minlength="6"
+                 placeholder="নতুন পাসওয়ার্ড দিন (কমপক্ষে ৬ অক্ষর)"
+                 class="w-full px-3.5 py-2.5 pr-20 rounded-xl border border-emerald-200 bg-white text-xs font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          <button type="button" onclick="genRandomPw('pw-input-{{ u.id }}')"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 px-2.5 py-1 rounded-lg text-[10px] font-extrabold">
+            Auto
+          </button>
+        </div>
+        <button type="submit" onclick="return confirm('{{ u.email }}-এর পাসওয়ার্ড পরিবর্তন করতে চান?')"
+                class="bg-emerald-900 hover:bg-emerald-800 text-white px-5 py-2.5 rounded-xl text-xs font-extrabold shadow shrink-0">
+          <i class="fa-solid fa-rotate mr-1"></i> Reset Password
+        </button>
+      </form>
+    </div>
+    {% else %}
+    <div class="soft-card rounded-3xl p-8 text-center text-sm font-bold text-emerald-700">
+      এই ইমেইল বা নামে কোনো ইউজার পাওয়া যায়নি।
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+function genRandomPw(inputId) {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  let pw = "";
+  for (let i = 0; i < 8; i++) pw += chars[Math.floor(Math.random() * chars.length)];
+  const el = document.getElementById(inputId);
+  if (el) el.value = pw;
+}
+</script>
+{% endblock %}
