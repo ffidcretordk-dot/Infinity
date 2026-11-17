@@ -1,146 +1,233 @@
 {% extends "base_app.html" %}
 {% block title %}সকল কাজ - InfinityWork{% endblock %}
 {% block content %}
+<style>
+  .work-glass {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(14px);
+    border: 1px solid #d1fae5;
+    box-shadow: 0 12px 32px -10px rgba(13, 74, 43, 0.08);
+  }
+  .work-tile {
+    background: #ffffff;
+    border: 1px solid #dcfce7;
+    box-shadow: 0 8px 20px -10px rgba(13, 74, 43, 0.08);
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .work-tile:hover {
+    transform: translateY(-2px);
+    border-color: #6ee7b7;
+    box-shadow: 0 14px 26px -10px rgba(13, 74, 43, 0.14);
+  }
+</style>
+
 <div class="space-y-5">
-  <!-- Hero Header Card -->
-  <div class="rounded-3xl bg-gradient-to-br from-emerald-800 via-emerald-900 to-emerald-950 text-white p-6 shadow-xl relative overflow-hidden">
-    <div class="absolute -right-6 -bottom-6 text-white/5 text-8xl pointer-events-none">
-      <i class="fa-solid fa-briefcase"></i>
-    </div>
-    <div class="relative z-10 flex items-center justify-between gap-4">
-      <div class="space-y-1">
-        <span class="inline-flex items-center gap-1.5 bg-white/15 px-3 py-1 rounded-full text-[11px] font-bold text-emerald-100">
-          <i class="fa-solid fa-bolt text-yellow-300"></i> ৬টি আয়ের মাধ্যম
+  <!-- 1. LIGHT-MINT WORK HUB HERO WITH FLAT VECTOR SVG -->
+  <section class="work-glass rounded-[2rem] p-5 sm:p-6 bg-gradient-to-br from-white via-emerald-50/70 to-teal-50/70 relative overflow-hidden">
+    <div class="grid grid-cols-12 gap-4 items-center">
+      <div class="col-span-8 space-y-2.5">
+        <span class="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-900 px-3 py-1 rounded-full text-[11px] font-extrabold">
+          <i class="fa-solid fa-bolt text-amber-500"></i> Online Earning Hub
         </span>
-        <h1 class="text-2xl font-extrabold">সকল কাজের তালিকা</h1>
-        <p class="text-xs text-emerald-200">আপনার পছন্দের কাজ বেছে নিয়ে এখনই ইনকাম শুরু করুন</p>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-emerald-950 leading-tight">কাজ করুন, আয় করুন</h1>
+        <p class="text-xs text-emerald-800">আপনার পছন্দের কাজটি বেছে নিয়ে এখনই ইনকাম শুরু করুন</p>
+
+        <div class="flex flex-wrap gap-2 pt-1">
+          <a href="/history" class="bg-emerald-900 hover:bg-emerald-800 text-white px-4 py-2 rounded-full text-xs font-extrabold shadow-xs">
+            <i class="fa-solid fa-clock-rotate-left mr-1"></i> আয়ের হিস্টোরি
+          </a>
+          <a href="/refer" class="bg-white border border-emerald-200 hover:bg-emerald-50 text-emerald-950 px-4 py-2 rounded-full text-xs font-extrabold">
+            <i class="fa-solid fa-users text-emerald-700 mr-1"></i> রেফার পেজ
+          </a>
+        </div>
       </div>
-      <a href="/history" class="bg-white/15 hover:bg-white/25 border border-white/20 text-white px-4 py-2.5 rounded-2xl text-xs font-bold shrink-0 backdrop-blur-md transition">
-        <i class="fa-solid fa-clock-rotate-left mr-1"></i> হিস্টোরি
+
+      <!-- Flat Vector Briefcase & Taka SVG -->
+      <div class="col-span-4 flex justify-end">
+        <svg viewBox="0 0 140 140" class="w-24 h-24 sm:w-28 sm:h-28 drop-shadow-sm" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="70" cy="70" r="62" fill="#d1fae5" />
+          <rect x="52" y="34" width="36" height="16" rx="8" fill="none" stroke="#064e3b" stroke-width="6" />
+          <rect x="24" y="46" width="92" height="62" rx="18" fill="#064e3b" />
+          <path d="M24 62c0-9 7-16 16-16h60c9 0 16 7 16 16v12H24V62z" fill="#059669" />
+          <circle cx="70" cy="74" r="14" fill="#fde047" />
+          <text x="70" y="80" text-anchor="middle" fill="#064e3b" font-size="16" font-weight="800" font-family="sans-serif">৳</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. REFER & EARN + INSTANT REFER LINK COPY CARD -->
+  <section class="work-glass rounded-3xl p-5 space-y-3 bg-gradient-to-br from-emerald-50/80 via-white to-amber-50/40 border-emerald-300">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-emerald-900 text-yellow-300 flex items-center justify-center text-lg shrink-0 shadow">
+          <i class="fa-solid fa-user-plus"></i>
+        </div>
+        <div>
+          <h2 class="font-extrabold text-sm text-emerald-950">রেফার করে আনলিমিটেড আয় করুন!</h2>
+          <p class="text-xs text-emerald-700">প্রতি সফল রেফারে আপনি <b>৮৳</b> ও আপনার বন্ধু <b>১০৳</b> বোনাস পাবে</p>
+        </div>
+      </div>
+      <a href="/refer" class="text-xs font-extrabold text-emerald-800 hover:text-emerald-950 underline">বিস্তারিত ও নিয়ম →</a>
+    </div>
+
+    <div class="flex flex-col sm:flex-row gap-2 pt-1">
+      <input id="work-ref-link-input" type="text" readonly value="{{ request.base_url }}signup?ref={{ user.referral_code }}"
+             class="flex-1 bg-white border border-emerald-200 rounded-2xl px-3.5 py-2.5 text-xs font-semibold text-emerald-950 focus:outline-none" />
+      <button id="work-copy-ref" onclick="copyText(document.getElementById('work-ref-link-input').value, 'work-copy-ref')"
+              class="bg-emerald-900 hover:bg-emerald-800 text-white px-5 py-2.5 rounded-2xl text-xs font-extrabold shrink-0 shadow">
+        <i class="fa-solid fa-copy mr-1"></i> রেফার লিংক কপি
+      </button>
+    </div>
+  </section>
+
+  <!-- 3. ACTIVE WORKS GRID -->
+  <section class="space-y-2.5">
+    <div class="flex items-center justify-between px-1">
+      <h2 class="font-extrabold text-sm text-emerald-950 flex items-center gap-1.5">
+        <span class="w-2 h-5 rounded-full bg-emerald-700 inline-block"></span>
+        <span>এখনই করতে পারবেন (Active Works)</span>
+      </h2>
+      <span class="text-[11px] font-bold text-emerald-700">লাইভ কাজ</span>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <!-- Micro Task -->
+      <a href="/task" class="work-tile rounded-3xl p-4 sm:p-5 flex items-center justify-between gap-3 group">
+        <div class="flex items-center gap-3.5 min-w-0">
+          <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-xl shrink-0 group-hover:bg-emerald-900 group-hover:text-white transition">
+            <i class="fa-solid fa-list-check"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5">
+              <h3 class="font-extrabold text-sm text-emerald-950 truncate">Micro Task</h3>
+              <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold">জনপ্রিয়</span>
+            </div>
+            <p class="text-xs text-emerald-700 mt-0.5 truncate">ফলো, লাইক, ভিজিট ও রিভিউ কাজ</p>
+          </div>
+        </div>
+        <span class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-800 flex items-center justify-center text-xs shrink-0 group-hover:bg-emerald-900 group-hover:text-white transition">
+          <i class="fa-solid fa-arrow-right"></i>
+        </span>
+      </a>
+
+      <!-- ChatGPT Image -->
+      <a href="/work/ai-image" class="work-tile rounded-3xl p-4 sm:p-5 flex items-center justify-between gap-3 group">
+        <div class="flex items-center gap-3.5 min-w-0">
+          <div class="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center text-xl shrink-0 group-hover:bg-purple-700 group-hover:text-white transition">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5">
+              <h3 class="font-extrabold text-sm text-emerald-950 truncate">ChatGPT Image</h3>
+              <span class="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[10px] font-extrabold">হাই পেমেন্ট</span>
+            </div>
+            <p class="text-xs text-emerald-700 mt-0.5 truncate">প্রম্পট দিয়ে AI ছবি বানিয়ে জমা দিন</p>
+          </div>
+        </div>
+        <span class="w-8 h-8 rounded-full bg-purple-50 text-purple-700 flex items-center justify-center text-xs shrink-0 group-hover:bg-purple-700 group-hover:text-white transition">
+          <i class="fa-solid fa-arrow-right"></i>
+        </span>
+      </a>
+
+      <!-- Typing Task -->
+      <a href="/work/typing" class="work-tile rounded-3xl p-4 sm:p-5 flex items-center justify-between gap-3 group">
+        <div class="flex items-center gap-3.5 min-w-0">
+          <div class="w-12 h-12 rounded-2xl bg-sky-100 text-sky-700 flex items-center justify-center text-xl shrink-0 group-hover:bg-sky-700 group-hover:text-white transition">
+            <i class="fa-solid fa-keyboard"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5">
+              <h3 class="font-extrabold text-sm text-emerald-950 truncate">Typing Task</h3>
+              <span class="px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 text-[10px] font-extrabold">সহজ কাজ</span>
+            </div>
+            <p class="text-xs text-emerald-700 mt-0.5 truncate">ছবি দেখে লেখা টাইপ করে আয় করুন</p>
+          </div>
+        </div>
+        <span class="w-8 h-8 rounded-full bg-sky-50 text-sky-700 flex items-center justify-center text-xs shrink-0 group-hover:bg-sky-700 group-hover:text-white transition">
+          <i class="fa-solid fa-arrow-right"></i>
+        </span>
+      </a>
+
+      <!-- 2, 4, 8 Cube Game -->
+      <a href="/work/cube-game" class="work-tile rounded-3xl p-4 sm:p-5 flex items-center justify-between gap-3 group">
+        <div class="flex items-center gap-3.5 min-w-0">
+          <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl shrink-0 group-hover:bg-amber-600 group-hover:text-white transition">
+            <i class="fa-solid fa-cubes"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5">
+              <h3 class="font-extrabold text-sm text-emerald-950 truncate">2, 4, 8 Cube Game</h3>
+              <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-extrabold">∞ রিওয়ার্ড</span>
+            </div>
+            <p class="text-xs text-emerald-700 mt-0.5 truncate">প্রতিদিন ৫ মিনিট গেম খেলে আয়</p>
+          </div>
+        </div>
+        <span class="w-8 h-8 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center text-xs shrink-0 group-hover:bg-amber-600 group-hover:text-white transition">
+          <i class="fa-solid fa-arrow-right"></i>
+        </span>
       </a>
     </div>
-  </div>
+  </section>
 
-  <!-- 6 Work Categories Grid -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-    <!-- 1. Micro Task -->
-    <a href="/task" class="soft-card rounded-3xl p-5 flex items-center justify-between gap-3 hover:border-emerald-400 hover:-translate-y-0.5 transition group">
-      <div class="flex items-center gap-4 min-w-0">
-        <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-xl shrink-0 group-hover:bg-emerald-900 group-hover:text-white transition">
-          <i class="fa-solid fa-list-check"></i>
-        </div>
+  <!-- 4. UPCOMING / COMING SOON WORKS GRID -->
+  <section class="space-y-2.5 pt-1">
+    <h2 class="font-extrabold text-sm text-emerald-950 flex items-center gap-1.5 px-1">
+      <span class="w-2 h-5 rounded-full bg-amber-500 inline-block"></span>
+      <span>আপকামিং কাজসমূহ (শীঘ্রই আসছে)</span>
+    </h2>
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <a href="/work/gmail-sell" class="work-tile rounded-2xl p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center text-base shrink-0"><i class="fa-solid fa-envelope"></i></div>
         <div class="min-w-0">
-          <div class="flex items-center gap-1.5">
-            <h3 class="font-extrabold text-sm text-emerald-950">Micro Task</h3>
-            <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold">জনপ্রিয়</span>
-          </div>
-          <p class="text-xs text-emerald-700 mt-0.5 truncate">ফলো, লাইক, ওয়েব ভিজিট ও রিভিউ কাজ</p>
+          <div class="font-extrabold text-xs text-emerald-950 truncate">Gmail Sell</div>
+          <span class="inline-block mt-0.5 px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[9px] font-extrabold">শীঘ্রই আসছে</span>
         </div>
-      </div>
-      <i class="fa-solid fa-chevron-right text-xs text-emerald-500 group-hover:translate-x-0.5 transition"></i>
-    </a>
+      </a>
 
-    <!-- 2. ChatGPT Image Generate -->
-    <a href="/work/ai-image" class="soft-card rounded-3xl p-5 flex items-center justify-between gap-3 hover:border-purple-400 hover:-translate-y-0.5 transition group">
-      <div class="flex items-center gap-4 min-w-0">
-        <div class="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center text-xl shrink-0 group-hover:bg-purple-700 group-hover:text-white transition">
-          <i class="fa-solid fa-wand-magic-sparkles"></i>
-        </div>
+      <a href="/work/fb-sell" class="work-tile rounded-2xl p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-base shrink-0"><i class="fa-brands fa-facebook"></i></div>
         <div class="min-w-0">
-          <div class="flex items-center gap-1.5">
-            <h3 class="font-extrabold text-sm text-emerald-950">ChatGPT Image</h3>
-            <span class="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[10px] font-extrabold">হাই রিওয়ার্ড</span>
-          </div>
-          <p class="text-xs text-emerald-700 mt-0.5 truncate">প্রম্পট দিয়ে AI ছবি বানিয়ে আয় করুন</p>
+          <div class="font-extrabold text-xs text-emerald-950 truncate">FB Sell</div>
+          <span class="inline-block mt-0.5 px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[9px] font-extrabold">শীঘ্রই আসছে</span>
         </div>
-      </div>
-      <i class="fa-solid fa-chevron-right text-xs text-emerald-500 group-hover:translate-x-0.5 transition"></i>
-    </a>
+      </a>
 
-    <!-- 3. 2, 4, 8 Cube Game -->
-    <a href="/work/cube-game" class="soft-card rounded-3xl p-5 flex items-center justify-between gap-3 hover:border-amber-400 hover:-translate-y-0.5 transition group">
-      <div class="flex items-center gap-4 min-w-0">
-        <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl shrink-0 group-hover:bg-amber-600 group-hover:text-white transition">
-          <i class="fa-solid fa-cubes"></i>
-        </div>
+      <a href="/work/ig-sell" class="work-tile rounded-2xl p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center text-base shrink-0"><i class="fa-brands fa-instagram"></i></div>
         <div class="min-w-0">
-          <div class="flex items-center gap-1.5">
-            <h3 class="font-extrabold text-sm text-emerald-950">2, 4, 8 Cube Game</h3>
-            <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-extrabold">∞ রিওয়ার্ড</span>
-          </div>
-          <p class="text-xs text-emerald-700 mt-0.5 truncate">গেম খেলে প্রতিদিন ৫ মিনিটে আয়</p>
+          <div class="font-extrabold text-xs text-emerald-950 truncate">IG Sell</div>
+          <span class="inline-block mt-0.5 px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[9px] font-extrabold">শীঘ্রই আসছে</span>
         </div>
-      </div>
-      <i class="fa-solid fa-chevron-right text-xs text-emerald-500 group-hover:translate-x-0.5 transition"></i>
-    </a>
+      </a>
 
-    <!-- 4. Typing Task -->
-    <a href="/work/typing" class="soft-card rounded-3xl p-5 flex items-center justify-between gap-3 hover:border-sky-400 hover:-translate-y-0.5 transition group">
-      <div class="flex items-center gap-4 min-w-0">
-        <div class="w-12 h-12 rounded-2xl bg-sky-100 text-sky-700 flex items-center justify-center text-xl shrink-0 group-hover:bg-sky-700 group-hover:text-white transition">
-          <i class="fa-solid fa-keyboard"></i>
-        </div>
+      <a href="/work/tiktok-sell" class="work-tile rounded-2xl p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-base shrink-0"><i class="fa-brands fa-tiktok"></i></div>
         <div class="min-w-0">
-          <div class="flex items-center gap-1.5">
-            <h3 class="font-extrabold text-sm text-emerald-950">Typing Task</h3>
-            <span class="px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 text-[10px] font-extrabold">৳২.৫০</span>
-          </div>
-          <p class="text-xs text-emerald-700 mt-0.5 truncate">সহজ টেক্সট টাইপ করে তাৎক্ষণিক আয়</p>
+          <div class="font-extrabold text-xs text-emerald-950 truncate">TikTok Sell</div>
+          <span class="inline-block mt-0.5 px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[9px] font-extrabold">শীঘ্রই আসছে</span>
         </div>
-      </div>
-      <i class="fa-solid fa-chevron-right text-xs text-emerald-500 group-hover:translate-x-0.5 transition"></i>
-    </a>
+      </a>
 
-    <!-- 5. Survey -->
-    <a href="/work/survey" class="soft-card rounded-3xl p-5 flex items-center justify-between gap-3 hover:border-teal-400 hover:-translate-y-0.5 transition group">
-      <div class="flex items-center gap-4 min-w-0">
-        <div class="w-12 h-12 rounded-2xl bg-teal-100 text-teal-700 flex items-center justify-center text-xl shrink-0 group-hover:bg-teal-700 group-hover:text-white transition">
-          <i class="fa-solid fa-square-poll-vertical"></i>
-        </div>
+      <a href="/work/survey" class="work-tile rounded-2xl p-4 flex items-center gap-3 col-span-2 sm:col-span-2">
+        <div class="w-10 h-10 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center text-base shrink-0"><i class="fa-solid fa-square-poll-vertical"></i></div>
         <div class="min-w-0">
-          <div class="flex items-center gap-1.5">
-            <h3 class="font-extrabold text-sm text-emerald-950">Daily Survey</h3>
-            <span class="px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 text-[10px] font-extrabold">৳৫.০০</span>
-          </div>
-          <p class="text-xs text-emerald-700 mt-0.5 truncate">ছোট প্রশ্নের উত্তর দিয়ে বোনাস নিন</p>
+          <div class="font-extrabold text-xs text-emerald-950 truncate">Daily Survey</div>
+          <span class="inline-block mt-0.5 px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[9px] font-extrabold">শীঘ্রই আসছে</span>
         </div>
-      </div>
-      <i class="fa-solid fa-chevron-right text-xs text-emerald-500 group-hover:translate-x-0.5 transition"></i>
-    </a>
-
-    <!-- 6. TikTok Account Sell -->
-    <a href="/work/tiktok-sell" class="soft-card rounded-3xl p-5 flex items-center justify-between gap-3 hover:border-rose-400 hover:-translate-y-0.5 transition group">
-      <div class="flex items-center gap-4 min-w-0">
-        <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center text-xl shrink-0 group-hover:bg-rose-700 group-hover:text-white transition">
-          <i class="fa-brands fa-tiktok"></i>
-        </div>
-        <div class="min-w-0">
-          <div class="flex items-center gap-1.5">
-            <h3 class="font-extrabold text-sm text-emerald-950">TikTok Account Sell</h3>
-            <span class="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-extrabold">হাই পেমেন্ট</span>
-          </div>
-          <p class="text-xs text-emerald-700 mt-0.5 truncate">আপনার TikTok আইডি নিরাপদে বিক্রি করুন</p>
-        </div>
-      </div>
-      <i class="fa-solid fa-chevron-right text-xs text-emerald-500 group-hover:translate-x-0.5 transition"></i>
-    </a>
-  </div>
-
-  <!-- Referral Quick Promo Card -->
-  <div class="soft-card rounded-3xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-emerald-50 to-white">
-    <div class="flex items-center gap-3">
-      <div class="w-11 h-11 rounded-2xl bg-emerald-900 text-yellow-300 flex items-center justify-center text-lg shrink-0">
-        <i class="fa-solid fa-gift"></i>
-      </div>
-      <div>
-        <h3 class="font-extrabold text-sm text-emerald-950">বন্ধুদের আমন্ত্রণ জানিয়ে বাড়তি আয় করুন!</h3>
-        <p class="text-xs text-emerald-700">প্রতি সফল রেফারে আপনি পাবেন <b>৮৳</b> ও আপনার বন্ধু পাবে <b>১০৳</b></p>
-      </div>
+      </a>
     </div>
-    <button id="work-copy-ref" onclick="copyText('{{ request.base_url }}signup?ref={{ user.referral_code }}', 'work-copy-ref')"
-            class="bg-emerald-900 hover:bg-emerald-800 text-white px-4 py-2.5 rounded-full text-xs font-bold shrink-0 shadow">
-      <i class="fa-solid fa-copy mr-1"></i> রেফার লিংক কপি
-    </button>
-  </div>
+  </section>
+
+  <!-- 5. QUICK FOOTER ACTIONS -->
+  <section class="grid grid-cols-2 gap-3 text-xs font-extrabold">
+    <a href="/payout" class="work-glass rounded-2xl py-3.5 px-4 flex items-center justify-center gap-2 text-emerald-950 hover:bg-emerald-50">
+      <i class="fa-solid fa-wallet text-emerald-700"></i> ০% চার্জে উইথড্র
+    </a>
+    <a href="/review" class="work-glass rounded-2xl py-3.5 px-4 flex items-center justify-center gap-2 text-emerald-950 hover:bg-amber-50">
+      <i class="fa-solid fa-star text-amber-500"></i> রিভিউ ও প্রুফ
+    </a>
+  </section>
 </div>
 {% endblock %}
