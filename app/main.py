@@ -379,7 +379,163 @@ async def refer_event_page(request: Request):
         "my_active_refs": my_active_refs,
     })
     return templates.TemplateResponse("event.html", ctx)
+
+
+def _iso_to_bd_date(iso_str: str | None) -> str:
+    if not iso_str:
+        return ""
+    try:
+        clean = iso_str.replace("Z", "+00:00")
+        dt = datetime.fromisoformat(clean)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        bd_dt = dt.astimezone(timezone(timedelta(hours=6)))
+        return bd_dt.strftime("%Y-%m-%d")
+    except Exception:
+        return iso_str[:10]
+
+
+async def _safe_select(table: str) -> list[dict]:
+    try:
+        return await db.select(table)
+    except Exception:
+        return []
+
+
+@app.get("/admin/status", response_class=HTMLResponse)
+async def admin_status_page(request: Request):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অ্যাডমিন অ্যাক্সেস অনুমোদিত নয়!", "error")
+
+    bd_now = datetime.now(timezone(timedelta(hours=6)))
+    today_str = bd_now.strftime("%Y-%m-%d")
+    yesterday_str = (bd_now - timedelta(days=1)).strftime("%Y-%m-%d")
+
+    (
+        all_users,
+        micro_subs,
+        ai_subs,
+        typing_subs,
+        work_logs,
+        payouts,
+        imgbb_keys,
+        micro_tasks,
+        notices,
+        reviews,
+        contacts,
+    ) = await asyncio.gather(
+        _safe_select("users"),
+        _safe_select("task_submissions"),
+        _safe_select("ai_image_submissions"),
+        _safe_select("typing_submissions"),
+        _safe_select("work_logs"),
+        _safe_select("payouts"),
+        _safe_select("imgbb_keys"),
+        _safe_select("tasks"),
+        _safe_select("notices"),
+        _safe_select("reviews"),
+        _safe_select("contact_messages"),
+    )
+
+    # 1. Users Stats
+    today_users = sum(1 for u in all_users if _iso_to_bd_date(u.get("created_at")) == today_str)
+    yesterday_users = sum(1 for u in all_users if _iso_to_bd_date(u.get("created_at")) == yesterday_str)
+    total_referrals = sum(1 for u in all_users if u.get("referred_by"))
+    total_user_balance = sum(float(u.get("balance") or 0) for u in all_users)
+    total_user_earned = sum(float(u.get("total_earned") or 0) for u in all_users)
+
+    # 2. All-Type Submissions Stats Helper
+    def calc_stats(rows: list[dict], amount_key: str = "reward") -> dict:
+        t_cnt, t_amt = 0, 0.0
+        y_cnt, y_amt = 0, 0.0
+        pend_cnt = 0
+        tot_amt = 0.0
+        for r in rows:
+            d = _iso_to_bd_date(r.get("created_at"))
+            amt = float(r.get(amount_key) or 0)
+            tot_amt += amt
+            if r.get("status") == "pending":
+                pend_cnt += 1
+            if d == today_str:
+                t_cnt += 1
+                t_amt += amt
+            elif d == yesterday_str:
+                y_cnt += 1
+                y_amt += amt
+        return {
+            "total": len(rows),
+            "total_amt": tot_amt,
+            "today_cnt": t_cnt,
+            "today_amt": t_amt,
+            "yest_cnt": y_cnt,
+            "yest_amt": y_amt,
+            "pending": pend_cnt,
+        }
+
+    st_micro = calc_stats(micro_subs)
+    st_ai = calc_stats(ai_subs)
+    st_typing = calc_stats(typing_subs)
+    st_logs = calc_stats(work_logs)
+
+    all_today_cnt = st_micro["today_cnt"] + st_ai["today_cnt"] + st_typing["today_cnt"] + st_logs["today_cnt"]
+    all_today_amt = st_micro["today_amt"] + st_ai["today_amt"] + st_typing["today_amt"] + st_logs["today_amt"]
+    all_yest_cnt = st_micro["yest_cnt"] + st_ai["yest_cnt"] + st_typing["yest_cnt"] + st_logs["yest_cnt"]
+    all_yest_amt = st_micro["yest_amt"] + st_ai["yest_amt"] + st_typing["yest_amt"] + st_logs["yest_amt"]
+    all_total_cnt = st_micro["total"] + st_ai["total"] + st_typing["total"] + st_logs["total"]
+    all_total_amt = st_micro["total_amt"] + st_ai["total_amt"] + st_typing["total_amt"] + st_logs["total_amt"]
+
+    # 3. Payouts Stats
+    today_payout_amt = sum(float(p.get("amount") or 0) for p in payouts if _iso_to_bd_date(p.get("created_at")) == today_str)
+    paid_payout_amt = sum(float(p.get("amount") or 0) for p in payouts if p.get("status") == "paid")
+    pending_payout_amt = sum(float(p.get("amount") or 0) for p in payouts if p.get("status") == "pending")
+    pending_payout_cnt = sum(1 for p in payouts if p.get("status") == "pending")
+
+    ctx = base_ctx(request, user, "admin")
+    ctx.update({
+        "today_str": today_str,
+        "yesterday_str": yesterday_str,
+        "users_stats": {
+            "total": len(all_users),
+            "today": today_users,
+            "yesterday": yesterday_users,
+            "referrals": total_referrals,
+            "balance_held": total_user_balance,
+            "total_earned": total_user_earned,
+        },
+        "tasks_summary": {
+            "today_cnt": all_today_cnt,
+            "today_amt": all_today_amt,
+            "yest_cnt": all_yest_cnt,
+            "yest_amt": all_yest_amt,
+            "total_cnt": all_total_cnt,
+            "total_amt": all_total_amt,
+        },
+        "breakdown": [
+            {"name": "Micro Tasks", "icon": "fa-list-check", "data": st_micro},
+            {"name": "ChatGPT Image", "icon": "fa-wand-magic-sparkles", "data": st_ai},
+            {"name": "Typing Tasks", "icon": "fa-keyboard", "data": st_typing},
+            {"name": "Cube Game & Logs", "icon": "fa-cubes", "data": st_logs},
+        ],
+        "payout_stats": {
+            "today_amt": today_payout_amt,
+            "paid_amt": paid_payout_amt,
+            "pending_amt": pending_payout_amt,
+            "pending_cnt": pending_payout_cnt,
+            "total_cnt": len(payouts),
+        },
+        "system_stats": {
+            "active_micro_tasks": sum(1 for t in micro_tasks if t.get("is_active")),
+            "imgbb_active": sum(1 for k in imgbb_keys if k.get("is_active")),
+            "imgbb_uploads": sum(int(k.get("usage_count") or 0) for k in imgbb_keys),
+            "notices": len(notices),
+            "reviews": len(reviews),
+            "contacts": len(contacts),
+        },
+    })
+    return templates.TemplateResponse("admin_status.html", ctx)
     
+
 @app.get("/task/{task_id}", response_class=HTMLResponse)
 async def task_detail(request: Request, task_id: int):
     user = await get_current_user(request)
