@@ -2,88 +2,200 @@
 {% block title %}Admin Panel - InfinityWork{% endblock %}
 {% block content %}
 <div class="space-y-6">
-  <h1 class="text-xl font-extrabold">⚙️ InfinityWork অ্যাডমিন প্যানেল</h1>
+  <!-- Admin Hero Header -->
+  <div class="rounded-3xl bg-gradient-to-br from-emerald-800 via-emerald-900 to-emerald-950 text-white p-6 shadow-xl relative overflow-hidden">
+    <div class="absolute -right-6 -bottom-6 text-white/5 text-8xl pointer-events-none">
+      <i class="fa-solid fa-shield-halved"></i>
+    </div>
+    <div class="relative z-10 space-y-4">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <span class="inline-flex items-center gap-1.5 bg-yellow-300 text-emerald-950 px-3 py-0.5 rounded-full text-[10px] font-extrabold uppercase">
+            <i class="fa-solid fa-crown"></i> Control Center
+          </span>
+          <h1 class="text-2xl font-extrabold mt-1.5">InfinityWork অ্যাডমিন প্যানেল</h1>
+        </div>
+        <a href="/i" class="bg-white/15 hover:bg-white/25 border border-white/20 px-4 py-2 rounded-full text-xs font-bold shrink-0">
+          ইউজার ভিউ →
+        </a>
+      </div>
 
-  <!-- Add Micro Task -->
+      <!-- 4 Live Admin Stats -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center text-xs">
+        <div class="bg-white/10 border border-white/15 rounded-2xl p-3">
+          <div class="text-emerald-200 text-[10px] font-bold">মোট ইউজার</div>
+          <div class="text-xl font-extrabold mt-0.5">{{ stats.users_count }}</div>
+        </div>
+        <div class="bg-white/10 border border-white/15 rounded-2xl p-3">
+          <div class="text-emerald-200 text-[10px] font-bold">Pending টাস্ক</div>
+          <div class="text-xl font-extrabold text-yellow-300 mt-0.5">{{ stats.pending_subs }}</div>
+        </div>
+        <div class="bg-white/10 border border-white/15 rounded-2xl p-3">
+          <div class="text-emerald-200 text-[10px] font-bold">Pending উইথড্র</div>
+          <div class="text-xl font-extrabold text-amber-300 mt-0.5">{{ stats.pending_payouts }}</div>
+        </div>
+        <div class="bg-white/10 border border-white/15 rounded-2xl p-3">
+          <div class="text-emerald-200 text-[10px] font-bold">Active ImgBB</div>
+          <div class="text-xl font-extrabold text-emerald-300 mt-0.5">{{ stats.active_imgbb }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Sub-Pages Grid -->
+  <div class="space-y-2.5">
+    <h2 class="font-extrabold text-sm text-emerald-950 px-1">
+      <i class="fa-solid fa-grid-2 text-emerald-700 mr-1.5"></i>অ্যাডমিন ম্যানেজমেন্ট মডিউল
+    </h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs font-extrabold">
+      <a href="/admin/submiton" class="soft-card rounded-2xl p-4 flex items-center gap-3 hover:border-emerald-400 transition">
+        <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-base shrink-0"><i class="fa-solid fa-list-check"></i></div>
+        <div class="min-w-0">
+          <div class="text-emerald-950 truncate">Bulk Submissions</div>
+          <div class="text-[10px] text-emerald-700 font-semibold">৫০+ অ্যাপ্রুভ ও রিজেক্ট</div>
+        </div>
+      </a>
+
+      <a href="/admin/c" class="soft-card rounded-2xl p-4 flex items-center gap-3 hover:border-purple-400 transition">
+        <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center text-base shrink-0"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+        <div class="min-w-0">
+          <div class="text-emerald-950 truncate">ChatGPT Image</div>
+          <div class="text-[10px] text-purple-700 font-semibold">প্রম্পট ও ইমেজ রিভিউ</div>
+        </div>
+      </a>
+
+      <a href="/admin/t" class="soft-card rounded-2xl p-4 flex items-center gap-3 hover:border-sky-400 transition">
+        <div class="w-10 h-10 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center text-base shrink-0"><i class="fa-solid fa-keyboard"></i></div>
+        <div class="min-w-0">
+          <div class="text-emerald-950 truncate">Typing Admin</div>
+          <div class="text-[10px] text-sky-700 font-semibold">ইমেজ টাইপিং টাস্ক</div>
+        </div>
+      </a>
+
+      <a href="/admin/n" class="soft-card rounded-2xl p-4 flex items-center gap-3 hover:border-rose-400 transition">
+        <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-base shrink-0"><i class="fa-solid fa-bullhorn"></i></div>
+        <div class="min-w-0">
+          <div class="text-emerald-950 truncate">Notice Admin</div>
+          <div class="text-[10px] text-rose-600 font-semibold">১+ ছবি ও নোটিশ পোস্ট</div>
+        </div>
+      </a>
+
+      <a href="/admin/r" class="soft-card rounded-2xl p-4 flex items-center gap-3 hover:border-amber-400 transition">
+        <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-base shrink-0"><i class="fa-solid fa-star"></i></div>
+        <div class="min-w-0">
+          <div class="text-emerald-950 truncate">Review Admin</div>
+          <div class="text-[10px] text-amber-700 font-semibold">ফেক রিভিউ ও প্রুফ</div>
+        </div>
+      </a>
+
+      <a href="/admin/imgbb" class="soft-card rounded-2xl p-4 flex items-center gap-3 hover:border-teal-400 transition">
+        <div class="w-10 h-10 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center text-base shrink-0"><i class="fa-solid fa-images"></i></div>
+        <div class="min-w-0">
+          <div class="text-emerald-950 truncate">ImgBB Manager</div>
+          <div class="text-[10px] text-teal-700 font-semibold">API লোড ব্যালেন্সার</div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Dashboard Global Popup Notice Editor -->
+  <div class="soft-card rounded-3xl p-5 space-y-3 border-emerald-300">
+    <h2 class="font-extrabold text-sm text-emerald-950">
+      <i class="fa-solid fa-window-restore text-emerald-700 mr-1.5"></i>Dashboard Global Popup Notice
+    </h2>
+    <form action="/admin/global-notice" method="POST" class="space-y-2.5 text-sm">
+      <textarea name="global_notice" rows="2" required placeholder="ড্যাশবোর্ডে ঢুকলে পপআপে যে গ্লোবাল নোটিশ দেখাবে তা লিখুন..."
+                class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white">{{ global_notice|default('') }}</textarea>
+      <button type="submit" class="bg-emerald-900 hover:bg-emerald-800 text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow">
+        <i class="fa-solid fa-floppy-disk mr-1"></i> Global Notice সেভ করুন
+      </button>
+    </form>
+  </div>
+
+  <!-- Add Micro Task + Active Tasks List -->
   <div class="soft-card rounded-3xl p-5 space-y-3">
-    <h2 class="font-extrabold text-sm">নতুন মাইক্রো টাস্ক যোগ করুন</h2>
+    <h2 class="font-extrabold text-sm text-emerald-950">
+      <i class="fa-solid fa-plus-circle text-emerald-700 mr-1.5"></i>নতুন মাইক্রো টাস্ক যোগ করুন
+    </h2>
     <form action="/admin/task/add" method="POST" class="grid sm:grid-cols-2 gap-3 text-sm">
-      <input type="text" name="title" required placeholder="Task Title" class="px-3 py-2.5 rounded-xl border border-emerald-200" />
-      <input type="text" name="category" required placeholder="Category (e.g. YouTube, Social)" class="px-3 py-2.5 rounded-xl border border-emerald-200" />
-      <input type="number" step="0.5" name="rate" required placeholder="Rate (৳)" class="px-3 py-2.5 rounded-xl border border-emerald-200" />
-      <input type="url" name="task_link" placeholder="Task Link (https://...)" class="px-3 py-2.5 rounded-xl border border-emerald-200" />
-      <textarea name="description" required placeholder="Task Description" class="sm:col-span-2 px-3 py-2.5 rounded-xl border border-emerald-200"></textarea>
-      <button type="submit" class="sm:col-span-2 bg-emerald-900 text-white py-2.5 rounded-xl font-bold">টাস্ক পাবলিশ করুন</button>
+      <input type="text" name="title" required placeholder="Task Title" class="px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white" />
+      <input type="text" name="category" required placeholder="Category (e.g. YouTube, Social)" class="px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white" />
+      <input type="number" step="0.5" name="rate" required placeholder="Rate (৳)" class="px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white" />
+      <input type="url" name="task_link" placeholder="Task Link (https://...)" class="px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white" />
+      <textarea name="description" rows="2" required placeholder="Task Description" class="sm:col-span-2 px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white"></textarea>
+      <button type="submit" class="sm:col-span-2 bg-emerald-900 hover:bg-emerald-800 text-white py-3 rounded-xl font-extrabold shadow">
+        টাস্ক পাবলিশ করুন
+      </button>
     </form>
 
     <div class="pt-3 space-y-2 text-xs">
       {% for t in tasks %}
-      <div class="flex items-center justify-between bg-emerald-50/70 p-2.5 rounded-xl">
-        <div><b>{{ t.title }}</b> ({{ t.category }}) — ৳{{ t.rate }}</div>
-        <form action="/admin/task/{{ t.id }}/delete" method="POST"><button class="text-red-600 font-bold">Delete</button></form>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-
-  <!-- ImgBB Load Balancer Pool -->
-  <div class="soft-card rounded-3xl p-5 space-y-3">
-    <h2 class="font-extrabold text-sm">ImgBB API Load Balancer</h2>
-    <p class="text-xs text-emerald-700">একাধিক API Key দিলে প্রতি আপলোডে একটি একটি করে ব্যবহার হবে। কোনো Key না থাকলে Dummy Submit হবে।</p>
-    <form action="/admin/imgbb/add" method="POST" class="flex flex-col sm:flex-row gap-2 text-sm">
-      <input type="text" name="label" required placeholder="Key Label (e.g. Key-1)" class="px-3 py-2 rounded-xl border border-emerald-200" />
-      <input type="text" name="api_key" required placeholder="ImgBB API Key" class="flex-1 px-3 py-2 rounded-xl border border-emerald-200" />
-      <button type="submit" class="bg-emerald-900 text-white px-4 py-2 rounded-xl font-bold">Add Key</button>
-    </form>
-
-    <div class="space-y-2 text-xs">
-      {% for k in imgbb_keys %}
-      <div class="flex items-center justify-between bg-emerald-50/70 p-2.5 rounded-xl">
-        <div><b>{{ k.label }}</b> • Used: {{ k.usage_count }} • Fails: {{ k.fail_count }}</div>
-        <form action="/admin/imgbb/{{ k.id }}/delete" method="POST"><button class="text-red-600 font-bold">Remove</button></form>
+      <div class="flex items-center justify-between gap-2 bg-emerald-50/70 border border-emerald-100 p-3 rounded-2xl">
+        <div class="min-w-0">
+          <div class="font-extrabold text-emerald-950 truncate">{{ t.title }}</div>
+          <div class="text-emerald-700">{{ t.category }} • ৳{{ "%.2f"|format(t.rate) }}</div>
+        </div>
+        <form action="/admin/task/{{ t.id }}/delete" method="POST" onsubmit="return confirm('টাস্কটি ডিলিট করবেন?')">
+          <button class="text-red-600 font-bold px-2.5 py-1 hover:bg-red-50 rounded-lg shrink-0">Delete</button>
+        </form>
       </div>
       {% else %}
-      <div class="text-amber-700 font-bold">কোনো ImgBB API Key নেই — এখন Dummy Submit চালু আছে।</div>
+      <p class="text-emerald-700 text-center py-2">কোনো মাইক্রো টাস্ক নেই।</p>
       {% endfor %}
     </div>
   </div>
 
-  <!-- Task Submissions Review -->
+  <!-- Payout / Withdraw Requests Review -->
   <div class="soft-card rounded-3xl p-5 space-y-3">
-    <h2 class="font-extrabold text-sm">টাস্ক সাবমিশন রিভিউ</h2>
-    <div class="space-y-2 text-xs">
-      {% for s in submissions %}
-      <div class="flex flex-wrap items-center justify-between gap-2 bg-white border border-emerald-100 p-3 rounded-xl">
-        <div>
-          <div>User #{{ s.user_id }} • Task #{{ s.task_id }} • ৳{{ s.reward }} • <b>{{ s.status }}</b></div>
-          <div class="text-emerald-700">Note: {{ s.proof_note }} {% if s.is_dummy %}<span class="text-amber-600">(Dummy Submit)</span>{% endif %}</div>
-          {% if s.proof_image_url %}<a href="{{ s.proof_image_url }}" target="_blank" class="text-blue-600 underline">স্ক্রিনশট দেখুন</a>{% endif %}
-        </div>
-        {% if s.status == 'pending' %}
-        <div class="flex gap-2">
-          <form action="/admin/submission/{{ s.id }}/approve" method="POST"><button class="bg-emerald-700 text-white px-3 py-1 rounded-lg font-bold">Approve</button></form>
-          <form action="/admin/submission/{{ s.id }}/reject" method="POST"><button class="bg-red-600 text-white px-3 py-1 rounded-lg font-bold">Reject</button></form>
-        </div>
-        {% endif %}
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-
-  <!-- Payout Review -->
-  <div class="soft-card rounded-3xl p-5 space-y-3">
-    <h2 class="font-extrabold text-sm">উইথড্র রিকুয়েস্ট</h2>
-    <div class="space-y-2 text-xs">
+    <h2 class="font-extrabold text-sm text-emerald-950">
+      <i class="fa-solid fa-wallet text-emerald-700 mr-1.5"></i>উইথড্র রিকুয়েস্ট সমূহ
+    </h2>
+    <div class="space-y-2.5 text-xs">
       {% for p in payouts %}
-      <div class="flex items-center justify-between bg-white border border-emerald-100 p-3 rounded-xl">
-        <div>User #{{ p.user_id }} • {{ p.method }} ({{ p.account_number }}) • <b>৳{{ p.amount }}</b> • {{ p.status }}</div>
+      <div class="flex flex-wrap items-center justify-between gap-2 bg-white border border-emerald-100 p-3.5 rounded-2xl">
+        <div>
+          <div class="font-extrabold text-emerald-950">
+            User #{{ p.user_id }} • {{ p.method }} ({{ p.account_number }}) • <span class="text-emerald-700">৳{{ "%.2f"|format(p.amount) }}</span>
+          </div>
+          <div class="text-[11px] text-slate-500 mt-0.5">
+            {{ (p.created_at or '')[:16].replace('T', ' ') }} •
+            <span class="font-bold {% if p.status == 'paid' %}text-emerald-700{% elif p.status == 'rejected' %}text-red-600{% else %}text-amber-600{% endif %}">{{ p.status|upper }}</span>
+          </div>
+        </div>
         {% if p.status == 'pending' %}
         <div class="flex gap-2">
-          <form action="/admin/payout/{{ p.id }}/paid" method="POST"><button class="bg-emerald-700 text-white px-3 py-1 rounded-lg font-bold">Mark Paid</button></form>
-          <form action="/admin/payout/{{ p.id }}/reject" method="POST"><button class="bg-red-600 text-white px-3 py-1 rounded-lg font-bold">Reject</button></form>
+          <form action="/admin/payout/{{ p.id }}/paid" method="POST">
+            <button class="bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-1.5 rounded-xl font-bold">Mark Paid</button>
+          </form>
+          <form action="/admin/payout/{{ p.id }}/reject" method="POST">
+            <button class="bg-red-600 hover:bg-red-700 text-white px-3.5 py-1.5 rounded-xl font-bold">Reject</button>
+          </form>
         </div>
         {% endif %}
       </div>
+      {% else %}
+      <p class="text-emerald-700 text-center py-3">কোনো উইথড্র রিকুয়েস্ট নেই।</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Recent Contact Messages (/contact) -->
+  <div class="soft-card rounded-3xl p-5 space-y-3">
+    <h2 class="font-extrabold text-sm text-emerald-950">
+      <i class="fa-solid fa-envelope-open-text text-sky-700 mr-1.5"></i>যোগাযোগ ও প্রমোশনাল মেসেজ (/contact)
+    </h2>
+    <div class="space-y-2.5 text-xs">
+      {% for c in contacts %}
+      <div class="bg-white border border-emerald-100 p-3.5 rounded-2xl space-y-1">
+        <div class="flex items-center justify-between gap-2">
+          <span class="font-extrabold text-emerald-950">{{ c.name }} ({{ c.contact_info }})</span>
+          <span class="bg-sky-100 text-sky-900 px-2.5 py-0.5 rounded-full text-[10px] font-bold">{{ c.topic }}</span>
+        </div>
+        <p class="text-emerald-900 leading-relaxed">{{ c.message }}</p>
+        <div class="text-[10px] text-slate-400">{{ (c.created_at or '')[:16].replace('T', ' ') }}</div>
+      </div>
+      {% else %}
+      <p class="text-emerald-700 text-center py-3">এখনো কোনো যোগাযোগ মেসেজ আসেনি।</p>
       {% endfor %}
     </div>
   </div>
