@@ -1542,14 +1542,33 @@ async def admin_panel(request: Request):
 
     tasks = await db.select("tasks", order="created_at.desc")
     imgbb_keys = await db.select("imgbb_keys", order="id.asc")
-    submissions = await db.select("task_submissions", order="created_at.desc", limit=30)
+    pending_subs = await db.select("task_submissions", filters={"status": "pending"})
     payouts = await db.select("payouts", order="created_at.desc", limit=30)
+    all_users = await db.select("users")
+    global_notice = await get_global_notice()
+
+    try:
+        contacts = await db.select("contact_messages", order="created_at.desc", limit=15)
+    except Exception:
+        contacts = []
+
+    stats = {
+        "users_count": len(all_users),
+        "pending_subs": len(pending_subs),
+        "pending_payouts": sum(1 for p in payouts if p.get("status") == "pending"),
+        "active_imgbb": sum(1 for k in imgbb_keys if k.get("is_active")),
+    }
 
     ctx = base_ctx(request, user, "admin")
-    ctx.update({"tasks": tasks, "imgbb_keys": imgbb_keys, "submissions": submissions, "payouts": payouts})
+    ctx.update({
+        "tasks": tasks,
+        "payouts": payouts,
+        "contacts": contacts,
+        "global_notice": global_notice,
+        "stats": stats,
+    })
     return templates.TemplateResponse("admin.html", ctx)
-
-
+    
 @app.post("/admin/task/add")
 async def admin_add_task(
     request: Request,
