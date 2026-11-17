@@ -1,0 +1,141 @@
+{% extends "base_app.html" %}
+{% block title %}Site Status & Analytics - Admin{% endblock %}
+{% block content %}
+<div class="space-y-5">
+  <!-- Header -->
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h1 class="text-xl font-extrabold text-emerald-950">
+        <i class="fa-solid fa-chart-column text-emerald-700 mr-1.5"></i>Full Site Status
+      </h1>
+      <p class="text-xs text-emerald-700">বাংলাদেশ সময় অনুযায়ী আজ ({{ today_str }}) ও গতকাল ({{ yesterday_str }})-এর রিপোর্ট</p>
+    </div>
+    <a href="/admin" class="bg-white border border-emerald-200 px-4 py-2 rounded-full text-xs font-bold text-emerald-900">← মেইন অ্যাডমিন</a>
+  </div>
+
+  <!-- 1. USERS ANALYTICS SECTION -->
+  <div class="rounded-3xl bg-gradient-to-br from-emerald-800 via-emerald-900 to-emerald-950 text-white p-5 sm:p-6 shadow-xl space-y-4">
+    <div class="flex items-center justify-between">
+      <h2 class="font-extrabold text-sm flex items-center gap-2">
+        <i class="fa-solid fa-users text-yellow-300"></i> ইউজার রিপোর্ট
+      </h2>
+      <span class="bg-white/15 px-3 py-0.5 rounded-full text-[10px] font-bold">Live Stats</span>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">
+      <div class="bg-white/10 border border-white/15 rounded-2xl p-3">
+        <div class="text-[11px] text-emerald-200 font-bold">মোট ইউজার</div>
+        <div class="text-2xl font-extrabold mt-0.5">{{ users_stats.total }}</div>
+      </div>
+      <div class="bg-white/10 border border-white/15 rounded-2xl p-3">
+        <div class="text-[11px] text-emerald-200 font-bold">আজকের ইউজার</div>
+        <div class="text-2xl font-extrabold text-yellow-300 mt-0.5">+{{ users_stats.today }}</div>
+      </div>
+      <div class="bg-white/10 border border-white/15 rounded-2xl p-3">
+        <div class="text-[11px] text-emerald-200 font-bold">গতকালের ইউজার</div>
+        <div class="text-2xl font-extrabold text-emerald-300 mt-0.5">+{{ users_stats.yesterday }}</div>
+      </div>
+      <div class="bg-white/10 border border-white/15 rounded-2xl p-3">
+        <div class="text-[11px] text-emerald-200 font-bold">মোট রেফার</div>
+        <div class="text-2xl font-extrabold mt-0.5">{{ users_stats.referrals }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. ALL-TYPE TASK SUBMISSIONS (TODAY vs YESTERDAY vs TOTAL) -->
+  <div class="soft-card rounded-3xl p-5 space-y-4">
+    <h2 class="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
+      <i class="fa-solid fa-list-check text-emerald-700"></i> সব ধরনের টাস্ক সাবমিশন ও টাকার হিসাব
+    </h2>
+
+    <div class="grid sm:grid-cols-3 gap-3 text-center">
+      <div class="rounded-2xl p-4 bg-emerald-50 border border-emerald-200 space-y-1">
+        <div class="text-[11px] font-bold text-emerald-700">আজকের সাবমিশন</div>
+        <div class="text-xl font-extrabold text-emerald-950">{{ tasks_summary.today_cnt }} টি</div>
+        <div class="text-sm font-extrabold text-emerald-700">৳{{ "%.2f"|format(tasks_summary.today_amt) }}</div>
+      </div>
+
+      <div class="rounded-2xl p-4 bg-sky-50 border border-sky-200 space-y-1">
+        <div class="text-[11px] font-bold text-sky-700">গতকালের সাবমিশন</div>
+        <div class="text-xl font-extrabold text-emerald-950">{{ tasks_summary.yest_cnt }} টি</div>
+        <div class="text-sm font-extrabold text-sky-700">৳{{ "%.2f"|format(tasks_summary.yest_amt) }}</div>
+      </div>
+
+      <div class="rounded-2xl p-4 bg-amber-50 border border-amber-200 space-y-1">
+        <div class="text-[11px] font-bold text-amber-800">সর্বমোট সাবমিশন</div>
+        <div class="text-xl font-extrabold text-emerald-950">{{ tasks_summary.total_cnt }} টি</div>
+        <div class="text-sm font-extrabold text-amber-700">৳{{ "%.2f"|format(tasks_summary.total_amt) }}</div>
+      </div>
+    </div>
+
+    <!-- Category Breakdown -->
+    <div class="space-y-2 pt-1 text-xs">
+      {% for b in breakdown %}
+      <div class="bg-white border border-emerald-100 rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
+            <i class="fa-solid {{ b.icon }}"></i>
+          </div>
+          <div>
+            <div class="font-extrabold text-emerald-950">{{ b.name }}</div>
+            <div class="text-[11px] text-emerald-700">মোট: {{ b.data.total }} টি • Pending: <b class="text-amber-600">{{ b.data.pending }}</b></div>
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="font-extrabold text-emerald-800">আজ: {{ b.data.today_cnt }} টি (৳{{ "%.2f"|format(b.data.today_amt) }})</div>
+          <div class="text-[11px] text-slate-500 font-semibold">গতকাল: {{ b.data.yest_cnt }} টি (৳{{ "%.2f"|format(b.data.yest_amt) }})</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- 3. FINANCE & PAYOUTS OVERVIEW -->
+  <div class="soft-card rounded-3xl p-5 space-y-3">
+    <h2 class="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
+      <i class="fa-solid fa-sack-dollar text-amber-500"></i> ফাইন্যান্স ও পেমেন্ট স্ট্যাটাস
+    </h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+      <div class="bg-white border border-emerald-100 rounded-2xl p-3.5">
+        <div class="text-emerald-700 font-bold">ইউজারদের বর্তমান ব্যালেন্স</div>
+        <div class="text-lg font-extrabold text-emerald-950 mt-0.5">৳{{ "%.2f"|format(users_stats.balance_held) }}</div>
+      </div>
+      <div class="bg-white border border-emerald-100 rounded-2xl p-3.5">
+        <div class="text-emerald-700 font-bold">মোট অর্জিত (All Time)</div>
+        <div class="text-lg font-extrabold text-emerald-700 mt-0.5">৳{{ "%.2f"|format(users_stats.total_earned) }}</div>
+      </div>
+      <div class="bg-white border border-emerald-100 rounded-2xl p-3.5">
+        <div class="text-emerald-700 font-bold">আজকের উইথড্র</div>
+        <div class="text-lg font-extrabold text-sky-700 mt-0.5">৳{{ "%.2f"|format(payout_stats.today_amt) }}</div>
+      </div>
+      <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5">
+        <div class="text-emerald-800 font-bold">মোট Paid পেমেন্ট</div>
+        <div class="text-lg font-extrabold text-emerald-800 mt-0.5">৳{{ "%.2f"|format(payout_stats.paid_amt) }}</div>
+      </div>
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-3.5">
+        <div class="text-amber-800 font-bold">Pending উইথড্র ({{ payout_stats.pending_cnt }})</div>
+        <div class="text-lg font-extrabold text-amber-700 mt-0.5">৳{{ "%.2f"|format(payout_stats.pending_amt) }}</div>
+      </div>
+      <div class="bg-white border border-emerald-100 rounded-2xl p-3.5">
+        <div class="text-emerald-700 font-bold">মোট উইথড্র রিকুয়েস্ট</div>
+        <div class="text-lg font-extrabold text-emerald-950 mt-0.5">{{ payout_stats.total_cnt }} টি</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. SYSTEM ASSETS & HEALTH -->
+  <div class="soft-card rounded-3xl p-5 space-y-3">
+    <h2 class="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
+      <i class="fa-solid fa-server text-emerald-700"></i> সিস্টেম ও কনটেন্ট স্ট্যাটাস
+    </h2>
+    <div class="grid grid-cols-3 sm:grid-cols-6 gap-2.5 text-center text-xs">
+      <div class="bg-emerald-50/70 rounded-2xl p-3"><div class="font-extrabold text-base">{{ system_stats.active_micro_tasks }}</div><div class="text-[10px] text-emerald-700 font-bold">Active টাস্ক</div></div>
+      <div class="bg-emerald-50/70 rounded-2xl p-3"><div class="font-extrabold text-base">{{ system_stats.imgbb_active }}</div><div class="text-[10px] text-emerald-700 font-bold">ImgBB Keys</div></div>
+      <div class="bg-emerald-50/70 rounded-2xl p-3"><div class="font-extrabold text-base">{{ system_stats.imgbb_uploads }}</div><div class="text-[10px] text-emerald-700 font-bold">ImgBB আপলোড</div></div>
+      <div class="bg-emerald-50/70 rounded-2xl p-3"><div class="font-extrabold text-base">{{ system_stats.notices }}</div><div class="text-[10px] text-emerald-700 font-bold">নোটিশ</div></div>
+      <div class="bg-emerald-50/70 rounded-2xl p-3"><div class="font-extrabold text-base">{{ system_stats.reviews }}</div><div class="text-[10px] text-emerald-700 font-bold">রিভিউ</div></div>
+      <div class="bg-emerald-50/70 rounded-2xl p-3"><div class="font-extrabold text-base">{{ system_stats.contacts }}</div><div class="text-[10px] text-emerald-700 font-bold">মেসেজ</div></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
