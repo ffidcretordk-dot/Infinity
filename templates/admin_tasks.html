@@ -1,0 +1,182 @@
+{% extends "base_app.html" %}
+{% block title %}Task Control System - Admin{% endblock %}
+{% block content %}
+<div class="space-y-5">
+  <!-- Header -->
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h1 class="text-xl font-extrabold text-emerald-950">
+        <i class="fa-solid fa-sliders text-emerald-700 mr-1.5"></i>Micro Task Control System
+      </h1>
+      <p class="text-xs text-emerald-700">নতুন টাস্ক তৈরি, এডিট, পজ এবং ডিলিট করুন</p>
+    </div>
+    <a href="/admin" class="bg-white border border-emerald-200 px-4 py-2 rounded-full text-xs font-bold text-emerald-900">← মেইন অ্যাডমিন</a>
+  </div>
+
+  <!-- Summary Bar -->
+  <div class="grid grid-cols-2 gap-3 text-center text-xs">
+    <div class="soft-card rounded-2xl p-3.5">
+      <div class="text-emerald-700 font-bold">মোট টাস্ক</div>
+      <div class="text-xl font-extrabold text-emerald-950 mt-0.5">{{ tasks|length }} টি</div>
+    </div>
+    <div class="soft-card rounded-2xl p-3.5">
+      <div class="text-emerald-700 font-bold">বর্তমানে Active</div>
+      <div class="text-xl font-extrabold text-emerald-700 mt-0.5">{{ active_count }} টি</div>
+    </div>
+  </div>
+
+  <!-- Add New Micro Task Card -->
+  <div class="soft-card rounded-3xl p-5 space-y-3">
+    <h2 class="font-extrabold text-sm text-emerald-950">
+      <i class="fa-solid fa-plus-circle text-emerald-700 mr-1.5"></i>নতুন মাইক্রো টাস্ক যোগ করুন
+    </h2>
+    <form action="/admin/task/add" method="POST" class="grid sm:grid-cols-2 gap-3 text-sm">
+      <div>
+        <label class="text-[11px] font-bold text-emerald-800 block mb-1">Task Title</label>
+        <input type="text" name="title" required placeholder="যেমন: Facebook Page Follow" class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white" />
+      </div>
+      <div>
+        <label class="text-[11px] font-bold text-emerald-800 block mb-1">Category</label>
+        <input type="text" name="category" required placeholder="যেমন: Social Media, YouTube" class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white" />
+      </div>
+      <div>
+        <label class="text-[11px] font-bold text-emerald-800 block mb-1">Rate / Reward (৳)</label>
+        <input type="number" step="0.5" name="rate" required placeholder="যেমন: 5" class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white" />
+      </div>
+      <div>
+        <label class="text-[11px] font-bold text-emerald-800 block mb-1">Task Link</label>
+        <input type="url" name="task_link" placeholder="https://..." class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white" />
+      </div>
+      <div class="sm:col-span-2">
+        <label class="text-[11px] font-bold text-emerald-800 block mb-1">Description / নির্দেশনা</label>
+        <textarea name="description" rows="3" required placeholder="ইউজার কীভাবে কাজটি করবে তার নিয়ম লিখুন..." class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white"></textarea>
+      </div>
+      <button type="submit" class="sm:col-span-2 bg-emerald-900 hover:bg-emerald-800 text-white py-3 rounded-xl font-extrabold shadow">
+        <i class="fa-solid fa-plus mr-1"></i> টাস্ক পাবলিশ করুন
+      </button>
+    </form>
+  </div>
+
+  <!-- All Tasks Management List -->
+  <div class="soft-card rounded-3xl p-5 space-y-3">
+    <h2 class="font-extrabold text-sm text-emerald-950">সকল মাইক্রো টাস্ক ({{ tasks|length }})</h2>
+
+    <div class="space-y-3 text-xs">
+      {% for t in tasks %}
+      <div class="bg-white border border-emerald-100 rounded-2xl p-4 space-y-2.5">
+        <div class="flex flex-wrap items-start justify-between gap-2">
+          <div class="space-y-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="font-extrabold text-sm text-emerald-950">{{ t.title }}</span>
+              <span class="bg-emerald-100 text-emerald-900 px-2.5 py-0.5 rounded-full text-[10px] font-bold">{{ t.category }}</span>
+              {% if t.is_active %}
+              <span class="bg-emerald-700 text-white px-2 py-0.5 rounded-full text-[10px] font-bold">Active</span>
+              {% else %}
+              <span class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full text-[10px] font-bold">Paused</span>
+              {% endif %}
+            </div>
+            <p class="text-emerald-800/85 leading-relaxed">{{ t.description }}</p>
+            {% if t.task_link %}
+            <a href="{{ t.task_link }}" target="_blank" class="text-sky-600 font-bold underline inline-block">
+              <i class="fa-solid fa-link mr-0.5"></i> {{ t.task_link }}
+            </a>
+            {% endif %}
+          </div>
+
+          <div class="text-lg font-extrabold text-emerald-700 shrink-0">৳{{ "%.2f"|format(t.rate) }}</div>
+        </div>
+
+        <!-- Action Buttons: Edit, Toggle, Delete -->
+        <div class="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-emerald-50">
+          <button type="button"
+                  data-id="{{ t.id }}"
+                  data-title="{{ t.title }}"
+                  data-category="{{ t.category }}"
+                  data-rate="{{ t.rate }}"
+                  data-link="{{ t.task_link or '' }}"
+                  data-desc="{{ t.description }}"
+                  onclick="openEditTaskModal(this)"
+                  class="bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 px-3.5 py-1.5 rounded-xl font-bold">
+            <i class="fa-solid fa-pen-to-square mr-1"></i> Edit
+          </button>
+
+          <form action="/admin/task/{{ t.id }}/toggle" method="POST">
+            <button class="px-3.5 py-1.5 rounded-xl font-bold border
+              {% if t.is_active %}bg-amber-50 border-amber-200 text-amber-900 hover:bg-amber-100{% else %}bg-emerald-50 border-emerald-200 text-emerald-900 hover:bg-emerald-100{% endif %}">
+              {{ 'Pause' if t.is_active else 'Activate' }}
+            </button>
+          </form>
+
+          <form action="/admin/task/{{ t.id }}/delete" method="POST" onsubmit="return confirm('টাস্কটি স্থায়ীভাবে ডিলিট করতে চান?')">
+            <button class="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 px-3.5 py-1.5 rounded-xl font-bold">
+              <i class="fa-solid fa-trash mr-1"></i> Delete
+            </button>
+          </form>
+        </div>
+      </div>
+      {% else %}
+      <p class="text-emerald-700 text-center py-4">কোনো মাইক্রো টাস্ক নেই। ওপরের ফর্ম থেকে যোগ করুন।</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Interactive Edit Task Modal -->
+<div id="edit-task-modal" class="hidden fixed inset-0 z-50 bg-emerald-950/55 backdrop-blur-xs flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-emerald-100 space-y-4">
+    <div class="flex items-center justify-between border-b border-emerald-100 pb-3">
+      <h3 class="font-extrabold text-base text-emerald-950">
+        <i class="fa-solid fa-pen-to-square text-emerald-700 mr-1.5"></i>টাস্ক এডিট করুন
+      </h3>
+      <button onclick="closeEditTaskModal()" class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-900 font-bold">✕</button>
+    </div>
+
+    <form id="edit-task-form" action="" method="POST" class="space-y-3 text-sm">
+      <div>
+        <label class="text-[11px] font-bold text-emerald-800 block mb-1">Task Title</label>
+        <input id="edit-title" type="text" name="title" required class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white" />
+      </div>
+      <div class="grid grid-cols-2 gap-2.5">
+        <div>
+          <label class="text-[11px] font-bold text-emerald-800 block mb-1">Category</label>
+          <input id="edit-category" type="text" name="category" required class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white" />
+        </div>
+        <div>
+          <label class="text-[11px] font-bold text-emerald-800 block mb-1">Rate (৳)</label>
+          <input id="edit-rate" type="number" step="0.5" name="rate" required class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white" />
+        </div>
+      </div>
+      <div>
+        <label class="text-[11px] font-bold text-emerald-800 block mb-1">Task Link</label>
+        <input id="edit-link" type="url" name="task_link" class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white" />
+      </div>
+      <div>
+        <label class="text-[11px] font-bold text-emerald-800 block mb-1">Description</label>
+        <textarea id="edit-desc" name="description" rows="3" required class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white"></textarea>
+      </div>
+
+      <div class="flex gap-2 pt-1">
+        <button type="button" onclick="closeEditTaskModal()" class="flex-1 bg-slate-100 text-slate-800 py-2.5 rounded-xl font-bold text-xs">বাতিল</button>
+        <button type="submit" class="flex-1 bg-emerald-900 hover:bg-emerald-800 text-white py-2.5 rounded-xl font-extrabold text-xs shadow">আপডেট সেভ করুন ✓</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openEditTaskModal(btn) {
+  const d = btn.dataset;
+  document.getElementById("edit-task-form").action = `/admin/task/${d.id}/edit`;
+  document.getElementById("edit-title").value = d.title || "";
+  document.getElementById("edit-category").value = d.category || "";
+  document.getElementById("edit-rate").value = d.rate || "";
+  document.getElementById("edit-link").value = d.link || "";
+  document.getElementById("edit-desc").value = d.desc || "";
+  document.getElementById("edit-task-modal").classList.remove("hidden");
+}
+
+function closeEditTaskModal() {
+  document.getElementById("edit-task-modal").classList.add("hidden");
+}
+</script>
+{% endblock %}
