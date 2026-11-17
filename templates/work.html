@@ -26,9 +26,7 @@
   <section class="work-glass rounded-[2rem] p-5 sm:p-6 bg-gradient-to-br from-white via-emerald-50/70 to-teal-50/70 relative overflow-hidden">
     <div class="grid grid-cols-12 gap-4 items-center">
       <div class="col-span-8 space-y-2.5">
-        <span class="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-900 px-3 py-1 rounded-full text-[11px] font-extrabold">
-          <i class="fa-solid fa-bolt text-amber-500"></i> Online Earning Hub
-        </span>
+      
         <h1 class="text-2xl sm:text-3xl font-extrabold text-emerald-950 leading-tight">কাজ করুন, আয় করুন</h1>
         <p class="text-xs text-emerald-800">আপনার পছন্দের কাজটি বেছে নিয়ে এখনই ইনকাম শুরু করুন</p>
 
@@ -56,30 +54,6 @@
     </div>
   </section>
 
-  <!-- 2. REFER & EARN + INSTANT REFER LINK COPY CARD -->
-  <section class="work-glass rounded-3xl p-5 space-y-3 bg-gradient-to-br from-emerald-50/80 via-white to-amber-50/40 border-emerald-300">
-    <div class="flex flex-wrap items-center justify-between gap-2">
-      <div class="flex items-center gap-3">
-        <div class="w-11 h-11 rounded-2xl bg-emerald-900 text-yellow-300 flex items-center justify-center text-lg shrink-0 shadow">
-          <i class="fa-solid fa-user-plus"></i>
-        </div>
-        <div>
-          <h2 class="font-extrabold text-sm text-emerald-950">রেফার করে আনলিমিটেড আয় করুন!</h2>
-          <p class="text-xs text-emerald-700">প্রতি সফল রেফারে আপনি <b>৮৳</b> ও আপনার বন্ধু <b>১০৳</b> বোনাস পাবে</p>
-        </div>
-      </div>
-      <a href="/refer" class="text-xs font-extrabold text-emerald-800 hover:text-emerald-950 underline">বিস্তারিত ও নিয়ম →</a>
-    </div>
-
-    <div class="flex flex-col sm:flex-row gap-2 pt-1">
-      <input id="work-ref-link-input" type="text" readonly value="{{ request.base_url }}signup?ref={{ user.referral_code }}"
-             class="flex-1 bg-white border border-emerald-200 rounded-2xl px-3.5 py-2.5 text-xs font-semibold text-emerald-950 focus:outline-none" />
-      <button id="work-copy-ref" onclick="copyText(document.getElementById('work-ref-link-input').value, 'work-copy-ref')"
-              class="bg-emerald-900 hover:bg-emerald-800 text-white px-5 py-2.5 rounded-2xl text-xs font-extrabold shrink-0 shadow">
-        <i class="fa-solid fa-copy mr-1"></i> রেফার লিংক কপি
-      </button>
-    </div>
-  </section>
 
   <!-- 3. ACTIVE WORKS GRID -->
   <section class="space-y-2.5">
@@ -220,6 +194,30 @@
     </div>
   </section>
 
+  <!-- 2. REFER & EARN + INSTANT REFER LINK COPY CARD -->
+  <section class="work-glass rounded-3xl p-5 space-y-3 bg-gradient-to-br from-emerald-50/80 via-white to-amber-50/40 border-emerald-300">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-emerald-900 text-yellow-300 flex items-center justify-center text-lg shrink-0 shadow">
+          <i class="fa-solid fa-user-plus"></i>
+        </div>
+        <div>
+          <h2 class="font-extrabold text-sm text-emerald-950">রেফার করে আনলিমিটেড আয় করুন!</h2>
+          <p class="text-xs text-emerald-700">প্রতি সফল রেফারে আপনি <b>৮৳</b> ও আপনার বন্ধু <b>১০৳</b> বোনাস পাবে</p>
+        </div>
+      </div>
+      <a href="/refer" class="text-xs font-extrabold text-emerald-800 hover:text-emerald-950 underline">বিস্তারিত ও নিয়ম →</a>
+    </div>
+
+    <div class="flex flex-col sm:flex-row gap-2 pt-1">
+      <input id="work-ref-link-input" type="text" readonly value="{{ request.base_url }}signup?ref={{ user.referral_code }}"
+             class="flex-1 bg-white border border-emerald-200 rounded-2xl px-3.5 py-2.5 text-xs font-semibold text-emerald-950 focus:outline-none" />
+      <button id="work-copy-ref" onclick="copyText(document.getElementById('work-ref-link-input').value, 'work-copy-ref')"
+              class="bg-emerald-900 hover:bg-emerald-800 text-white px-5 py-2.5 rounded-2xl text-xs font-extrabold shrink-0 shadow">
+        <i class="fa-solid fa-copy mr-1"></i> রেফার লিংক কপি
+      </button>
+    </div>
+  </section>
   <!-- 5. QUICK FOOTER ACTIONS -->
   <section class="grid grid-cols-2 gap-3 text-xs font-extrabold">
     <a href="/payout" class="work-glass rounded-2xl py-3.5 px-4 flex items-center justify-center gap-2 text-emerald-950 hover:bg-emerald-50">
