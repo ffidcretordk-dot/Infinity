@@ -1569,6 +1569,22 @@ async def admin_panel(request: Request):
     })
     return templates.TemplateResponse("admin.html", ctx)
     
+# ---------------- ADMIN PANEL: MICRO TASK CONTROL (/admin/task) ----------------
+
+@app.get("/admin/task", response_class=HTMLResponse)
+async def admin_task_panel(request: Request):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অ্যাডমিন অ্যাক্সেস অনুমোদিত নয়!", "error")
+
+    tasks = await db.select("tasks", order="id.desc")
+    active_count = sum(1 for t in tasks if t.get("is_active"))
+
+    ctx = base_ctx(request, user, "admin")
+    ctx.update({"tasks": tasks, "active_count": active_count})
+    return templates.TemplateResponse("admin_tasks.html", ctx)
+
+
 @app.post("/admin/task/add")
 async def admin_add_task(
     request: Request,
@@ -1593,7 +1609,47 @@ async def admin_add_task(
             "is_active": True,
         },
     )
-    return redirect_with_flash(request, "/admin", "নতুন মাইক্রো টাস্ক যুক্ত হয়েছে!", "success")
+    return redirect_with_flash(request, "/admin/task", "নতুন মাইক্রো টাস্ক যুক্ত হয়েছে!", "success")
+
+
+@app.post("/admin/task/{task_id}/edit")
+async def admin_edit_task(
+    request: Request,
+    task_id: int,
+    title: str = Form(...),
+    category: str = Form(...),
+    description: str = Form(...),
+    rate: float = Form(...),
+    task_link: str = Form(""),
+):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
+
+    await db.update(
+        "tasks",
+        {"id": task_id},
+        {
+            "title": title.strip(),
+            "category": category.strip(),
+            "description": description.strip(),
+            "rate": rate,
+            "task_link": task_link.strip(),
+        },
+    )
+    return redirect_with_flash(request, "/admin/task", "টাস্ক সফলভাবে আপডেট করা হয়েছে!", "success")
+
+
+@app.post("/admin/task/{task_id}/toggle")
+async def admin_toggle_task(request: Request, task_id: int):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
+
+    row = await db.select("tasks", filters={"id": task_id}, single=True)
+    if row:
+        await db.update("tasks", {"id": task_id}, {"is_active": not bool(row.get("is_active"))})
+    return redirect_with_flash(request, "/admin/task", "টাস্ক স্ট্যাটাস পরিবর্তন হয়েছে।", "info")
 
 
 @app.post("/admin/task/{task_id}/delete")
@@ -1602,8 +1658,8 @@ async def admin_delete_task(request: Request, task_id: int):
     if not user or not user.get("is_admin"):
         return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
     await db.delete("tasks", {"id": task_id})
-    return redirect_with_flash(request, "/admin", "টাস্ক মুছে ফেলা হয়েছে।", "info")
-
+    return redirect_with_flash(request, "/admin/task", "টাস্ক মুছে ফেলা হয়েছে।", "info")
+    
 # ---------------- ADMIN PANEL: IMGBB LOAD BALANCER (/admin/imgbb) ----------------
 
 @app.get("/admin/imgbb", response_class=HTMLResponse)
