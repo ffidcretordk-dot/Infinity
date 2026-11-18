@@ -1,0 +1,274 @@
+{% extends "base_app.html" %}
+{% block title %}Typing Task Admin - InfinityWork{% endblock %}
+{% block content %}
+<div class="space-y-5">
+  <!-- Header Card -->
+  <div class="soft-card rounded-[2rem] p-5 sm:p-6 bg-gradient-to-br from-white via-sky-50/40 to-emerald-50/60 flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center gap-3.5">
+      <div class="w-12 h-12 rounded-2xl bg-sky-100 text-sky-700 flex items-center justify-center text-xl shadow-xs">
+        <i class="fa-solid fa-keyboard"></i>
+      </div>
+      <div>
+        <h1 class="text-xl font-extrabold text-emerald-950">Typing Task Admin</h1>
+        <p class="text-xs text-emerald-700">ImgBB দিয়ে ছবি আপলোড করে টাইপিং কাজ ও প্রাইস সেট করুন</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="/work/typing" target="_blank" class="bg-emerald-50 border border-emerald-200 px-3.5 py-2 rounded-full text-xs font-bold text-emerald-900">
+        <i class="fa-solid fa-eye mr-1"></i> ইউজার পেজ
+      </a>
+      <a href="/admin" class="bg-emerald-900 text-white px-4 py-2 rounded-full text-xs font-bold shadow-xs">← অ্যাডমিন</a>
+    </div>
+  </div>
+
+  <!-- Quick Summary Strip -->
+  {% set cnt = counts|default({'all':0,'pending':0,'approved':0,'rejected':0}) %}
+  <div class="grid grid-cols-4 gap-2 text-center text-xs">
+    <div class="soft-card rounded-2xl p-3">
+      <div class="text-lg font-extrabold text-emerald-950">{{ tasks|length }}</div>
+      <div class="text-[10px] font-bold text-emerald-700">মোট টাস্ক</div>
+    </div>
+    <div class="soft-card rounded-2xl p-3 bg-amber-50/70 border-amber-200">
+      <div class="text-lg font-extrabold text-amber-700">{{ cnt.pending }}</div>
+      <div class="text-[10px] font-bold text-amber-800">Pending</div>
+    </div>
+    <div class="soft-card rounded-2xl p-3 bg-emerald-50/70 border-emerald-200">
+      <div class="text-lg font-extrabold text-emerald-700">{{ cnt.approved }}</div>
+      <div class="text-[10px] font-bold text-emerald-800">Approved</div>
+    </div>
+    <div class="soft-card rounded-2xl p-3 bg-red-50/60 border-red-200">
+      <div class="text-lg font-extrabold text-red-600">{{ cnt.rejected }}</div>
+      <div class="text-[10px] font-bold text-red-700">Rejected</div>
+    </div>
+  </div>
+
+  <!-- Add New Typing Task -->
+  <div class="soft-card rounded-3xl p-5 sm:p-6 space-y-4">
+    <div class="flex items-center justify-between">
+      <h2 class="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
+        <i class="fa-solid fa-plus-circle text-sky-700"></i> নতুন টাইপিং ইমেজ আপলোড করুন
+      </h2>
+      <span class="text-[10px] font-extrabold bg-sky-100 text-sky-900 px-2.5 py-1 rounded-full">Auto: {{ next_auto_title }}</span>
+    </div>
+
+    <form action="/admin/t/task/add" method="POST" enctype="multipart/form-data" class="space-y-3.5 text-sm">
+      <div class="grid sm:grid-cols-2 gap-3">
+        <div>
+          <label class="text-[11px] font-bold text-emerald-800 block mb-1">Title (খালি রাখলে অটো: {{ next_auto_title }})</label>
+          <input type="text" name="title" placeholder="{{ next_auto_title }}"
+                 class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        </div>
+        <div>
+          <label class="text-[11px] font-bold text-emerald-800 block mb-1">Price / Reward (৳)</label>
+          <input type="number" step="0.5" name="reward" required placeholder="যেমন: 5"
+                 class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        </div>
+      </div>
+
+      <!-- Image Upload with Live Preview -->
+      <div class="bg-sky-50/60 border-2 border-dashed border-sky-300 rounded-2xl p-4 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <label for="typing-img-file" class="inline-flex items-center gap-2 bg-white border border-sky-200 hover:bg-sky-100 text-sky-950 px-4 py-2 rounded-xl text-xs font-extrabold cursor-pointer shadow-xs">
+            <i class="fa-solid fa-cloud-arrow-up text-sky-700"></i>
+            <span>টাইপিং ইমেজ সিলেক্ট করুন (ImgBB)</span>
+          </label>
+          <img id="typing-upload-prev" src="" class="hidden h-14 rounded-xl border border-sky-300 object-contain" />
+        </div>
+
+        <input id="typing-img-file" type="file" name="typing_image" accept="image/*" class="hidden" onchange="previewTypingUpload(this)" />
+
+        <input type="url" name="fallback_image_url" placeholder="অথবা সরাসরি Image URL দিন (https://i.ibb.co/...)"
+               class="w-full px-3.5 py-2 rounded-xl border border-emerald-200 bg-white text-xs" />
+      </div>
+
+      <button type="submit" class="w-full bg-gradient-to-r from-emerald-700 to-emerald-950 hover:opacity-95 text-white py-3.5 rounded-full font-extrabold shadow-lg transition">
+        <i class="fa-solid fa-paper-plane mr-1.5"></i> টাইপিং টাস্ক পাবলিশ করুন
+      </button>
+    </form>
+  </div>
+
+  <!-- Typing Submissions Review Section -->
+  <div class="soft-card rounded-3xl p-5 space-y-4">
+    <h2 class="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
+      <i class="fa-solid fa-list-check text-emerald-700"></i> টাইপিং সাবমিশন লিস্ট
+    </h2>
+
+    <!-- Filter Tabs -->
+    <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-bold">
+      <a href="/admin/t?status=pending" class="px-3.5 py-1.5 rounded-full shrink-0 {% if status_filter == 'pending' %}bg-emerald-900 text-white{% else %}bg-emerald-50 text-emerald-900{% endif %}">
+        Pending ({{ cnt.pending }})
+      </a>
+      <a href="/admin/t?status=approved" class="px-3.5 py-1.5 rounded-full shrink-0 {% if status_filter == 'approved' %}bg-emerald-900 text-white{% else %}bg-emerald-50 text-emerald-900{% endif %}">
+        Approved ({{ cnt.approved }})
+      </a>
+      <a href="/admin/t?status=rejected" class="px-3.5 py-1.5 rounded-full shrink-0 {% if status_filter == 'rejected' %}bg-emerald-900 text-white{% else %}bg-emerald-50 text-emerald-900{% endif %}">
+        Rejected ({{ cnt.rejected }})
+      </a>
+      <a href="/admin/t?status=all" class="px-3.5 py-1.5 rounded-full shrink-0 {% if status_filter == 'all' %}bg-emerald-900 text-white{% else %}bg-emerald-50 text-emerald-900{% endif %}">
+        All ({{ cnt.all }})
+      </a>
+    </div>
+
+    <div class="space-y-3 text-xs">
+      {% for s in submissions %}
+      <div class="bg-white border border-emerald-100 p-4 rounded-2xl space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <div class="font-extrabold text-sm text-emerald-950">{{ s.task_title }} • <span class="text-emerald-700">৳{{ "%.2f"|format(s.reward) }}</span></div>
+            <div class="text-[11px] text-emerald-700 font-semibold">
+              <i class="fa-solid fa-user mr-1"></i>{{ s.user_name|default('User') }} (#{{ s.user_id }}) • {{ (s.created_at or '')[:16].replace('T', ' ') }}
+            </div>
+          </div>
+
+          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold
+            {% if s.status == 'approved' %}bg-emerald-100 text-emerald-800
+            {% elif s.status == 'rejected' %}bg-red-100 text-red-700
+            {% else %}bg-amber-100 text-amber-800{% endif %}">
+            {{ s.status|upper }}
+          </span>
+        </div>
+
+        <!-- User Typed Text -->
+        <div class="bg-emerald-50/75 border border-emerald-100 rounded-2xl p-3 text-emerald-950 font-medium whitespace-pre-wrap leading-relaxed">{{ s.typed_text }}</div>
+
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+          {% if s.task_image %}
+          <button type="button" onclick="openTypingLightbox('{{ s.task_image }}')"
+                  class="inline-flex items-center gap-1.5 bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-900 px-3 py-1.5 rounded-xl font-bold">
+            <i class="fa-solid fa-image"></i> মূল ছবি মিলিয়ে দেখুন
+          </button>
+          {% else %}
+          <span></span>
+          {% endif %}
+
+          {% if s.status == 'pending' %}
+          <div class="flex gap-2">
+            <form action="/admin/t/submission/{{ s.id }}/approve" method="POST">
+              <button class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-xl font-bold shadow-xs">Approve</button>
+            </form>
+            <form action="/admin/t/submission/{{ s.id }}/reject" method="POST">
+              <button class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl font-bold shadow-xs">Reject</button>
+            </form>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% else %}
+      <p class="text-emerald-700 text-center py-6 font-bold">এই ফিল্টারে কোনো টাইপিং সাবমিশন নেই।</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Published Typing Tasks List -->
+  <div class="soft-card rounded-3xl p-5 space-y-3">
+    <h2 class="font-extrabold text-sm text-emerald-950">প্রকাশিত টাইপিং টাস্ক সমূহ ({{ tasks|length }})</h2>
+
+    <div class="space-y-2.5 text-xs">
+      {% for t in tasks %}
+      <div class="bg-white border border-emerald-100 p-3.5 rounded-2xl flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <img src="{{ t.image_url }}" onclick="openTypingLightbox('{{ t.image_url }}')"
+               class="w-14 h-14 rounded-xl object-cover border border-emerald-200 cursor-pointer shrink-0" />
+          <div class="min-w-0 space-y-1">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="font-extrabold text-sm text-emerald-950">{{ t.title }}</span>
+              <span class="bg-sky-100 text-sky-900 px-2 py-0.5 rounded-full text-[10px] font-extrabold">৳{{ "%.2f"|format(t.reward) }}</span>
+              {% if t.is_active %}
+              <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full text-[10px] font-bold">Active</span>
+              {% else %}
+              <span class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full text-[10px] font-bold">Paused</span>
+              {% endif %}
+            </div>
+            <button type="button" onclick="openTypingLightbox('{{ t.image_url }}')" class="text-[11px] text-sky-600 font-bold underline">ছবি জুম করুন</button>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button type="button"
+                  data-id="{{ t.id }}"
+                  data-title="{{ t.title }}"
+                  data-reward="{{ t.reward }}"
+                  data-img="{{ t.image_url }}"
+                  onclick="openEditTypingModal(this)"
+                  class="bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 px-3 py-1.5 rounded-xl font-bold">
+            Edit
+          </button>
+          <form action="/admin/t/task/{{ t.id }}/toggle" method="POST">
+            <button class="px-3 py-1.5 rounded-xl font-bold border
+              {% if t.is_active %}bg-amber-50 border-amber-200 text-amber-900{% else %}bg-emerald-50 border-emerald-200 text-emerald-900{% endif %}">
+              {{ 'Pause' if t.is_active else 'Activate' }}
+            </button>
+          </form>
+          <form action="/admin/t/task/{{ t.id }}/delete" method="POST" onsubmit="return confirm('টাস্কটি ডিলিট করবেন?')">
+            <button class="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 px-3 py-1.5 rounded-xl font-bold">Delete</button>
+          </form>
+        </div>
+      </div>
+      {% else %}
+      <p class="text-emerald-700 text-center py-4">কোনো টাইপিং টাস্ক নেই।</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Edit Typing Task Modal -->
+<div id="edit-typing-modal" class="hidden fixed inset-0 z-50 bg-emerald-950/55 backdrop-blur-xs flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-emerald-100 space-y-4">
+    <div class="flex items-center justify-between border-b border-emerald-100 pb-3">
+      <h3 class="font-extrabold text-base text-emerald-950"><i class="fa-solid fa-pen-to-square text-sky-700 mr-1.5"></i>টাইপিং টাস্ক এডিট</h3>
+      <button onclick="document.getElementById('edit-typing-modal').classList.add('hidden')" class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-900 font-bold">✕</button>
+    </div>
+
+    <form id="edit-typing-form" action="" method="POST" class="space-y-3 text-sm">
+      <div class="grid grid-cols-2 gap-2.5">
+        <div>
+          <label class="text-[11px] font-bold text-emerald-800 block mb-1">Title</label>
+          <input id="edit-t-title" type="text" name="title" required class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white" />
+        </div>
+        <div>
+          <label class="text-[11px] font-bold text-emerald-800 block mb-1">Reward (৳)</label>
+          <input id="edit-t-reward" type="number" step="0.5" name="reward" required class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white" />
+        </div>
+      </div>
+      <div>
+        <label class="text-[11px] font-bold text-emerald-800 block mb-1">Image URL</label>
+        <input id="edit-t-img" type="url" name="image_url" required class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white text-xs" />
+      </div>
+      <button type="submit" class="w-full bg-emerald-900 text-white py-3 rounded-xl font-extrabold text-xs shadow">আপডেট সেভ করুন ✓</button>
+    </form>
+  </div>
+</div>
+
+<!-- Image Zoom Lightbox -->
+<div id="typing-lightbox" onclick="this.classList.add('hidden')" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4">
+  <img id="typing-lightbox-img" src="" class="max-w-full max-h-[88vh] rounded-2xl shadow-2xl object-contain" onclick="event.stopPropagation()" />
+</div>
+
+<script>
+function previewTypingUpload(input) {
+  const el = document.getElementById("typing-upload-prev");
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      el.src = e.target.result;
+      el.classList.remove("hidden");
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function openEditTypingModal(btn) {
+  const d = btn.dataset;
+  document.getElementById("edit-typing-form").action = `/admin/t/task/${d.id}/edit`;
+  document.getElementById("edit-t-title").value = d.title || "";
+  document.getElementById("edit-t-reward").value = d.reward || "";
+  document.getElementById("edit-t-img").value = d.img || "";
+  document.getElementById("edit-typing-modal").classList.remove("hidden");
+}
+
+function openTypingLightbox(url) {
+  document.getElementById("typing-lightbox-img").src = url;
+  document.getElementById("typing-lightbox").classList.remove("hidden");
+}
+</script>
+{% endblock %}
