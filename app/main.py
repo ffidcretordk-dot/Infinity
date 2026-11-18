@@ -3,7 +3,7 @@ import struct
 import zlib
 
 import secrets
-
+import hashlib
 import asyncio
 import random
 import httpx
@@ -125,6 +125,16 @@ async def landing(request: Request):
     return templates.TemplateResponse("landing.html", base_ctx(request, user, "landing"))
 
 
+def get_client_ip(request: Request) -> str:
+    xff = request.headers.get("x-forwarded-for")
+    if xff:
+        return xff.split(",")[0].strip()
+    xri = request.headers.get("x-real-ip")
+    if xri:
+        return xri.strip()
+    return request.client.host if request.client else ""
+
+
 @app.get("/signup", response_class=HTMLResponse)
 async def signup_page(request: Request, ref: str = ""):
     user = await get_current_user(request)
@@ -133,6 +143,7 @@ async def signup_page(request: Request, ref: str = ""):
     ctx = base_ctx(request, None, "signup")
     ctx["ref_code"] = ref
     return templates.TemplateResponse("signup.html", ctx)
+
 
 @app.post("/signup")
 async def signup_submit(
@@ -145,31 +156,45 @@ async def signup_submit(
     lock_token: str = Form(""),
 ):
     email_clean = email.strip().lower()
-    device_clean = device_id.strip()
-    lock_clean = lock_token.strip() or request.cookies.get("iw_lock_token") or ""
     client_ip = get_client_ip(request)
+    lock_clean = lock_token.strip() or request.cookies.get("iw_lock_token") or ""
 
-    if not device_clean or len(device_clean) < 16:
-        return redirect_with_flash(request, "/signup", "ডিভাইস ভেরিফিকেশন ব্যর্থ হয়েছে। পুনরায় চেষ্টা করুন।", "error")
+    # Fallback deterministic server fingerprint if client JS didn't populate device_id
+    device_clean = device_id.strip() or request.cookies.get("iw_device") or ""
+    if len(device_clean) < 8:
+        ua = request.headers.get("user-agent", "")
+        lang = request.headers.get("accept-language", "")
+        device_clean = hashlib.sha256(f"{ua}|{lang}|{client_ip}".encode()).hexdigest()[:32]
 
-    # 1. Cookie OR 4-Layer Recovered Lock Token check (Blocks cookie delete!)
+    # 1. Cookie OR 4-Layer Persistent Lock check (Blocks cookie deletion on same device)
     if request.cookies.get("iw_registered") == "1" or lock_clean:
-        return redirect_with_flash(request, "/signup", "এই ডিভাইস থেকে ইতিমধ্যেই একটি অ্যাকাউন্ট খোলা হয়েছে!", "error")
+        return redirect_with_flash(
+            request,
+            "/signup",
+            "এই ডিভাইস থেকে ইতিমধ্যেই একটি অ্যাকাউন্ট খোলা হয়েছে!",
+            "error",
+        )
 
-    # 2. Combined (Same Device Fingerprint + Same IP) check (Zero false positive on same phone model or same WiFi!)
+    # 2. Combined (Same Device Fingerprint + Same IP) check
     if client_ip:
         try:
             same_ip_users = await db.select("users", filters={"signup_ip": client_ip})
             if any(u.get("device_id") == device_clean for u in same_ip_users):
-                return redirect_with_flash(request, "/signup", "একই ডিভাইসে একাধিক অ্যাকাউন্ট খোলা অনুমোদিত নয়!", "error")
+                return redirect_with_flash(
+                    request,
+                    "/signup",
+                    "একই ডিভাইসে একাধিক অ্যাকাউন্ট খোলা অনুমোদিত নয়!",
+                    "error",
+                )
         except Exception:
             pass
 
+    # 3. Duplicate Email check
     existing_email = await db.select("users", filters={"email": email_clean}, single=True)
     if existing_email:
         return redirect_with_flash(request, "/signup", "এই ইমেইল দিয়ে আগেই অ্যাকাউন্ট তৈরি করা হয়েছে।", "error")
 
-    # Referral Logic: Referred User = 10৳, Referred By = 8৳
+    # 4. Referral Logic: Referred User = 10৳, Referred By = 8৳
     ref_input = referral_code.strip().upper()
     initial_balance = 0.0
     valid_referrer = None
@@ -184,23 +209,40 @@ async def signup_submit(
     is_admin = email_clean == ADMIN_EMAIL
     new_lock_token = secrets.token_hex(16)
 
-    new_user = await db.insert(
-        "users",
-        {
-            "name": name.strip(),
-            "email": email_clean,
-            "password_hash": hash_password(password),
-            "referral_code": new_ref_code,
-            "referred_by": ref_input if valid_referrer else None,
-            "device_id": device_clean,
-            "signup_ip": client_ip or None,
-            "lock_token": new_lock_token,
-            "balance": initial_balance,
-            "total_earned": initial_balance,
-            "is_admin": is_admin,
-        },
-    )
+    user_payload = {
+        "name": name.strip(),
+        "email": email_clean,
+        "password_hash": hash_password(password),
+        "referral_code": new_ref_code,
+        "referred_by": ref_input if valid_referrer else None,
+        "device_id": device_clean,
+        "signup_ip": client_ip or None,
+        "lock_token": new_lock_token,
+        "balance": initial_balance,
+        "total_earned": initial_balance,
+        "is_admin": is_admin,
+    }
 
+    try:
+        new_user = await db.insert("users", user_payload)
+    except Exception:
+        # Fallback if optional columns (signup_ip / lock_token) aren't added yet in Supabase
+        user_payload.pop("signup_ip", None)
+        user_payload.pop("lock_token", None)
+        try:
+            new_user = await db.insert("users", user_payload)
+        except Exception:
+            return redirect_with_flash(
+                request,
+                "/signup",
+                "অ্যাকাউন্ট তৈরি করা যায়নি! একই ডিভাইসে আগে থেকেই অ্যাকাউন্ট থাকতে পারে।",
+                "error",
+            )
+
+    if not new_user:
+        return redirect_with_flash(request, "/signup", "সার্ভার ত্রুটি! অনুগ্রহ করে আবার চেষ্টা করুন।", "error")
+
+    # 5. Credit Referrer (8৳) & Welcome Bonus Log (10৳)
     if valid_referrer:
         new_ref_bal = float(valid_referrer.get("balance", 0)) + REFERRAL_OWNER_BONUS
         new_ref_total = float(valid_referrer.get("total_earned", 0)) + REFERRAL_OWNER_BONUS
@@ -219,7 +261,7 @@ async def signup_submit(
             },
         )
 
-    if initial_balance > 0 and new_user:
+    if initial_balance > 0:
         await db.insert(
             "work_logs",
             {
@@ -242,7 +284,7 @@ async def signup_submit(
     response.set_cookie("iw_registered", "1", max_age=60 * 60 * 24 * 365 * 5, samesite="lax")
     response.set_cookie("iw_lock_token", new_lock_token, max_age=60 * 60 * 24 * 365 * 5, samesite="lax")
     return response
-    
+
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
@@ -251,6 +293,34 @@ async def login_page(request: Request):
         return RedirectResponse("/i", status_code=303)
     return templates.TemplateResponse("login.html", base_ctx(request, None, "login"))
 
+
+@app.post("/login")
+async def login_submit(
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...),
+):
+    email_clean = email.strip().lower()
+    user = await db.select("users", filters={"email": email_clean}, single=True)
+    if not user or not verify_password(password, user["password_hash"]):
+        return redirect_with_flash(request, "/login", "ইমেইল অথবা পাসওয়ার্ড সঠিক নয়!", "error")
+
+    set_flash(request, f"স্বাগতম, {user['name']}!", "success")
+    response = RedirectResponse("/i", status_code=303)
+    response.set_cookie("iw_auth", create_session_token(user["id"]), httponly=True, max_age=60 * 60 * 24 * 14, samesite="lax")
+    response.set_cookie("iw_registered", "1", max_age=60 * 60 * 24 * 365 * 5, samesite="lax")
+    if user.get("lock_token"):
+        response.set_cookie("iw_lock_token", user["lock_token"], max_age=60 * 60 * 24 * 365 * 5, samesite="lax")
+    return response
+
+
+@app.get("/logout")
+async def logout(request: Request):
+    set_flash(request, "সফলভাবে লগআউট সম্পন্ন হয়েছে।", "info")
+    response = RedirectResponse("/login", status_code=303)
+    response.delete_cookie("iw_auth")
+    return response
+    
 # ---------------- ADMIN PANEL: USER MANAGEMENT (/admin/user) ----------------
 
 @app.get("/admin/user", response_class=HTMLResponse)
@@ -373,13 +443,6 @@ async def login_submit(
     response.set_cookie("iw_auth", create_session_token(user["id"]), httponly=True, max_age=60 * 60 * 24 * 14, samesite="lax")
     return response
 
-
-@app.get("/logout")
-async def logout(request: Request):
-    set_flash(request, "সফলভাবে লগআউট সম্পন্ন হয়েছে।", "info")
-    response = RedirectResponse("/login", status_code=303)
-    response.delete_cookie("iw_auth")
-    return response
 
 
 # ---------------- AUTHENTICATED APP ROUTES ----------------
