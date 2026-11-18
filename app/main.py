@@ -556,7 +556,7 @@ async def refer_event_page(request: Request):
 
     ctx = base_ctx(request, user, "refer")
     ctx.update({
-        "leaderboard": leaderboard[:10],
+        "leaderboard": leaderboard[:5],
         "my_total_refs": my_total_refs,
         "my_active_refs": my_active_refs,
     })
@@ -1677,7 +1677,7 @@ async def leaderboard_page(request: Request):
         is_me = bool(user and u["id"] == user["id"])
         if is_me:
             my_rank = idx
-        if idx <= 30:
+        if idx <= 10:
             leaders.append({
                 "rank": idx,
                 "name": u.get("name") or "User",
