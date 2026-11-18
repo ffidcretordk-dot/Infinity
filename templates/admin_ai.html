@@ -1,0 +1,266 @@
+{% extends "base_app.html" %}
+{% block title %}ChatGPT Image Admin - InfinityWork{% endblock %}
+{% block content %}
+<div class="space-y-5">
+  <!-- Header Card -->
+  <div class="soft-card rounded-[2rem] p-5 sm:p-6 bg-gradient-to-br from-white via-purple-50/40 to-emerald-50/60 flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center gap-3.5">
+      <div class="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center text-xl shadow-xs">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+      </div>
+      <div>
+        <h1 class="text-xl font-extrabold text-emerald-950">ChatGPT Image Admin</h1>
+        <p class="text-xs text-emerald-700">নতুন প্রম্পট পাবলিশ, এডিট ও ইমেজ সাবমিশন রিভিউ করুন</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="/work/ai-image" target="_blank" class="bg-emerald-50 border border-emerald-200 px-3.5 py-2 rounded-full text-xs font-bold text-emerald-900">
+        <i class="fa-solid fa-eye mr-1"></i> ইউজার পেজ
+      </a>
+      <a href="/admin" class="bg-emerald-900 text-white px-4 py-2 rounded-full text-xs font-bold shadow-xs">← অ্যাডমিন</a>
+    </div>
+  </div>
+
+  <!-- Quick Summary Strip -->
+  {% set cnt = counts|default({'all':0,'pending':0,'approved':0,'rejected':0}) %}
+  <div class="grid grid-cols-4 gap-2 text-center text-xs">
+    <div class="soft-card rounded-2xl p-3">
+      <div class="text-lg font-extrabold text-emerald-950">{{ tasks|length }}</div>
+      <div class="text-[10px] font-bold text-emerald-700">মোট প্রম্পট</div>
+    </div>
+    <div class="soft-card rounded-2xl p-3 bg-amber-50/70 border-amber-200">
+      <div class="text-lg font-extrabold text-amber-700">{{ cnt.pending }}</div>
+      <div class="text-[10px] font-bold text-amber-800">Pending</div>
+    </div>
+    <div class="soft-card rounded-2xl p-3 bg-emerald-50/70 border-emerald-200">
+      <div class="text-lg font-extrabold text-emerald-700">{{ cnt.approved }}</div>
+      <div class="text-[10px] font-bold text-emerald-800">Approved</div>
+    </div>
+    <div class="soft-card rounded-2xl p-3 bg-red-50/60 border-red-200">
+      <div class="text-lg font-extrabold text-red-600">{{ cnt.rejected }}</div>
+      <div class="text-[10px] font-bold text-red-700">Rejected</div>
+    </div>
+  </div>
+
+  <!-- Create ChatGPT Image Task -->
+  <div class="soft-card rounded-3xl p-5 sm:p-6 space-y-4">
+    <div class="flex items-center justify-between">
+      <h2 class="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
+        <i class="fa-solid fa-plus-circle text-purple-600"></i> নতুন ChatGPT Image কাজ যোগ করুন
+      </h2>
+      <span class="text-[10px] font-extrabold bg-purple-100 text-purple-900 px-2.5 py-1 rounded-full">Auto: {{ next_auto_title }}</span>
+    </div>
+
+    <form action="/admin/c/task/add" method="POST" class="space-y-3.5 text-sm">
+      <div class="grid sm:grid-cols-2 gap-3">
+        <div>
+          <label class="text-[11px] font-bold text-emerald-800 block mb-1">Title (খালি রাখলে অটো: {{ next_auto_title }})</label>
+          <input type="text" name="title" placeholder="{{ next_auto_title }}"
+                 class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        </div>
+        <div>
+          <label class="text-[11px] font-bold text-emerald-800 block mb-1">Reward (৳)</label>
+          <input type="number" step="0.5" name="reward" required placeholder="যেমন: 10"
+                 class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        </div>
+      </div>
+
+      <div>
+        <label class="text-[11px] font-bold text-emerald-800 block mb-1">ChatGPT Prompt</label>
+        <textarea name="prompt" rows="3" required placeholder="এখানে সম্পূর্ণ Prompt লিখুন..."
+                  class="w-full px-3.5 py-2.5 rounded-2xl border border-emerald-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+      </div>
+
+      <div>
+        <label class="text-[11px] font-bold text-emerald-800 block mb-1">Description / নির্দেশনা (অপশনাল)</label>
+        <textarea name="description" rows="2" placeholder="ইমেজ সাইজ বা কোনো বিশেষ নিয়ম থাকলে লিখুন..."
+                  class="w-full px-3.5 py-2.5 rounded-2xl border border-emerald-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+      </div>
+
+      <button type="submit" class="w-full bg-gradient-to-r from-emerald-700 to-emerald-950 hover:opacity-95 text-white py-3.5 rounded-full font-extrabold shadow-lg transition">
+        <i class="fa-solid fa-paper-plane mr-1.5"></i> ChatGPT কাজ পাবলিশ করুন
+      </button>
+    </form>
+  </div>
+
+  <!-- Image Submissions Review Section -->
+  <div class="soft-card rounded-3xl p-5 space-y-4">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h2 class="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
+        <i class="fa-solid fa-images text-emerald-700"></i> ইমেজ সাবমিশন লিস্ট
+      </h2>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-bold">
+      <a href="/admin/c?status=pending" class="px-3.5 py-1.5 rounded-full shrink-0 {% if status_filter == 'pending' %}bg-emerald-900 text-white{% else %}bg-emerald-50 text-emerald-900{% endif %}">
+        Pending ({{ cnt.pending }})
+      </a>
+      <a href="/admin/c?status=approved" class="px-3.5 py-1.5 rounded-full shrink-0 {% if status_filter == 'approved' %}bg-emerald-900 text-white{% else %}bg-emerald-50 text-emerald-900{% endif %}">
+        Approved ({{ cnt.approved }})
+      </a>
+      <a href="/admin/c?status=rejected" class="px-3.5 py-1.5 rounded-full shrink-0 {% if status_filter == 'rejected' %}bg-emerald-900 text-white{% else %}bg-emerald-50 text-emerald-900{% endif %}">
+        Rejected ({{ cnt.rejected }})
+      </a>
+      <a href="/admin/c?status=all" class="px-3.5 py-1.5 rounded-full shrink-0 {% if status_filter == 'all' %}bg-emerald-900 text-white{% else %}bg-emerald-50 text-emerald-900{% endif %}">
+        All ({{ cnt.all }})
+      </a>
+    </div>
+
+    <div class="space-y-3 text-xs">
+      {% for s in submissions %}
+      <div class="bg-white border border-emerald-100 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          {% if s.image_url %}
+          <img src="{{ s.image_url }}" onclick="openAiLightbox('{{ s.image_url }}')"
+               class="w-16 h-16 rounded-2xl object-cover border border-emerald-200 cursor-pointer shrink-0 hover:scale-105 transition" />
+          {% else %}
+          <div class="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 flex flex-col items-center justify-center text-[10px] font-bold shrink-0 text-center p-1">
+            <i class="fa-solid fa-image text-base mb-0.5"></i>Dummy
+          </div>
+          {% endif %}
+
+          <div class="space-y-1 min-w-0">
+            <div class="font-extrabold text-sm text-emerald-950 truncate">{{ s.task_title }}</div>
+            <div class="text-emerald-800 font-semibold">
+              <i class="fa-solid fa-user mr-1 text-emerald-600"></i>{{ s.user_name|default('User') }} (#{{ s.user_id }})
+              • <b class="text-emerald-700">৳{{ "%.2f"|format(s.reward) }}</b>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold
+                {% if s.status == 'approved' %}bg-emerald-100 text-emerald-800
+                {% elif s.status == 'rejected' %}bg-red-100 text-red-700
+                {% else %}bg-amber-100 text-amber-800{% endif %}">
+                {{ s.status|upper }}
+              </span>
+              <span class="text-[11px] text-slate-400">{{ (s.created_at or '')[:16].replace('T', ' ') }}</span>
+              {% if s.image_url %}
+              <button type="button" onclick="openAiLightbox('{{ s.image_url }}')" class="text-sky-600 font-bold underline">বড় করে দেখুন</button>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        {% if s.status == 'pending' %}
+        <div class="flex gap-2 shrink-0">
+          <form action="/admin/c/submission/{{ s.id }}/approve" method="POST">
+            <button class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-xl font-bold shadow-xs">Approve</button>
+          </form>
+          <form action="/admin/c/submission/{{ s.id }}/reject" method="POST">
+            <button class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl font-bold shadow-xs">Reject</button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+      {% else %}
+      <p class="text-emerald-700 text-center py-6 font-bold">এই ফিল্টারে কোনো ইমেজ সাবমিশন নেই।</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Published Tasks Management List -->
+  <div class="soft-card rounded-3xl p-5 space-y-3">
+    <h2 class="font-extrabold text-sm text-emerald-950">প্রকাশিত ChatGPT প্রম্পট সমূহ ({{ tasks|length }})</h2>
+    <div class="space-y-2.5 text-xs">
+      {% for t in tasks %}
+      <div class="bg-white border border-emerald-100 p-4 rounded-2xl space-y-2">
+        <div class="flex flex-wrap items-start justify-between gap-2">
+          <div class="min-w-0 space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="font-extrabold text-sm text-emerald-950">{{ t.title }}</span>
+              <span class="bg-purple-100 text-purple-900 px-2 py-0.5 rounded-full text-[10px] font-extrabold">৳{{ "%.2f"|format(t.reward) }}</span>
+              {% if t.is_active %}
+              <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full text-[10px] font-bold">Active</span>
+              {% else %}
+              <span class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full text-[10px] font-bold">Paused</span>
+              {% endif %}
+            </div>
+            <p class="text-emerald-800/90 font-medium line-clamp-2">{{ t.prompt }}</p>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-emerald-50">
+          <button type="button"
+                  data-id="{{ t.id }}"
+                  data-title="{{ t.title }}"
+                  data-reward="{{ t.reward }}"
+                  data-prompt="{{ t.prompt }}"
+                  data-desc="{{ t.description or '' }}"
+                  onclick="openEditAiModal(this)"
+                  class="bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 px-3 py-1.5 rounded-xl font-bold">
+            <i class="fa-solid fa-pen-to-square mr-1"></i> Edit
+          </button>
+
+          <form action="/admin/c/task/{{ t.id }}/toggle" method="POST">
+            <button class="px-3 py-1.5 rounded-xl font-bold border
+              {% if t.is_active %}bg-amber-50 border-amber-200 text-amber-900{% else %}bg-emerald-50 border-emerald-200 text-emerald-900{% endif %}">
+              {{ 'Pause' if t.is_active else 'Activate' }}
+            </button>
+          </form>
+
+          <form action="/admin/c/task/{{ t.id }}/delete" method="POST" onsubmit="return confirm('টাস্কটি ডিলিট করবেন?')">
+            <button class="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 px-3 py-1.5 rounded-xl font-bold">Delete</button>
+          </form>
+        </div>
+      </div>
+      {% else %}
+      <p class="text-emerald-700 text-center py-4">কোনো ChatGPT প্রম্পট নেই।</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Edit AI Task Modal -->
+<div id="edit-ai-modal" class="hidden fixed inset-0 z-50 bg-emerald-950/55 backdrop-blur-xs flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-emerald-100 space-y-4">
+    <div class="flex items-center justify-between border-b border-emerald-100 pb-3">
+      <h3 class="font-extrabold text-base text-emerald-950"><i class="fa-solid fa-pen-to-square text-purple-600 mr-1.5"></i>ChatGPT কাজ এডিট করুন</h3>
+      <button onclick="document.getElementById('edit-ai-modal').classList.add('hidden')" class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-900 font-bold">✕</button>
+    </div>
+
+    <form id="edit-ai-form" action="" method="POST" class="space-y-3 text-sm">
+      <div class="grid grid-cols-2 gap-2.5">
+        <div>
+          <label class="text-[11px] font-bold text-emerald-800 block mb-1">Title</label>
+          <input id="edit-ai-title" type="text" name="title" required class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white" />
+        </div>
+        <div>
+          <label class="text-[11px] font-bold text-emerald-800 block mb-1">Reward (৳)</label>
+          <input id="edit-ai-reward" type="number" step="0.5" name="reward" required class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white" />
+        </div>
+      </div>
+      <div>
+        <label class="text-[11px] font-bold text-emerald-800 block mb-1">Prompt</label>
+        <textarea id="edit-ai-prompt" name="prompt" rows="3" required class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white"></textarea>
+      </div>
+      <div>
+        <label class="text-[11px] font-bold text-emerald-800 block mb-1">Description</label>
+        <textarea id="edit-ai-desc" name="description" rows="2" class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white"></textarea>
+      </div>
+      <button type="submit" class="w-full bg-emerald-900 text-white py-3 rounded-xl font-extrabold text-xs shadow">আপডেট সেভ করুন ✓</button>
+    </form>
+  </div>
+</div>
+
+<!-- Image Zoom Lightbox -->
+<div id="ai-lightbox" onclick="this.classList.add('hidden')" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4">
+  <img id="ai-lightbox-img" src="" class="max-w-full max-h-[88vh] rounded-2xl shadow-2xl object-contain" onclick="event.stopPropagation()" />
+</div>
+
+<script>
+function openEditAiModal(btn) {
+  const d = btn.dataset;
+  document.getElementById("edit-ai-form").action = `/admin/c/task/${d.id}/edit`;
+  document.getElementById("edit-ai-title").value = d.title || "";
+  document.getElementById("edit-ai-reward").value = d.reward || "";
+  document.getElementById("edit-ai-prompt").value = d.prompt || "";
+  document.getElementById("edit-ai-desc").value = d.desc || "";
+  document.getElementById("edit-ai-modal").classList.remove("hidden");
+}
+
+function openAiLightbox(url) {
+  document.getElementById("ai-lightbox-img").src = url;
+  document.getElementById("ai-lightbox").classList.remove("hidden");
+}
+</script>
+{% endblock %}
