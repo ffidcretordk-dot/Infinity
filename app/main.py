@@ -1595,23 +1595,48 @@ async def history_page(request: Request, status: str = "all"):
     if not user:
         return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
 
-    submissions = await db.select("task_submissions", filters={"user_id": user["id"]}, order="created_at.desc")
-    all_tasks = await db.select("tasks")
+    async def safe_user_select(table: str, order: str = "created_at.desc") -> list[dict]:
+        try:
+            return await db.select(table, filters={"user_id": user["id"]}, order=order)
+        except Exception:
+            return []
+
+    (
+        submissions,
+        all_tasks,
+        ai_subs,
+        ai_tasks,
+        typing_subs,
+        typing_tasks,
+        work_logs,
+    ) = await asyncio.gather(
+        safe_user_select("task_submissions"),
+        _safe_select("tasks"),
+        safe_user_select("ai_image_submissions"),
+        _safe_select("ai_image_tasks"),
+        safe_user_select("typing_submissions"),
+        _safe_select("typing_tasks"),
+        safe_user_select("work_logs"),
+    )
+
     task_map = {t["id"]: t for t in all_tasks}
-    work_logs = await db.select("work_logs", filters={"user_id": user["id"]}, order="created_at.desc")
+    ai_task_map = {t["id"]: t for t in ai_tasks}
+    typing_task_map = {t["id"]: t for t in typing_tasks}
 
     icon_map = {
-        "Typing Task": ("⌨️", "Typing Task"),
-        "Survey": ("📝", "Survey করে আয়"),
-        "ChatGPT Image Gen": ("🎨", "ChatGPT Image Generate"),
-        "2,4,8 Cube Game": ("🎲", "গেম খেলে আয় (2,4,8 Cube)"),
-        "TikTok Account Sell": ("🎵", "TikTok Account Sell"),
-        "Referral Bonus": ("🤝", "রেফারেল বোনাস"),
-        "Welcome Referral Bonus": ("🎁", "ওয়েলকাম রেফার বোনাস"),
+        "Typing Task": ("fa-solid fa-keyboard text-sky-600 bg-sky-100", "Typing Task"),
+        "Survey": ("fa-solid fa-square-poll-vertical text-teal-700 bg-teal-100", "Survey করে আয়"),
+        "ChatGPT Image Gen": ("fa-solid fa-wand-magic-sparkles text-purple-600 bg-purple-100", "ChatGPT Image Generate"),
+        "2,4,8 Cube Game": ("fa-solid fa-cubes text-amber-600 bg-amber-100", "গেম খেলে আয় (2,4,8 Cube)"),
+        "TikTok Account Sell": ("fa-brands fa-tiktok text-rose-600 bg-rose-100", "TikTok Account Sell"),
+        "Referral Bonus": ("fa-solid fa-users text-teal-700 bg-teal-100", "রেফারেল বোনাস"),
+        "Welcome Referral Bonus": ("fa-solid fa-gift text-amber-600 bg-amber-100", "ওয়েলকাম রেফার বোনাস"),
+        "Admin Adjustment": ("fa-solid fa-shield-halved text-emerald-700 bg-emerald-100", "অ্যাডমিন বোনাস / সমন্বয়"),
     }
 
     combined: list[dict] = []
 
+    # 1. Micro Task Submissions
     for sub in submissions:
         task_info = task_map.get(sub["task_id"], {})
         task_title = task_info.get("title") or f"Micro Task #{sub['task_id']}"
@@ -1620,9 +1645,9 @@ async def history_page(request: Request, status: str = "all"):
         status_label = {"approved": "Approved", "pending": "Pending", "rejected": "Rejected"}[norm_status]
 
         combined.append({
-            "icon": "📋",
+            "icon_cls": "fa-solid fa-list-check text-emerald-700 bg-emerald-100",
             "title": task_title,
-            "subtitle": f"Micro Task • {sub.get('proof_note') or 'জমা দেওয়া হয়েছে'}",
+            "subtitle": f"Micro Task • {sub.get('proof_note') or 'স্ক্রিনশট জমা দেওয়া হয়েছে'}",
             "amount": float(sub.get("reward") or 0),
             "norm_status": norm_status,
             "status_label": status_label,
@@ -1630,15 +1655,52 @@ async def history_page(request: Request, status: str = "all"):
             "date": (sub.get("created_at") or "")[:16].replace("T", " "),
         })
 
+    # 2. ChatGPT AI Image Submissions
+    for sub in ai_subs:
+        t_title = ai_task_map.get(sub["ai_task_id"], {}).get("title") or f"Chatgpt Img #{sub['ai_task_id']}"
+        raw_status = (sub.get("status") or "pending").lower()
+        norm_status = "approved" if raw_status == "approved" else ("rejected" if raw_status == "rejected" else "pending")
+        status_label = {"approved": "Approved", "pending": "Pending", "rejected": "Rejected"}[norm_status]
+
+        combined.append({
+            "icon_cls": "fa-solid fa-wand-magic-sparkles text-purple-600 bg-purple-100",
+            "title": t_title,
+            "subtitle": "ChatGPT Image Generation",
+            "amount": float(sub.get("reward") or 0),
+            "norm_status": norm_status,
+            "status_label": status_label,
+            "created_at": sub.get("created_at") or "",
+            "date": (sub.get("created_at") or "")[:16].replace("T", " "),
+        })
+
+    # 3. Image Typing Submissions
+    for sub in typing_subs:
+        t_title = typing_task_map.get(sub["typing_task_id"], {}).get("title") or f"Typing #{sub['typing_task_id']}"
+        raw_status = (sub.get("status") or "pending").lower()
+        norm_status = "approved" if raw_status == "approved" else ("rejected" if raw_status == "rejected" else "pending")
+        status_label = {"approved": "Approved", "pending": "Pending", "rejected": "Rejected"}[norm_status]
+
+        combined.append({
+            "icon_cls": "fa-solid fa-keyboard text-sky-600 bg-sky-100",
+            "title": t_title,
+            "subtitle": "Image Typing Task",
+            "amount": float(sub.get("reward") or 0),
+            "norm_status": norm_status,
+            "status_label": status_label,
+            "created_at": sub.get("created_at") or "",
+            "date": (sub.get("created_at") or "")[:16].replace("T", " "),
+        })
+
+    # 4. General Work Logs (2,4,8 Cube Game, Referrals, Adjustments)
     for log in work_logs:
         wtype = log.get("work_type") or "Work"
-        icon, display_title = icon_map.get(wtype, ("💼", wtype))
+        icon_cls, display_title = icon_map.get(wtype, ("fa-solid fa-briefcase text-emerald-700 bg-emerald-100", wtype))
         raw_status = (log.get("status") or "completed").lower()
         norm_status = "approved" if raw_status in ("completed", "approved") else ("rejected" if raw_status == "rejected" else "pending")
         status_label = {"approved": "Approved", "pending": "Pending", "rejected": "Rejected"}[norm_status]
 
         combined.append({
-            "icon": icon,
+            "icon_cls": icon_cls,
             "title": display_title,
             "subtitle": log.get("details") or wtype,
             "amount": float(log.get("reward") or 0),
@@ -1663,7 +1725,7 @@ async def history_page(request: Request, status: str = "all"):
     ctx = base_ctx(request, user, "history")
     ctx.update({"items": filtered, "counts": counts, "status_filter": status_filter})
     return templates.TemplateResponse("history.html", ctx)
-
+    
 @app.get("/leaderboard", response_class=HTMLResponse)
 async def leaderboard_page(request: Request):
     user = await get_current_user(request)
