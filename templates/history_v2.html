@@ -1,172 +1,96 @@
 {% extends "base_app.html" %}
-{% block title %}Withdrawal History - InfinityWork{% endblock %}
+{% block title %}Earn History - InfinityWork{% endblock %}
 {% block content %}
 <div class="max-w-2xl mx-auto space-y-4">
-  <!-- Clean Heading + Only "Earn History" Button (No Insights) -->
-  <div class="soft-card rounded-3xl p-4 sm:p-5 flex items-center justify-between gap-3">
-    <h1 class="text-lg sm:text-xl font-extrabold text-emerald-950">Withdrawal History</h1>
-    <a href="/history" class="bg-emerald-900 hover:bg-emerald-800 text-white px-4 py-2 rounded-full text-xs font-extrabold shadow-xs shrink-0 transition">
-      <i class="fa-solid fa-clock-rotate-left mr-1"></i> Earn History
+  <!-- Minimal Header + Quick Link to /history/v2 (No Insights) -->
+  <div class="soft-card rounded-3xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-white via-emerald-50/40 to-white">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-2xl bg-emerald-900 text-yellow-300 flex items-center justify-center text-base shrink-0 shadow-xs">
+        <i class="fa-solid fa-clock-rotate-left"></i>
+      </div>
+      <div>
+        <h1 class="text-lg sm:text-xl font-extrabold text-emerald-950 leading-tight">Earn History</h1>
+        <p class="text-[11px] text-emerald-700 font-medium">কাজ, গেম ও বোনাসের তালিকা</p>
+      </div>
+    </div>
+
+    <a href="/history/v2" class="bg-emerald-900 hover:bg-emerald-800 text-white px-4 py-2 rounded-full text-xs font-extrabold shadow-xs shrink-0 transition">
+      <i class="fa-solid fa-wallet mr-1"></i> Withdraw History
     </a>
   </div>
 
-  <!-- Withdrawals List -->
+  <!-- Minimal Responsive Filter Pills -->
+  <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-extrabold no-scrollbar">
+    <a href="/history?status=all"
+       class="px-4 py-2 rounded-full shrink-0 transition {% if status_filter == 'all' %}bg-emerald-900 text-white shadow-sm{% else %}bg-white border border-emerald-200 text-emerald-900 hover:bg-emerald-50{% endif %}">
+      All
+    </a>
+    <a href="/history?status=approved"
+       class="px-4 py-2 rounded-full shrink-0 transition {% if status_filter == 'approved' %}bg-emerald-900 text-white shadow-sm{% else %}bg-white border border-emerald-200 text-emerald-900 hover:bg-emerald-50{% endif %}">
+      Approved
+    </a>
+    <a href="/history?status=pending"
+       class="px-4 py-2 rounded-full shrink-0 transition {% if status_filter == 'pending' %}bg-emerald-900 text-white shadow-sm{% else %}bg-white border border-emerald-200 text-emerald-900 hover:bg-emerald-50{% endif %}">
+      Pending
+    </a>
+    <a href="/history?status=rejected"
+       class="px-4 py-2 rounded-full shrink-0 transition {% if status_filter == 'rejected' %}bg-emerald-900 text-white shadow-sm{% else %}bg-white border border-emerald-200 text-emerald-900 hover:bg-emerald-50{% endif %}">
+      Rejected
+    </a>
+  </div>
+
+  <!-- Minimal Design-full History Cards -->
   <div class="space-y-2.5">
-    {% for p in payouts %}
-    <div class="soft-card rounded-3xl p-4 flex items-center justify-between gap-3">
-      <div class="flex items-center gap-3 min-w-0">
-        <!-- Payment Method Brand SVG Logo -->
-        {% if p.method == 'bKash' %}
-        <div class="w-11 h-11 rounded-2xl bg-pink-50 border border-pink-200 flex items-center justify-center shrink-0" title="bKash">
-          <svg viewBox="0 0 40 40" class="w-7 h-7" xmlns="http://www.w3.org/2000/svg">
-            <path d="M8 10l12 6 10-8-4 14 6 6-14-2-8 6 2-12z" fill="#e2136e"/>
-            <path d="M20 16l10-8-4 14z" fill="#b80b57"/>
-          </svg>
-        </div>
-        {% elif p.method == 'Nagad' %}
-        <div class="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center shrink-0" title="Nagad">
-          <svg viewBox="0 0 40 40" class="w-7 h-7" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="20" cy="20" r="14" fill="#f26522"/>
-            <path d="M13 24c2-8 9-12 15-10-4 2-6 5-7 10z" fill="#ffffff"/>
-            <circle cx="25" cy="24" r="3" fill="#ffd200"/>
-          </svg>
-        </div>
-        {% elif p.method == 'Rocket' %}
-        <div class="w-11 h-11 rounded-2xl bg-purple-50 border border-purple-200 flex items-center justify-center shrink-0" title="Rocket">
-          <svg viewBox="0 0 40 40" class="w-7 h-7" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="20" cy="20" r="14" fill="#8c3494"/>
-            <path d="M20 9c4 4 6 9 6 14l-6 4-6-4c0-5 2-10 6-14z" fill="#ffffff"/>
-            <circle cx="20" cy="18" r="2.5" fill="#8c3494"/>
-          </svg>
-        </div>
-        {% else %}
-        <div class="w-11 h-11 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0" title="Binance">
-          <svg viewBox="0 0 40 40" class="w-7 h-7" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20 8l5 5-5 5-5-5zm-8 8l4 4-4 4-4-4zm16 0l4 4-4 4-4-4zm-8 6l5 5-5 5-5-5z" fill="#f3ba2f"/>
-          </svg>
-        </div>
-        {% endif %}
-
-        <div class="min-w-0">
-          <div class="flex items-center gap-1.5">
-            <span class="font-extrabold text-sm text-emerald-950">{{ p.method }}</span>
-            <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold
-              {% if p.status == 'paid' %}bg-emerald-100 text-emerald-800
-              {% elif p.status == 'rejected' %}bg-red-100 text-red-700
-              {% else %}bg-amber-100 text-amber-800{% endif %}">
-              {{ p.status|upper }}
-            </span>
+    {% if items %}
+      {% for item in items %}
+      <div class="soft-card rounded-3xl p-4 flex items-center justify-between gap-3 hover:border-emerald-300 transition">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-11 h-11 rounded-2xl {{ item.icon_cls }} flex items-center justify-center text-base shrink-0">
+            <i class="{{ item.icon_cls.split(' ')[:2]|join(' ') }}"></i>
           </div>
-          <div class="text-xs font-mono font-bold text-emerald-700 truncate mt-0.5">{{ p.masked_account }}</div>
-          <div class="text-[10px] text-slate-400 mt-0.5">{{ p.formatted_date }}</div>
+
+          <div class="min-w-0">
+            <div class="font-extrabold text-sm text-emerald-950 truncate">{{ item.title }}</div>
+            <div class="text-xs text-emerald-700/90 truncate">{{ item.subtitle }}</div>
+            <div class="text-[10px] text-slate-400 font-medium mt-0.5">
+              <i class="fa-regular fa-clock mr-1"></i>{{ item.date }}
+            </div>
+          </div>
+        </div>
+
+        <div class="text-right shrink-0 space-y-1">
+          <div class="font-extrabold text-sm {% if item.norm_status == 'rejected' %}text-red-500 line-through{% elif item.norm_status == 'pending' %}text-amber-700{% else %}text-emerald-700{% endif %}">
+            +৳{{ "%.2f"|format(item.amount) }}
+          </div>
+          <div>
+            {% if item.norm_status == 'approved' %}
+            <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
+              {{ item.status_label }}
+            </span>
+            {% elif item.norm_status == 'pending' %}
+            <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800">
+              {{ item.status_label }}
+            </span>
+            {% else %}
+            <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-red-100 text-red-700">
+              {{ item.status_label }}
+            </span>
+            {% endif %}
+          </div>
         </div>
       </div>
-
-      <div class="flex items-center gap-2.5 shrink-0">
-        <div class="text-right">
-          <div class="font-extrabold text-sm text-emerald-950">৳{{ "%.2f"|format(p.amount) }}</div>
-        </div>
-
-        <button type="button"
-                data-id="{{ p.id }}"
-                data-method="{{ p.method }}"
-                data-account="{{ p.account_number }}"
-                data-masked="{{ p.masked_account }}"
-                data-amount="{{ '%.2f'|format(p.amount) }}"
-                data-status="{{ p.status|upper }}"
-                data-date="{{ p.formatted_date }}"
-                onclick="openWithdrawDetailModal(this)"
-                class="bg-emerald-50 hover:bg-emerald-900 text-emerald-900 hover:text-white border border-emerald-200 px-3.5 py-2 rounded-xl text-xs font-extrabold transition">
-          View
-        </button>
-      </div>
-    </div>
+      {% endfor %}
     {% else %}
-    <div class="soft-card rounded-3xl p-10 text-center space-y-2">
-      <div class="text-3xl text-emerald-600"><i class="fa-solid fa-wallet"></i></div>
-      <p class="text-sm font-extrabold text-emerald-950">এখনো কোনো উইথড্র হিস্টোরি নেই</p>
-      <a href="/payout" class="inline-block mt-2 bg-emerald-900 text-white px-5 py-2 rounded-full text-xs font-extrabold">উইথড্র করুন →</a>
+    <div class="soft-card rounded-3xl p-10 text-center space-y-2.5">
+      <div class="w-14 h-14 mx-auto rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-2xl">
+        <i class="fa-solid fa-folder-open"></i>
+      </div>
+      <p class="text-sm font-extrabold text-emerald-950">এই ক্যাটাগরিতে কোনো হিস্টোরি নেই</p>
+      <a href="/work" class="inline-block bg-emerald-900 text-white px-5 py-2.5 rounded-full text-xs font-extrabold shadow-xs">
+        কাজ শুরু করুন →
+      </a>
     </div>
-    {% endfor %}
+    {% endif %}
   </div>
 </div>
-
-<!-- Detailed Withdrawal Receipt Popup Modal -->
-<div id="wd-detail-modal" onclick="closeWithdrawModal()" class="hidden fixed inset-0 z-50 bg-emerald-950/55 backdrop-blur-xs flex items-center justify-center p-4">
-  <div onclick="event.stopPropagation()" class="bg-white rounded-[2rem] max-w-sm w-full overflow-hidden shadow-2xl border border-emerald-100">
-    <!-- Top Receipt Header -->
-    <div class="bg-gradient-to-br from-emerald-800 to-emerald-950 text-white p-5 flex items-center justify-between">
-      <div>
-        <div class="text-[10px] font-bold text-emerald-200 uppercase tracking-wider">Withdrawal Receipt</div>
-        <h2 id="wd-m-title" class="text-lg font-extrabold mt-0.5">bKash Payout</h2>
-      </div>
-      <button onclick="closeWithdrawModal()" class="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 text-white font-bold text-sm">✕</button>
-    </div>
-
-    <!-- Receipt Details Body -->
-    <div class="p-5 space-y-3 text-xs">
-      <div class="text-center py-2 bg-emerald-50/80 border border-emerald-100 rounded-2xl">
-        <div class="text-[11px] font-bold text-emerald-700">উত্তোলনের পরিমাণ</div>
-        <div id="wd-m-amount" class="text-3xl font-extrabold text-emerald-950 mt-0.5">৳0.00</div>
-      </div>
-
-      <div class="divide-y divide-emerald-100 bg-white border border-emerald-100 rounded-2xl px-4">
-        <div class="py-2.5 flex justify-between">
-          <span class="text-emerald-700 font-semibold">Transaction ID</span>
-          <span id="wd-m-txid" class="font-mono font-extrabold text-emerald-950">#IW-0</span>
-        </div>
-        <div class="py-2.5 flex justify-between">
-          <span class="text-emerald-700 font-semibold">পেমেন্ট মেথড</span>
-          <span id="wd-m-method" class="font-extrabold text-emerald-950">bKash</span>
-        </div>
-        <div class="py-2.5 flex justify-between">
-          <span class="text-emerald-700 font-semibold">অ্যাকাউন্ট নম্বর</span>
-          <span id="wd-m-account" class="font-mono font-extrabold text-emerald-950">017••••5678</span>
-        </div>
-        <div class="py-2.5 flex justify-between">
-          <span class="text-emerald-700 font-semibold">উইথড্র চার্জ</span>
-          <span class="font-extrabold text-emerald-700">৳0.00 (Free)</span>
-        </div>
-        <div class="py-2.5 flex justify-between">
-          <span class="text-emerald-700 font-semibold">স্ট্যাটাস</span>
-          <span id="wd-m-status" class="font-extrabold">PENDING</span>
-        </div>
-        <div class="py-2.5 flex justify-between">
-          <span class="text-emerald-700 font-semibold">তারিখ ও সময়</span>
-          <span id="wd-m-date" class="font-bold text-emerald-950">-</span>
-        </div>
-      </div>
-
-      <button onclick="closeWithdrawModal()" class="w-full bg-emerald-900 hover:bg-emerald-800 text-white py-3 rounded-full font-extrabold text-xs shadow">
-        বন্ধ করুন
-      </button>
-    </div>
-  </div>
-</div>
-
-<script>
-function openWithdrawDetailModal(btn) {
-  const d = btn.dataset;
-  document.getElementById("wd-m-title").innerText = `${d.method} Payout`;
-  document.getElementById("wd-m-amount").innerText = `৳${d.amount}`;
-  document.getElementById("wd-m-txid").innerText = `#IW-PAY-${d.id}`;
-  document.getElementById("wd-m-method").innerText = d.method;
-  document.getElementById("wd-m-account").innerText = d.account;
-  document.getElementById("wd-m-date").innerText = d.date;
-
-  const stEl = document.getElementById("wd-m-status");
-  stEl.innerText = d.status;
-  stEl.className = d.status === "PAID"
-    ? "font-extrabold text-emerald-700"
-    : d.status === "REJECTED"
-      ? "font-extrabold text-red-600"
-      : "font-extrabold text-amber-600";
-
-  document.getElementById("wd-detail-modal").classList.remove("hidden");
-}
-
-function closeWithdrawModal() {
-  document.getElementById("wd-detail-modal").classList.add("hidden");
-}
-</script>
 {% endblock %}
