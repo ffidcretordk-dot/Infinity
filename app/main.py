@@ -415,6 +415,29 @@ async def admin_user_update(
     )
 
 
+def mask_account_number(acc: str) -> str:
+    s = (acc or "").strip()
+    if len(s) <= 5:
+        return (s[:1] + "•••" + s[-1:]) if len(s) > 2 else s
+    return f"{s[:3]}••••{s[-4:]}"
+
+
+@app.get("/history/v2", response_class=HTMLResponse)
+async def withdraw_history_v2(request: Request):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+
+    payouts = await db.select("payouts", filters={"user_id": user["id"]}, order="created_at.desc")
+    for p in payouts:
+        p["masked_account"] = mask_account_number(p.get("account_number", ""))
+        p["formatted_date"] = (p.get("created_at") or "")[:16].replace("T", " ")
+
+    ctx = base_ctx(request, user, "history")
+    ctx["payouts"] = payouts
+    return templates.TemplateResponse("history_v2.html", ctx)
+    
+
 @app.post("/admin/user/{target_id}/delete")
 async def admin_user_delete(request: Request, target_id: int, page: int = Form(1)):
     user = await get_current_user(request)
