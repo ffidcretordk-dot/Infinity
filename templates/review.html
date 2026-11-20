@@ -142,6 +142,22 @@
   <img id="review-lightbox-img" src="" alt="Proof" class="max-w-full max-h-[88vh] rounded-2xl shadow-2xl object-contain" onclick="event.stopPropagation()" />
 </div>
 
+<!-- Load More Button & Server Error Box -->
+  {% if reviews %}
+  <div class="pt-1 text-center space-y-3">
+    <button id="load-more-reviews-btn" type="button" onclick="loadMoreReviews()"
+            class="bg-white hover:bg-emerald-50 border border-emerald-200 text-emerald-950 px-7 py-3 rounded-full text-xs font-extrabold shadow-xs inline-flex items-center gap-2 transition">
+      <i id="load-more-icon" class="fa-solid fa-rotate-right"></i>
+      <span id="load-more-text">আরও দেখুন</span>
+    </button>
+
+    <div id="reviews-server-error" class="hidden rounded-2xl bg-red-50 border border-red-200 text-red-800 p-4 text-xs font-bold space-y-1">
+      <div><i class="fa-solid fa-triangle-exclamation text-red-600 mr-1"></i> Server Error (503)</div>
+      <p class="font-medium text-red-700">দুঃখিত, এই মুহূর্তে সার্ভার থেকে পুরোনো রিভিউগুলো লোড করা যাচ্ছে না। অনুগ্রহ করে কিছুক্ষণ পর আবার চেষ্টা করুন।</p>
+    </div>
+  </div>
+  {% endif %}
+
 <script>
 function setRating(val) {
   document.getElementById("user-rating-input").value = val;
@@ -156,5 +172,25 @@ function openReviewLightbox(src) {
   document.getElementById("review-lightbox-img").src = src;
   document.getElementById("review-lightbox").classList.remove("hidden");
 }
+
+function loadMoreReviews() {
+  const btn = document.getElementById("load-more-reviews-btn");
+  const icon = document.getElementById("load-more-icon");
+  const text = document.getElementById("load-more-text");
+  const errBox = document.getElementById("reviews-server-error");
+
+  btn.disabled = true;
+  icon.className = "fa-solid fa-spinner fa-spin";
+  text.innerText = "লোড হচ্ছে...";
+  errBox.classList.add("hidden");
+
+  setTimeout(() => {
+    btn.disabled = false;
+    icon.className = "fa-solid fa-rotate-right";
+    text.innerText = "পুনরায় চেষ্টা করুন";
+    errBox.classList.remove("hidden");
+  }, 650);
+}
+  
 </script>
 {% endblock %}
