@@ -1,0 +1,256 @@
+{% extends "base_app.html" %}
+{% block title %}User Check & PDF Report - Admin{% endblock %}
+{% block content %}
+<style>
+  @media print {
+    header, nav, aside, .no-print, a[href*="help_Infinity_work"], #iw-drawer, #iw-drawer-backdrop {
+      display: none !important;
+    }
+    body {
+      background: #ffffff !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+    main {
+      max-width: 100% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+    .soft-card, .print-card {
+      box-shadow: none !important;
+      border: 1px solid #cbd5e1 !important;
+      break-inside: avoid;
+    }
+    .print-only {
+      display: block !important;
+    }
+  }
+</style>
+
+<div class="space-y-5">
+  <!-- Header & Search Bar (Hidden in PDF Print) -->
+  <div class="no-print space-y-4">
+    <div class="soft-card rounded-[2rem] p-5 sm:p-6 bg-gradient-to-br from-white via-emerald-50/50 to-sky-50/50 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3.5">
+        <div class="w-12 h-12 rounded-2xl bg-emerald-900 text-yellow-300 flex items-center justify-center text-xl shadow-xs">
+          <i class="fa-solid fa-user-check"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-extrabold text-emerald-950">User Audit & Check</h1>
+          <p class="text-xs text-emerald-700">ইমেইল দিয়ে ইউজারের ব্যালেন্স, হিস্টোরি, উইথড্র ও রেফার চেক ও PDF এক্সপোর্ট</p>
+        </div>
+      </div>
+      <a href="/admin" class="bg-white border border-emerald-200 px-4 py-2 rounded-full text-xs font-bold text-emerald-900">← অ্যাডমিন</a>
+    </div>
+
+    <div class="soft-card rounded-3xl p-4 sm:p-5">
+      <form action="/admin/ck" method="GET" class="flex flex-col sm:flex-row gap-2.5">
+        <div class="relative flex-1">
+          <i class="fa-solid fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-emerald-600 text-xs"></i>
+          <input type="email" name="email" value="{{ search_email }}" required placeholder="ইউজারের সম্পূর্ণ ইমেইল লিখুন (যেমন: user@gmail.com)"
+                 class="w-full pl-10 pr-4 py-3 rounded-2xl border border-emerald-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        </div>
+        <button type="submit" class="bg-emerald-900 hover:bg-emerald-800 text-white px-6 py-3 rounded-2xl text-xs font-extrabold shadow shrink-0">
+          <i class="fa-solid fa-magnifying-glass mr-1"></i> চেক করুন
+        </button>
+        {% if target_user %}
+        <button type="button" onclick="exportUserPdf('{{ target_user.name }}')"
+                class="bg-rose-600 hover:bg-rose-700 text-white px-5 py-3 rounded-2xl text-xs font-extrabold shadow shrink-0 flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-file-pdf"></i> Export PDF
+        </button>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+
+  {% if search_email and not target_user %}
+  <div class="soft-card rounded-3xl p-8 text-center space-y-2">
+    <div class="text-3xl text-red-500"><i class="fa-solid fa-user-xmark"></i></div>
+    <p class="text-sm font-extrabold text-emerald-950">"{{ search_email }}" ইমেইলে কোনো ইউজার পাওয়া যায়নি!</p>
+  </div>
+  {% endif %}
+
+  {% if target_user %}
+  <!-- PRINTABLE USER AUDIT REPORT CONTAINER -->
+  <div id="user-audit-report" class="space-y-5">
+    <!-- Official PDF Report Top Banner (Visible in PDF & Screen) -->
+    <div class="hidden print-only border-b-2 border-emerald-900 pb-3 mb-4 flex items-center justify-between">
+      <div>
+        <div class="text-xl font-extrabold text-emerald-950">InfinityWork — User Audit Report</div>
+        <div class="text-xs text-slate-600">Generated on: {{ report_time }} (BDT)</div>
+      </div>
+      <div class="text-xs font-mono font-bold">User ID: #{{ target_user.id }}</div>
+    </div>
+
+    <!-- 1. USER PROFILE & BALANCE OVERVIEW -->
+    <div class="soft-card print-card rounded-3xl p-5 sm:p-6 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3.5">
+          <div class="w-14 h-14 rounded-2xl overflow-hidden bg-emerald-900 text-white flex items-center justify-center font-extrabold text-xl shrink-0">
+            {% if target_user.avatar_url %}
+            <img src="{{ target_user.avatar_url }}" class="w-full h-full object-cover" />
+            {% else %}
+            {{ target_user.name[0]|upper }}
+            {% endif %}
+          </div>
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 class="text-lg font-extrabold text-emerald-950">{{ target_user.name }}</h2>
+              <span class="bg-emerald-100 text-emerald-900 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold">#{{ target_user.id }} • {{ level.name }}</span>
+            </div>
+            <div class="text-xs font-semibold text-emerald-700">{{ target_user.email }}</div>
+            <div class="text-[11px] text-slate-500 mt-0.5">
+              Ref Code: <b>{{ target_user.referral_code }}</b> • Referred By: <b>{{ target_user.referred_by or 'Direct' }}</b> • Join: {{ (target_user.created_at or '')[:10] }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Key Metrics -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center text-xs">
+        <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-3">
+          <div class="text-[10px] font-bold text-emerald-700">বর্তমান ব্যালেন্স</div>
+          <div class="text-lg font-extrabold text-emerald-950 mt-0.5">৳{{ "%.2f"|format(target_user.balance) }}</div>
+        </div>
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-3">
+          <div class="text-[10px] font-bold text-amber-800">মোট আয় (Total)</div>
+          <div class="text-lg font-extrabold text-amber-900 mt-0.5">৳{{ "%.2f"|format(target_user.total_earned) }}</div>
+        </div>
+        <div class="bg-sky-50 border border-sky-200 rounded-2xl p-3">
+          <div class="text-[10px] font-bold text-sky-800">মোট রেফার (অ্যাক্টিভ)</div>
+          <div class="text-lg font-extrabold text-sky-950 mt-0.5">{{ referrals|length }} ({{ active_ref_count }})</div>
+        </div>
+        <div class="bg-purple-50 border border-purple-200 rounded-2xl p-3">
+          <div class="text-[10px] font-bold text-purple-800">উইথড্র সংখ্যা</div>
+          <div class="text-lg font-extrabold text-purple-950 mt-0.5">{{ payouts|length }} টি</div>
+        </div>
+      </div>
+
+      <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-[11px] font-mono text-slate-700 flex flex-wrap gap-x-6 gap-y-1">
+        <span><b>Device ID:</b> {{ target_user.device_id }}</span>
+        <span><b>Signup IP:</b> {{ target_user.signup_ip or 'N/A' }}</span>
+      </div>
+    </div>
+
+    <!-- 2. WITHDRAW DATA -->
+    <div class="soft-card print-card rounded-3xl p-5 space-y-3">
+      <h3 class="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
+        <i class="fa-solid fa-wallet text-emerald-700"></i> Withdraw Data ({{ payouts|length }})
+      </h3>
+
+      {% if payouts %}
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr class="border-b border-emerald-200 text-emerald-800">
+              <th class="py-2 pr-3">ID</th>
+              <th class="py-2 pr-3">Method</th>
+              <th class="py-2 pr-3">Account</th>
+              <th class="py-2 pr-3">Amount</th>
+              <th class="py-2 pr-3">Status</th>
+              <th class="py-2">Date</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-emerald-100">
+            {% for p in payouts %}
+            <tr>
+              <td class="py-2 pr-3 font-mono font-bold">#{{ p.id }}</td>
+              <td class="py-2 pr-3 font-bold">{{ p.method }}</td>
+              <td class="py-2 pr-3 font-mono">{{ p.account_number }}</td>
+              <td class="py-2 pr-3 font-extrabold">৳{{ "%.2f"|format(p.amount) }}</td>
+              <td class="py-2 pr-3 font-extrabold {% if p.status == 'paid' %}text-emerald-700{% elif p.status == 'rejected' %}text-red-600{% else %}text-amber-600{% endif %}">{{ p.status|upper }}</td>
+              <td class="py-2 text-slate-500">{{ (p.created_at or '')[:16].replace('T', ' ') }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-xs text-emerald-700">কোনো উইথড্র রেকর্ড নেই।</p>
+      {% endif %}
+    </div>
+
+    <!-- 3. REFER DATA -->
+    <div class="soft-card print-card rounded-3xl p-5 space-y-3">
+      <h3 class="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
+        <i class="fa-solid fa-users text-teal-700"></i> Refer Data ({{ referrals|length }} জন)
+      </h3>
+
+      {% if referrals %}
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr class="border-b border-emerald-200 text-emerald-800">
+              <th class="py-2 pr-3">ID</th>
+              <th class="py-2 pr-3">Name</th>
+              <th class="py-2 pr-3">Email</th>
+              <th class="py-2 pr-3">Total Earned</th>
+              <th class="py-2">Join Date</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-emerald-100">
+            {% for r in referrals %}
+            <tr>
+              <td class="py-2 pr-3 font-mono">#{{ r.id }}</td>
+              <td class="py-2 pr-3 font-bold">{{ r.name }}</td>
+              <td class="py-2 pr-3">{{ r.email }}</td>
+              <td class="py-2 pr-3 font-extrabold text-emerald-700">৳{{ "%.2f"|format(r.total_earned) }}</td>
+              <td class="py-2 text-slate-500">{{ (r.created_at or '')[:10] }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-xs text-emerald-700">কোনো রেফারেল রেকর্ড নেই।</p>
+      {% endif %}
+    </div>
+
+    <!-- 4. FULL EARNING HISTORY -->
+    <div class="soft-card print-card rounded-3xl p-5 space-y-3">
+      <h3 class="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
+        <i class="fa-solid fa-clock-rotate-left text-emerald-700"></i> Full Earning & Work History ({{ history_items|length }} টি)
+      </h3>
+
+      {% if history_items %}
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr class="border-b border-emerald-200 text-emerald-800">
+              <th class="py-2 pr-3">Type</th>
+              <th class="py-2 pr-3">Details / Task</th>
+              <th class="py-2 pr-3">Status</th>
+              <th class="py-2 pr-3">Amount</th>
+              <th class="py-2">Date</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-emerald-100">
+            {% for h in history_items %}
+            <tr>
+              <td class="py-2 pr-3 font-bold">{{ h.type }}</td>
+              <td class="py-2 pr-3">{{ h.title }}</td>
+              <td class="py-2 pr-3 font-bold {% if h.status in ('APPROVED', 'COMPLETED') %}text-emerald-700{% elif h.status == 'REJECTED' %}text-red-600{% else %}text-amber-600{% endif %}">{{ h.status }}</td>
+              <td class="py-2 pr-3 font-extrabold">+৳{{ "%.2f"|format(h.amount) }}</td>
+              <td class="py-2 text-slate-500">{{ (h.created_at or '')[:16].replace('T', ' ') }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-xs text-emerald-700">কোনো কাজের হিস্টোরি নেই।</p>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+function exportUserPdf(userName) {
+  const prevTitle = document.title;
+  document.title = `InfinityWork_Audit_${userName.replace(/\s+/g, "_")}`;
+  window.print();
+  setTimeout(() => { document.title = prevTitle; }, 1000);
+}
+</script>
+{% endblock %}
