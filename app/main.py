@@ -36,6 +36,14 @@ from app.security import (
     set_flash,
     pop_flashes,
 )
+from app.config import CRON_SECRET
+from app.tg_proof import (
+    notify_real_withdrawal,
+    generate_realistic_fake_proof,
+    format_tg_message,
+    send_to_proof_channel,
+    should_post_cron_now,
+)
 
 app = FastAPI(title="InfinityWork")
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, same_site="lax")
@@ -1004,6 +1012,29 @@ async def admin_submissions_bulk(
         f"Bulk সম্পন্ন! {len(approve_ids)}টি Approved ও {len(reject_ids)}টি Random Rejected হয়েছে।",
         "success",
     )
+
+@app.get("/api/cron/live-proof")
+async def cron_live_proof(key: str = "", force: int = 0):
+    if key != CRON_SECRET:
+        return JSONResponse({"ok": False, "error": "Invalid cron key"}, status_code=403)
+
+    allowed, mode = await should_post_cron_now(force=(force == 1))
+    if not allowed:
+        return JSONResponse({"ok": True, "posted": False, "reason": mode})
+
+    proof = generate_realistic_fake_proof()
+    msg = format_tg_message(proof)
+    sent = await send_to_proof_channel(msg)
+
+    return JSONResponse({
+        "ok": True,
+        "posted": sent,
+        "mode": mode,
+        "headline": proof["headline"],
+        "amount": proof["amount"],
+        "method": proof["method"],
+    })
+    
 
 # ---------------- ADMIN PANEL: USER PASSWORD RESET (/admin/reset) ----------------
 
