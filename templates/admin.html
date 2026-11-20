@@ -74,17 +74,29 @@
     </div>
   </section>
 
-  <!-- 3. ALL 9 ADMIN MODULES GRID -->
+  <!-- 3. ALL ADMIN MODULES GRID -->
   <section class="space-y-2.5">
     <div class="flex items-center justify-between px-1">
       <h2 class="font-extrabold text-sm text-emerald-950 flex items-center gap-1.5">
         <span class="w-2 h-5 rounded-full bg-emerald-700 inline-block"></span>
-        <span>অ্যাডমিন কন্ট্রোল মডিউল (৯টি)</span>
+        <span>অ্যাডমিন কন্ট্রোল মডিউল</span>
       </h2>
     </div>
 
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-      <!-- 1. Bulk Submissions -->
+      <a href="/admin/withdrew" class="adm-tile rounded-2xl p-4 flex items-center gap-3 relative">
+        {% if st.get('pending_payouts', 0) > 0 %}
+        <span class="absolute top-2.5 right-2.5 bg-rose-600 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full">{{ st.get('pending_payouts', 0) }}</span>
+        {% endif %}
+        <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center text-base shrink-0">
+          <i class="fa-solid fa-money-bill-transfer"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="font-extrabold text-emerald-950 truncate">Withdrawals</div>
+          <div class="text-[10px] text-rose-700 font-semibold truncate">Paid ও Reject ম্যানেজ</div>
+        </div>
+      </a>
+
       <a href="/admin/submiton" class="adm-tile rounded-2xl p-4 flex items-center gap-3 relative">
         {% if st.get('pending_subs', 0) > 0 %}
         <span class="absolute top-2.5 right-2.5 bg-amber-500 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full">{{ st.get('pending_subs', 0) }}</span>
@@ -98,7 +110,6 @@
         </div>
       </a>
 
-      <!-- 2. Micro Task Control -->
       <a href="/admin/task" class="adm-tile rounded-2xl p-4 flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-emerald-900 text-yellow-300 flex items-center justify-center text-base shrink-0">
           <i class="fa-solid fa-sliders"></i>
@@ -109,7 +120,6 @@
         </div>
       </a>
 
-      <!-- 3. ChatGPT Image Admin -->
       <a href="/admin/c" class="adm-tile rounded-2xl p-4 flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center text-base shrink-0">
           <i class="fa-solid fa-wand-magic-sparkles"></i>
@@ -120,7 +130,6 @@
         </div>
       </a>
 
-      <!-- 4. Typing Task Admin -->
       <a href="/admin/t" class="adm-tile rounded-2xl p-4 flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center text-base shrink-0">
           <i class="fa-solid fa-keyboard"></i>
@@ -131,7 +140,16 @@
         </div>
       </a>
 
-      <!-- 5. Notice Board Admin -->
+      <a href="/admin/user" class="adm-tile rounded-2xl p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-base shrink-0">
+          <i class="fa-solid fa-users-gear"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="font-extrabold text-emerald-950 truncate">User Manager</div>
+          <div class="text-[10px] text-emerald-700 font-semibold truncate">ব্যালেন্স, আয় ও ডিলিট</div>
+        </div>
+      </a>
+
       <a href="/admin/n" class="adm-tile rounded-2xl p-4 flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-base shrink-0">
           <i class="fa-solid fa-bullhorn"></i>
@@ -142,7 +160,6 @@
         </div>
       </a>
 
-      <!-- 6. Review & Proof Admin -->
       <a href="/admin/r" class="adm-tile rounded-2xl p-4 flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-base shrink-0">
           <i class="fa-solid fa-star"></i>
@@ -153,7 +170,6 @@
         </div>
       </a>
 
-      <!-- 7. ImgBB API Manager -->
       <a href="/admin/imgbb" class="adm-tile rounded-2xl p-4 flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center text-base shrink-0">
           <i class="fa-solid fa-images"></i>
@@ -164,7 +180,6 @@
         </div>
       </a>
 
-      <!-- 8. Full Site Status -->
       <a href="/admin/status" class="adm-tile rounded-2xl p-4 flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-base shrink-0">
           <i class="fa-solid fa-chart-column"></i>
@@ -175,14 +190,23 @@
         </div>
       </a>
 
-      <!-- 9. User Password Reset -->
-      <a href="/admin/reset" class="adm-tile rounded-2xl p-4 flex items-center gap-3 col-span-2 sm:col-span-1">
+      <a href="/admin/reset" class="adm-tile rounded-2xl p-4 flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center text-base shrink-0">
           <i class="fa-solid fa-key"></i>
         </div>
         <div class="min-w-0">
           <div class="font-extrabold text-emerald-950 truncate">Password Reset</div>
           <div class="text-[10px] text-red-600 font-semibold truncate">ইমেইল দিয়ে পাস রিসেট</div>
+        </div>
+      </a>
+
+      <a href="/admin/pay" class="adm-tile rounded-2xl p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-900 text-yellow-300 flex items-center justify-center text-base shrink-0">
+          <i class="fa-solid fa-receipt"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="font-extrabold text-emerald-950 truncate">Pay Poster (6H)</div>
+          <div class="text-[10px] text-emerald-700 font-semibold truncate">TG স্ক্রিনশট পোস্টার</div>
         </div>
       </a>
     </div>
@@ -205,45 +229,7 @@
     </form>
   </section>
 
-  <!-- 5. WITHDRAW / PAYOUT REQUESTS -->
-  <section class="adm-glass rounded-3xl p-5 space-y-3">
-    <div class="flex items-center justify-between">
-      <h2 class="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
-        <i class="fa-solid fa-money-bill-transfer text-emerald-700"></i> উইথড্র রিকুয়েস্ট
-      </h2>
-      <span class="text-xs font-extrabold text-amber-700">{{ st.get('pending_payouts', 0) }} টি Pending</span>
-    </div>
-
-    <div class="space-y-2.5 text-xs">
-      {% for p in payouts|default([]) %}
-      <div class="flex flex-wrap items-center justify-between gap-2 bg-white border border-emerald-100 p-3.5 rounded-2xl">
-        <div>
-          <div class="font-extrabold text-emerald-950">
-            User #{{ p.user_id }} • {{ p.method }} ({{ p.account_number }}) • <span class="text-emerald-700">৳{{ "%.2f"|format(p.amount) }}</span>
-          </div>
-          <div class="text-[11px] text-slate-500 mt-0.5">
-            {{ (p.created_at or '')[:16].replace('T', ' ') }} •
-            <span class="font-bold {% if p.status == 'paid' %}text-emerald-700{% elif p.status == 'rejected' %}text-red-600{% else %}text-amber-600{% endif %}">{{ p.status|upper }}</span>
-          </div>
-        </div>
-        {% if p.status == 'pending' %}
-        <div class="flex gap-2">
-          <form action="/admin/payout/{{ p.id }}/paid" method="POST">
-            <button class="bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-1.5 rounded-xl font-bold">Mark Paid</button>
-          </form>
-          <form action="/admin/payout/{{ p.id }}/reject" method="POST">
-            <button class="bg-red-600 hover:bg-red-700 text-white px-3.5 py-1.5 rounded-xl font-bold">Reject</button>
-          </form>
-        </div>
-        {% endif %}
-      </div>
-      {% else %}
-      <p class="text-emerald-700 text-center py-3">কোনো উইথড্র রিকুয়েস্ট নেই।</p>
-      {% endfor %}
-    </div>
-  </section>
-
-  <!-- 6. CONTACT US MESSAGES INBOX -->
+  <!-- 5. CONTACT US MESSAGES INBOX -->
   <section class="adm-glass rounded-3xl p-5 space-y-3">
     <h2 class="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
       <i class="fa-solid fa-envelope-open-text text-sky-700"></i> যোগাযোগ ও প্রমোশনাল মেসেজ (/contact)
