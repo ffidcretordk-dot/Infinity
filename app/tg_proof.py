@@ -1,3 +1,4 @@
+import html
 import random
 import secrets
 from datetime import datetime, timezone, timedelta
@@ -7,6 +8,9 @@ from app.config import TG_BOT_TOKEN, TG_PROOF_CHANNEL_ID, SITE_URL, OFFICIAL_CHA
 from app.db import db
 
 BD_TZ = timezone(timedelta(hours=6))
+
+# In-memory streak guard so 60% Success / 37% Request / 3% Reject mix naturally
+_LAST_STATUS_KEY = None
 
 
 def mask_account(acc: str) -> str:
@@ -19,19 +23,28 @@ def mask_account(acc: str) -> str:
     return f"{s[:3]}••••{s[-4:]}"
 
 
-def pick_weighted_status() -> tuple[str, str, str]:
+def pick_weighted_status() -> tuple[str, str, str, str]:
     """
     60% -> Withdrawal Success
     37% -> Withdraw Request Success
     3%  -> Withdrawal Rejected
     """
+    global _LAST_STATUS_KEY
     r = random.random() * 100
+
     if r < 60:
-        return ("✅", "Withdrawal Success", "Paid ✓")
+        # Avoid getting stuck on Success too many times in a row
+        if _LAST_STATUS_KEY == "success" and random.random() < 0.45:
+            _LAST_STATUS_KEY = "request"
+            return ("request", "📥", "Withdraw Request Success", "Pending Review ⏳", "New payout request queued for verification")
+        _LAST_STATUS_KEY = "success"
+        return ("success", "✅", "Withdrawal Success", "Paid Successfully ✅", "Instant 0% fee payout completed")
     elif r < 97:
-        return ("⏳", "Withdraw Request Success", "Processing...")
+        _LAST_STATUS_KEY = "request"
+        return ("request", "📥", "Withdraw Request Success", "Pending Review ⏳", "New payout request queued for verification")
     else:
-        return ("❌", "Withdrawal Rejected", "Rejected (Refunded)")
+        _LAST_STATUS_KEY = "rejected"
+        return ("rejected", "❌", "Withdrawal Rejected", "Rejected & Refunded ↩️", "Verification failed • Balance returned")
 
 
 def pick_weighted_amount() -> float:
@@ -52,8 +65,22 @@ def pick_weighted_amount() -> float:
         return float(random.randint(200, 220) * 10)    # 2000 - 2200
 
 
-def generate_realistic_fake_proof() -> dict:
-    emoji, headline, status_text = pick_weighted_status()
+def generate_realistic_fake_proof(force_type: str | None = None) -> dict:
+    if force_type == "request":
+        emoji, headline, status_text, subtitle = (
+            "📥", "Withdraw Request Success", "Pending Review ⏳", "New payout request queued for verification"
+        )
+    elif force_type == "rejected":
+        emoji, headline, status_text, subtitle = (
+            "❌", "Withdrawal Rejected", "Rejected & Refunded ↩️", "Verification failed • Balance returned"
+        )
+    elif force_type == "success":
+        emoji, headline, status_text, subtitle = (
+            "✅", "Withdrawal Success", "Paid Successfully ✅", "Instant 0% fee payout completed"
+        )
+    else:
+        _, emoji, headline, status_text, subtitle = pick_weighted_status()
+
     amount = pick_weighted_amount()
 
     method = random.choices(
@@ -81,6 +108,7 @@ def generate_realistic_fake_proof() -> dict:
     return {
         "emoji": emoji,
         "headline": headline,
+        "subtitle": subtitle,
         "status_text": status_text,
         "method": method,
         "masked_acc": masked_acc,
@@ -93,27 +121,34 @@ def generate_realistic_fake_proof() -> dict:
 
 def format_tg_message(data: dict) -> str:
     bd_time = datetime.now(BD_TZ).strftime("%d %b %Y • %I:%M %p")
+    acc = html.escape(str(data["masked_acc"]))
+    method = html.escape(str(data["method"]))
+    st_txt = html.escape(str(data["status_text"]))
+    uid = html.escape(str(data["user_id"]))
+    ref_id = html.escape(str(data["refer_id"]))
+    trx = html.escape(str(data["trx_hash"]))
+    headline = html.escape(str(data["headline"]))
+    subtitle = html.escape(str(data.get("subtitle") or "InfinityWork Official Payout"))
+
     return (
-        f"{data['emoji']} <b>{data['headline']}</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"💳 <b>Withdrawal Data</b>\n"
-        f"• <b>Account Number:</b> <code>{data['masked_acc']}</code>\n"
-        f"• <b>Method:</b> {data['method']}\n"
-        f"• <b>Amount:</b> <b>৳{data['amount']:,.2f}</b>\n"
-        f"• <b>Status:</b> {data['status_text']}\n\n"
+        f"{data['emoji']} <b>{headline.upper()}</b>\n"
+        f"<i>{subtitle}</i>\n\n"
+        f"<blockquote>💳 <b>Withdrawal Data</b>\n"
+        f"┣ <b>Account:</b> <code>{acc}</code>\n"
+        f"┣ <b>Method:</b> {method}\n"
+        f"┣ <b>Amount:</b> <b>৳{data['amount']:,.2f}</b>\n"
+        f"┗ <b>Status:</b> {st_txt}\n\n"
         f"👤 <b>User Data</b>\n"
-        f"• <b>User ID:</b> <code>#IW-{data['user_id']}</code>\n"
-        f"• <b>Refer ID:</b> <code>{data['refer_id']}</code>\n"
-        f"• <b>Trx Hash:</b> <code>{data['trx_hash']}</code>\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"🕒 <i>{bd_time} (BDT)</i>\n"
-        f"⚡ <i>InfinityWork • 0% Fee Payout</i>"
+        f"┣ <b>User ID:</b> <code>#IW-{uid}</code>\n"
+        f"┣ <b>Refer ID:</b> <code>{ref_id}</code>\n"
+        f"┗ <b>Trx Hash:</b> <code>{trx}</code></blockquote>\n"
+        f"🕒 <i>{bd_time} (BDT)</i>  •  ⚡ <b>0% Fee</b>"
     )
 
 
-async def send_to_proof_channel(text: str) -> bool:
+async def send_to_proof_channel(text: str) -> tuple[bool, str]:
     if not TG_BOT_TOKEN or not TG_PROOF_CHANNEL_ID:
-        return False
+        return False, "Missing TG_BOT_TOKEN or TG_PROOF_CHANNEL_ID"
 
     url = f"https://api.telegram.org/bot{TG_BOT_TOKEN}/sendMessage"
     payload = {
@@ -133,23 +168,32 @@ async def send_to_proof_channel(text: str) -> bool:
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             r = await client.post(url, json=payload)
-            return r.status_code == 200
-    except Exception:
-        return False
+            if r.status_code == 200:
+                return True, "ok"
+            return False, r.text
+    except Exception as e:
+        return False, str(e)
 
 
 async def notify_real_withdrawal(user: dict, method: str, account_number: str, amount: float, status: str = "request"):
     if status == "paid":
-        emoji, headline, st_txt = "✅", "Withdrawal Success", "Paid ✓"
+        emoji, headline, st_txt, sub = (
+            "✅", "Withdrawal Success", "Paid Successfully ✅", "Instant 0% fee payout completed"
+        )
     elif status == "rejected":
-        emoji, headline, st_txt = "❌", "Withdrawal Rejected", "Rejected (Refunded)"
+        emoji, headline, st_txt, sub = (
+            "❌", "Withdrawal Rejected", "Rejected & Refunded ↩️", "Verification failed • Balance returned"
+        )
     else:
-        emoji, headline, st_txt = "⏳", "Withdraw Request Success", "Processing..."
+        emoji, headline, st_txt, sub = (
+            "📥", "Withdraw Request Success", "Pending Review ⏳", "New payout request queued for verification"
+        )
 
     trx_prefix = {"bKash": "BKS", "Nagad": "NGD", "Rocket": "RKT", "Binance": "BIN"}.get(method, "IWP")
     data = {
         "emoji": emoji,
         "headline": headline,
+        "subtitle": sub,
         "status_text": st_txt,
         "method": method,
         "masked_acc": mask_account(account_number),
@@ -182,7 +226,6 @@ async def should_post_cron_now(force: bool = False) -> tuple[bool, str]:
         else:
             await db.insert("site_settings", {"key": "last_proof_cron_ts", "value": str(now_ts)})
     except Exception:
-        # Fallback probabilistic slow mode if site_settings isn't present
         if is_night and random.random() > 0.16:
             return False, "night-slow-prob"
 
