@@ -739,8 +739,79 @@ async def admin_status_page(request: Request):
         },
     })
     return templates.TemplateResponse("admin_status.html", ctx)
-    
 
+# ---------------- ADMIN PANEL: WITHDRAW MANAGEMENT (/admin/withdrew) ----------------
+
+@app.get("/admin/withdrew", response_class=HTMLResponse)
+@app.get("/admin/withdraw", response_class=HTMLResponse)
+async def admin_withdraw_page(request: Request, status: str = "pending"):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অ্যাডমিন অ্যাক্সেস অনুমোদিত নয়!", "error")
+
+    all_payouts, all_users = await asyncio.gather(
+        db.select("payouts", order="created_at.desc"),
+        _safe_select("users"),
+    )
+
+    user_map = {u["id"]: u for u in all_users}
+
+    # Exclude ALL rejected payouts ("Reject korle seta r show korbe na")
+    active_payouts = [p for p in all_payouts if (p.get("status") or "").lower() != "rejected"]
+
+    counts = {
+        "all": len(active_payouts),
+        "pending": sum(1 for p in active_payouts if p.get("status") == "pending"),
+        "paid": sum(1 for p in active_payouts if p.get("status") == "paid"),
+    }
+
+    pending_total_amt = sum(float(p.get("amount") or 0) for p in active_payouts if p.get("status") == "pending")
+    paid_total_amt = sum(float(p.get("amount") or 0) for p in active_payouts if p.get("status") == "paid")
+
+    status_filter = status if status in ("pending", "paid", "all") else "pending"
+    filtered = active_payouts if status_filter == "all" else [p for p in active_payouts if p.get("status") == status_filter]
+
+    for p in filtered:
+        u = user_map.get(p["user_id"], {})
+        p["user_name"] = u.get("name") or f"User #{p['user_id']}"
+        p["user_email"] = u.get("email") or ""
+        p["formatted_date"] = (p.get("created_at") or "")[:16].replace("T", " ")
+
+    ctx = base_ctx(request, user, "admin")
+    ctx.update({
+        "payouts": filtered,
+        "counts": counts,
+        "status_filter": status_filter,
+        "pending_total_amt": pending_total_amt,
+        "paid_total_amt": paid_total_amt,
+    })
+    return templates.TemplateResponse("admin_withdraw.html", ctx)
+
+
+@app.post("/admin/withdrew/{payout_id}/{action}")
+async def admin_withdraw_action(request: Request, payout_id: int, action: str):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
+
+    p = await db.select("payouts", filters={"id": payout_id}, single=True)
+    if not p or p["status"] != "pending":
+        return redirect_with_flash(request, "/admin/withdrew", "রিকুয়েস্টটি আগেই প্রসেস করা আছে।", "info")
+
+    if action == "paid":
+        await db.update("payouts", {"id": payout_id}, {"status": "paid"})
+        return redirect_with_flash(request, "/admin/withdrew", f"#IW-PAY-{payout_id} Paid হিসেবে মার্ক করা হয়েছে!", "success")
+    else:
+        await db.update("payouts", {"id": payout_id}, {"status": "rejected"})
+        target_user = await db.select("users", filters={"id": p["user_id"]}, single=True)
+        if target_user:
+            await db.update(
+                "users",
+                {"id": target_user["id"]},
+                {"balance": float(target_user["balance"]) + float(p["amount"])},
+            )
+        return redirect_with_flash(request, "/admin/withdrew", f"#IW-PAY-{payout_id} Reject করা হয়েছে ও ব্যালেন্স ফেরত দেওয়া হয়েছে।", "info")
+        
 @app.get("/task/{task_id}", response_class=HTMLResponse)
 async def task_detail(request: Request, task_id: int):
     user = await get_current_user(request)
