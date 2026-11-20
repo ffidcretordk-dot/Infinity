@@ -21,6 +21,28 @@
 </style>
 
 <div class="space-y-5">
+  <!-- TOP APP INSTALL CTA BANNER (Shown ONLY if NOT installed!) -->
+  <section id="menu-app-install-cta" class="hidden rounded-3xl bg-gradient-to-r from-emerald-800 via-emerald-900 to-emerald-950 text-white p-4 sm:p-5 shadow-xl relative overflow-hidden">
+    <div class="w-36 h-36 rounded-full bg-emerald-400/15 blur-2xl -top-10 -right-10 absolute pointer-events-none"></div>
+    <div class="relative z-10 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <img src="/pwa-icon/192.png" alt="InfinityWork" class="w-12 h-12 rounded-2xl border border-white/25 shadow shrink-0" />
+        <div class="min-w-0">
+          <div class="flex items-center gap-1.5">
+            <span class="font-extrabold text-sm truncate">InfinityWork App</span>
+            <span class="bg-yellow-300 text-emerald-950 text-[9px] font-extrabold px-2 py-0.5 rounded-full">FREE</span>
+          </div>
+          <p class="text-[11px] text-emerald-200 truncate">ফোনে ইনস্টল করে ১-ট্যাপে দ্রুত কাজ করুন</p>
+        </div>
+      </div>
+
+      <button type="button" onclick="handleMenuInstallClick()"
+              class="bg-yellow-300 hover:bg-yellow-200 text-emerald-950 px-4 py-2.5 rounded-full text-xs font-extrabold shrink-0 shadow transition active:scale-95">
+        <i class="fa-solid fa-download mr-1"></i> Install
+      </button>
+    </div>
+  </section>
+
   <!-- 1. HERO CARD WITH FLAT VECTOR SVG -->
   <section class="app-glass rounded-[2rem] p-5 sm:p-6 relative overflow-hidden bg-gradient-to-br from-white via-emerald-50/60 to-teal-50/70">
     <div class="grid grid-cols-12 gap-4 items-center">
@@ -129,7 +151,11 @@
       </a>
       <a href="/history" class="map-tile rounded-2xl p-3 flex items-center gap-2.5">
         <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0"><i class="fa-solid fa-clock-rotate-left"></i></div>
-        <div class="min-w-0"><div class="font-extrabold text-xs text-emerald-950 truncate">History</div><div class="text-[10px] text-emerald-700 truncate">/history</div></div>
+        <div class="min-w-0"><div class="font-extrabold text-xs text-emerald-950 truncate">Earn History</div><div class="text-[10px] text-emerald-700 truncate">/history</div></div>
+      </a>
+      <a href="/history/v2" class="map-tile rounded-2xl p-3 flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0"><i class="fa-solid fa-receipt"></i></div>
+        <div class="min-w-0"><div class="font-extrabold text-xs text-emerald-950 truncate">Withdraw Log</div><div class="text-[10px] text-emerald-700 truncate">/history/v2</div></div>
       </a>
       <a href="/profile" class="map-tile rounded-2xl p-3 flex items-center gap-2.5">
         <div class="w-9 h-9 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center shrink-0"><i class="fa-solid fa-user"></i></div>
@@ -163,6 +189,10 @@
         <div class="w-9 h-9 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center shrink-0"><i class="fa-solid fa-envelope-open-text"></i></div>
         <div class="min-w-0"><div class="font-extrabold text-xs text-emerald-950 truncate">Contact Us</div><div class="text-[10px] text-sky-700 truncate">/contact</div></div>
       </a>
+      <a href="/app" class="map-tile rounded-2xl p-3 flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-emerald-900 text-yellow-300 flex items-center justify-center shrink-0"><i class="fa-solid fa-mobile-screen-button"></i></div>
+        <div class="min-w-0"><div class="font-extrabold text-xs text-emerald-950 truncate">Official App</div><div class="text-[10px] text-emerald-700 truncate">/app</div></div>
+      </a>
       <a href="/" class="map-tile rounded-2xl p-3 flex items-center gap-2.5">
         <div class="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-center shrink-0"><i class="fa-solid fa-globe"></i></div>
         <div class="min-w-0"><div class="font-extrabold text-xs text-emerald-950 truncate">Landing Page</div><div class="text-[10px] text-emerald-700 truncate">/</div></div>
@@ -179,12 +209,18 @@
     </h2>
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs font-bold">
       <a href="/admin" class="map-tile rounded-2xl p-3 text-center bg-amber-50/70 border-amber-200 text-amber-950"><i class="fa-solid fa-gear mr-1"></i>Main Admin</a>
+      <a href="/admin/withdrew" class="map-tile rounded-2xl p-3 text-center bg-amber-50/70 border-amber-200 text-amber-950"><i class="fa-solid fa-money-bill-transfer mr-1"></i>Withdrawals</a>
       <a href="/admin/submiton" class="map-tile rounded-2xl p-3 text-center bg-amber-50/70 border-amber-200 text-amber-950"><i class="fa-solid fa-list-check mr-1"></i>Bulk Review</a>
+      <a href="/admin/task" class="map-tile rounded-2xl p-3 text-center bg-amber-50/70 border-amber-200 text-amber-950"><i class="fa-solid fa-sliders mr-1"></i>Task Control</a>
       <a href="/admin/c" class="map-tile rounded-2xl p-3 text-center bg-amber-50/70 border-amber-200 text-amber-950"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>AI Admin</a>
       <a href="/admin/t" class="map-tile rounded-2xl p-3 text-center bg-amber-50/70 border-amber-200 text-amber-950"><i class="fa-solid fa-keyboard mr-1"></i>Typing Admin</a>
+      <a href="/admin/user" class="map-tile rounded-2xl p-3 text-center bg-amber-50/70 border-amber-200 text-amber-950"><i class="fa-solid fa-users-gear mr-1"></i>Users</a>
       <a href="/admin/n" class="map-tile rounded-2xl p-3 text-center bg-amber-50/70 border-amber-200 text-amber-950"><i class="fa-solid fa-bullhorn mr-1"></i>Notice Admin</a>
       <a href="/admin/r" class="map-tile rounded-2xl p-3 text-center bg-amber-50/70 border-amber-200 text-amber-950"><i class="fa-solid fa-star mr-1"></i>Review Admin</a>
       <a href="/admin/imgbb" class="map-tile rounded-2xl p-3 text-center bg-amber-50/70 border-amber-200 text-amber-950"><i class="fa-solid fa-images mr-1"></i>ImgBB Keys</a>
+      <a href="/admin/status" class="map-tile rounded-2xl p-3 text-center bg-amber-50/70 border-amber-200 text-amber-950"><i class="fa-solid fa-chart-column mr-1"></i>Site Status</a>
+      <a href="/admin/reset" class="map-tile rounded-2xl p-3 text-center bg-amber-50/70 border-amber-200 text-amber-950"><i class="fa-solid fa-key mr-1"></i>Pass Reset</a>
+      <a href="/admin/pay" class="map-tile rounded-2xl p-3 text-center bg-amber-50/70 border-amber-200 text-amber-950"><i class="fa-solid fa-receipt mr-1"></i>Pay Poster</a>
     </div>
   </section>
   {% endif %}
@@ -247,4 +283,28 @@
     </a>
   </section>
 </div>
+
+<script>
+// Show Top App Install CTA ONLY if app is NOT already installed (standalone mode)
+document.addEventListener("DOMContentLoaded", () => {
+  const isInstalled = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  const cta = document.getElementById("menu-app-install-cta");
+  if (!isInstalled && cta) {
+    cta.classList.remove("hidden");
+  }
+});
+
+async function handleMenuInstallClick() {
+  if (typeof deferredPrompt !== "undefined" && deferredPrompt) {
+    deferredPrompt.prompt();
+    const res = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    if (res && res.outcome === "accepted") {
+      document.getElementById("menu-app-install-cta").classList.add("hidden");
+      return;
+    }
+  }
+  window.location.href = "/app";
+}
+</script>
 {% endblock %}
