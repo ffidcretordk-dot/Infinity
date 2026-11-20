@@ -839,7 +839,113 @@ async def task_detail(request: Request, task_id: int):
     ctx["task"] = task
     return templates.TemplateResponse("task_detail.html", ctx)
 
+# ---------------- ADMIN PANEL: USER CHECK & PDF EXPORT (/admin/ck) ----------------
 
+@app.get("/admin/ck", response_class=HTMLResponse)
+@app.get("/admin/check", response_class=HTMLResponse)
+async def admin_user_check(request: Request, email: str = ""):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অ্যাডমিন অ্যাক্সেস অনুমোদিত নয়!", "error")
+
+    email_clean = email.strip().lower()
+    target_user = None
+    history_items: list[dict] = []
+    payouts: list[dict] = []
+    referrals: list[dict] = []
+    level_info = None
+    active_ref_count = 0
+
+    if email_clean:
+        target_user = await db.select("users", filters={"email": email_clean}, single=True)
+
+        if target_user:
+            tid = target_user["id"]
+            t_ref_code = target_user["referral_code"]
+
+            async def safe_target_select(table: str, filters: dict, order: str = "created_at.desc") -> list[dict]:
+                try:
+                    return await db.select(table, filters=filters, order=order)
+                except Exception:
+                    return []
+
+            (
+                submissions,
+                all_tasks,
+                ai_subs,
+                ai_tasks,
+                typing_subs,
+                typing_tasks,
+                work_logs,
+                payouts,
+                referrals,
+            ) = await asyncio.gather(
+                safe_target_select("task_submissions", {"user_id": tid}),
+                _safe_select("tasks"),
+                safe_target_select("ai_image_submissions", {"user_id": tid}),
+                _safe_select("ai_image_tasks"),
+                safe_target_select("typing_submissions", {"user_id": tid}),
+                _safe_select("typing_tasks"),
+                safe_target_select("work_logs", {"user_id": tid}),
+                safe_target_select("payouts", {"user_id": tid}),
+                safe_target_select("users", {"referred_by": t_ref_code}),
+            )
+
+            task_map = {t["id"]: t for t in all_tasks}
+            ai_map = {t["id"]: t for t in ai_tasks}
+            typing_map = {t["id"]: t for t in typing_tasks}
+
+            for s in submissions:
+                history_items.append({
+                    "type": "Micro Task",
+                    "title": task_map.get(s["task_id"], {}).get("title") or f"Task #{s['task_id']}",
+                    "status": (s.get("status") or "pending").upper(),
+                    "amount": float(s.get("reward") or 0),
+                    "created_at": s.get("created_at") or "",
+                })
+            for s in ai_subs:
+                history_items.append({
+                    "type": "ChatGPT Image",
+                    "title": ai_map.get(s["ai_task_id"], {}).get("title") or f"Chatgpt Img #{s['ai_task_id']}",
+                    "status": (s.get("status") or "pending").upper(),
+                    "amount": float(s.get("reward") or 0),
+                    "created_at": s.get("created_at") or "",
+                })
+            for s in typing_subs:
+                history_items.append({
+                    "type": "Image Typing",
+                    "title": typing_map.get(s["typing_task_id"], {}).get("title") or f"Typing #{s['typing_task_id']}",
+                    "status": (s.get("status") or "pending").upper(),
+                    "amount": float(s.get("reward") or 0),
+                    "created_at": s.get("created_at") or "",
+                })
+            for l in work_logs:
+                history_items.append({
+                    "type": l.get("work_type") or "Work",
+                    "title": l.get("details") or l.get("work_type") or "Activity",
+                    "status": (l.get("status") or "completed").upper(),
+                    "amount": float(l.get("reward") or 0),
+                    "created_at": l.get("created_at") or "",
+                })
+
+            history_items.sort(key=lambda x: x["created_at"], reverse=True)
+            level_info = get_earning_level(float(target_user.get("total_earned") or 0))
+            active_ref_count = sum(1 for r in referrals if float(r.get("total_earned") or 0) > REFERRAL_NEW_USER_BONUS)
+
+    bd_now_str = datetime.now(timezone(timedelta(hours=6))).strftime("%d %b %Y, %I:%M %p")
+    ctx = base_ctx(request, user, "admin")
+    ctx.update({
+        "search_email": email.strip(),
+        "target_user": target_user,
+        "level": level_info,
+        "history_items": history_items,
+        "payouts": payouts,
+        "referrals": referrals,
+        "active_ref_count": active_ref_count,
+        "report_time": bd_now_str,
+    })
+    return templates.TemplateResponse("admin_check.html", ctx)
+    
 @app.post("/task/{task_id}/submit")
 async def task_submit(
     request: Request,
