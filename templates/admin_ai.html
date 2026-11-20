@@ -10,7 +10,7 @@
       </div>
       <div>
         <h1 class="text-xl font-extrabold text-emerald-950">ChatGPT Image Admin</h1>
-        <p class="text-xs text-emerald-700">নতুন প্রম্পট পাবলিশ, এডিট ও ইমেজ সাবমিশন রিভিউ করুন</p>
+        <p class="text-xs text-emerald-700">নতুন প্রম্পট পাবলিশ ও ৩০টি ব্যাচে ১% Random Reject সহ Bulk Approve করুন</p>
       </div>
     </div>
     <div class="flex items-center gap-2">
@@ -21,24 +21,15 @@
     </div>
   </div>
 
-  <!-- Quick Summary Strip -->
-  {% set cnt = counts|default({'all':0,'pending':0,'approved':0,'rejected':0}) %}
-  <div class="grid grid-cols-4 gap-2 text-center text-xs">
-    <div class="soft-card rounded-2xl p-3">
+  <!-- Quick Summary Strip (Pending Only) -->
+  <div class="grid grid-cols-2 gap-3 text-center text-xs">
+    <div class="soft-card rounded-2xl p-3.5">
       <div class="text-lg font-extrabold text-emerald-950">{{ tasks|length }}</div>
       <div class="text-[10px] font-bold text-emerald-700">মোট প্রম্পট</div>
     </div>
-    <div class="soft-card rounded-2xl p-3 bg-amber-50/70 border-amber-200">
-      <div class="text-lg font-extrabold text-amber-700">{{ cnt.pending }}</div>
-      <div class="text-[10px] font-bold text-amber-800">Pending</div>
-    </div>
-    <div class="soft-card rounded-2xl p-3 bg-emerald-50/70 border-emerald-200">
-      <div class="text-lg font-extrabold text-emerald-700">{{ cnt.approved }}</div>
-      <div class="text-[10px] font-bold text-emerald-800">Approved</div>
-    </div>
-    <div class="soft-card rounded-2xl p-3 bg-red-50/60 border-red-200">
-      <div class="text-lg font-extrabold text-red-600">{{ cnt.rejected }}</div>
-      <div class="text-[10px] font-bold text-red-700">Rejected</div>
+    <div class="soft-card rounded-2xl p-3.5 bg-amber-50/70 border-amber-200">
+      <div class="text-lg font-extrabold text-amber-700">{{ pending_count|default(submissions|length) }}</div>
+      <div class="text-[10px] font-bold text-amber-800">Pending সাবমিশন</div>
     </div>
   </div>
 
@@ -83,34 +74,72 @@
     </form>
   </div>
 
-  <!-- Image Submissions Review Section -->
+  <!-- Image Submissions Review Section (Pending Only + Bulk Approve) -->
   <div class="soft-card rounded-3xl p-5 space-y-4">
-    <div class="flex flex-wrap items-center justify-between gap-2">
+    <div class="flex items-center justify-between gap-2">
       <h2 class="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
-        <i class="fa-solid fa-images text-emerald-700"></i> ইমেজ সাবমিশন লিস্ট
+        <i class="fa-solid fa-images text-emerald-700"></i> Pending ইমেজ সাবমিশন
       </h2>
+      <span class="bg-amber-100 text-amber-900 px-3 py-1 rounded-full text-[11px] font-extrabold">
+        {{ pending_count|default(submissions|length) }} টি Pending
+      </span>
     </div>
 
-    <!-- Filter Tabs -->
-    <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-bold">
-      <a href="/admin/c?status=pending" class="px-3.5 py-1.5 rounded-full shrink-0 {% if status_filter == 'pending' %}bg-emerald-900 text-white{% else %}bg-emerald-50 text-emerald-900{% endif %}">
-        Pending ({{ cnt.pending }})
-      </a>
-      <a href="/admin/c?status=approved" class="px-3.5 py-1.5 rounded-full shrink-0 {% if status_filter == 'approved' %}bg-emerald-900 text-white{% else %}bg-emerald-50 text-emerald-900{% endif %}">
-        Approved ({{ cnt.approved }})
-      </a>
-      <a href="/admin/c?status=rejected" class="px-3.5 py-1.5 rounded-full shrink-0 {% if status_filter == 'rejected' %}bg-emerald-900 text-white{% else %}bg-emerald-50 text-emerald-900{% endif %}">
-        Rejected ({{ cnt.rejected }})
-      </a>
-      <a href="/admin/c?status=all" class="px-3.5 py-1.5 rounded-full shrink-0 {% if status_filter == 'all' %}bg-emerald-900 text-white{% else %}bg-emerald-50 text-emerald-900{% endif %}">
-        All ({{ cnt.all }})
-      </a>
-    </div>
+    {% if submissions %}
+    <!-- Smart Bulk Approve Bar (Batch 30 + Random 1% Reject) -->
+    <form id="ai-bulk-form" action="/admin/c/bulk" method="POST"
+          class="rounded-2xl p-4 space-y-3 border-2 border-purple-200 bg-gradient-to-br from-purple-50/70 to-emerald-50/60 text-xs">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <span class="font-extrabold text-emerald-950">
+          <i class="fa-solid fa-bolt text-amber-500 mr-1"></i> Bulk Approve (৩০টি ব্যাচ ও ১% Random Reject)
+        </span>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+        <div>
+          <label class="font-bold text-emerald-900 block mb-1">ব্যাচ সংখ্যা (Batch)</label>
+          <input type="number" name="batch_limit" value="30" min="1" max="500"
+                 class="w-full px-3 py-2 rounded-xl border border-emerald-200 bg-white font-bold" />
+        </div>
+        <div>
+          <label class="font-bold text-red-700 block mb-1">Random Reject (%)</label>
+          <input type="number" name="reject_percent" value="1" min="0" max="100" step="0.5"
+                 class="w-full px-3 py-2 rounded-xl border border-red-200 bg-white font-bold text-red-700" />
+        </div>
+        <div class="col-span-2 sm:col-span-1 flex items-end">
+          <button type="submit" name="mode" value="smart_bulk"
+                  onclick="return confirm('৩০টি ব্যাচে Bulk Approve ও ১% Random Reject চালাতে চান?')"
+                  class="w-full bg-emerald-900 hover:bg-emerald-800 text-white py-2.5 px-4 rounded-xl font-extrabold shadow">
+            <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Bulk Approve
+          </button>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-purple-200/60">
+        <label class="inline-flex items-center gap-2 font-bold text-emerald-950 cursor-pointer">
+          <input type="checkbox" onchange="toggleAllAiSubs(this)" class="w-4 h-4 accent-emerald-800 rounded" />
+          <span>সবগুলো সিলেক্ট করুন (<span id="ai-selected-count">0</span> টি)</span>
+        </label>
+
+        <div class="flex gap-2">
+          <button type="submit" name="mode" value="approve_selected" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl font-bold">
+            সিলেক্টেড Approve
+          </button>
+          <button type="submit" name="mode" value="reject_selected" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-xl font-bold">
+            সিলেক্টেড Reject
+          </button>
+        </div>
+      </div>
+    </form>
+    {% endif %}
 
     <div class="space-y-3 text-xs">
       {% for s in submissions %}
       <div class="bg-white border border-emerald-100 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-3 min-w-0">
+          <input type="checkbox" form="ai-bulk-form" name="selected_ids" value="{{ s.id }}" onchange="updateAiSelectedCount()"
+                 class="ai-sub-checkbox w-4 h-4 accent-emerald-800 rounded shrink-0" />
+
           {% if s.image_url %}
           <img src="{{ s.image_url }}" onclick="openAiLightbox('{{ s.image_url }}')"
                class="w-16 h-16 rounded-2xl object-cover border border-emerald-200 cursor-pointer shrink-0 hover:scale-105 transition" />
@@ -127,12 +156,7 @@
               • <b class="text-emerald-700">৳{{ "%.2f"|format(s.reward) }}</b>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold
-                {% if s.status == 'approved' %}bg-emerald-100 text-emerald-800
-                {% elif s.status == 'rejected' %}bg-red-100 text-red-700
-                {% else %}bg-amber-100 text-amber-800{% endif %}">
-                {{ s.status|upper }}
-              </span>
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">PENDING</span>
               <span class="text-[11px] text-slate-400">{{ (s.created_at or '')[:16].replace('T', ' ') }}</span>
               {% if s.image_url %}
               <button type="button" onclick="openAiLightbox('{{ s.image_url }}')" class="text-sky-600 font-bold underline">বড় করে দেখুন</button>
@@ -141,7 +165,6 @@
           </div>
         </div>
 
-        {% if s.status == 'pending' %}
         <div class="flex gap-2 shrink-0">
           <form action="/admin/c/submission/{{ s.id }}/approve" method="POST">
             <button class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-xl font-bold shadow-xs">Approve</button>
@@ -150,10 +173,9 @@
             <button class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl font-bold shadow-xs">Reject</button>
           </form>
         </div>
-        {% endif %}
       </div>
       {% else %}
-      <p class="text-emerald-700 text-center py-6 font-bold">এই ফিল্টারে কোনো ইমেজ সাবমিশন নেই।</p>
+      <p class="text-emerald-700 text-center py-6 font-bold">এই মুহূর্তে কোনো Pending ইমেজ সাবমিশন নেই।</p>
       {% endfor %}
     </div>
   </div>
@@ -248,6 +270,17 @@
 </div>
 
 <script>
+function toggleAllAiSubs(master) {
+  document.querySelectorAll(".ai-sub-checkbox").forEach((cb) => (cb.checked = master.checked));
+  updateAiSelectedCount();
+}
+
+function updateAiSelectedCount() {
+  const count = document.querySelectorAll(".ai-sub-checkbox:checked").length;
+  const el = document.getElementById("ai-selected-count");
+  if (el) el.innerText = count;
+}
+
 function openEditAiModal(btn) {
   const d = btn.dataset;
   document.getElementById("edit-ai-form").action = `/admin/c/task/${d.id}/edit`;
