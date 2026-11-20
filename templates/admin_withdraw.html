@@ -1,0 +1,121 @@
+{% extends "base_app.html" %}
+{% block title %}Withdraw Management - Admin{% endblock %}
+{% block content %}
+<div class="space-y-5">
+  <!-- Header Card -->
+  <div class="soft-card rounded-[2rem] p-5 sm:p-6 bg-gradient-to-br from-white via-emerald-50/50 to-amber-50/40 flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center gap-3.5">
+      <div class="w-12 h-12 rounded-2xl bg-emerald-900 text-yellow-300 flex items-center justify-center text-xl shadow-xs">
+        <i class="fa-solid fa-money-bill-transfer"></i>
+      </div>
+      <div>
+        <h1 class="text-xl font-extrabold text-emerald-950">Withdraw Management</h1>
+        <p class="text-xs text-emerald-700">Pending ও Paid উইথড্র ম্যানেজ করুন (Rejected অটো হাইড থাকবে)</p>
+      </div>
+    </div>
+    <a href="/admin" class="bg-emerald-900 text-white px-4 py-2 rounded-full text-xs font-bold shadow-xs">← অ্যাডমিন</a>
+  </div>
+
+  <!-- Summary Strip -->
+  <div class="grid grid-cols-2 gap-3 text-center text-xs">
+    <div class="soft-card rounded-2xl p-4 bg-amber-50/70 border-amber-200">
+      <div class="text-amber-800 font-bold">Pending ({{ counts.pending }} টি)</div>
+      <div class="text-xl font-extrabold text-amber-700 mt-0.5">৳{{ "%.2f"|format(pending_total_amt) }}</div>
+    </div>
+    <div class="soft-card rounded-2xl p-4 bg-emerald-50/70 border-emerald-200">
+      <div class="text-emerald-800 font-bold">Paid ({{ counts.paid }} টি)</div>
+      <div class="text-xl font-extrabold text-emerald-700 mt-0.5">৳{{ "%.2f"|format(paid_total_amt) }}</div>
+    </div>
+  </div>
+
+  <!-- Filter Tabs (No Rejected Tab) -->
+  <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-extrabold">
+    <a href="/admin/withdrew?status=pending" class="px-4 py-2 rounded-full shrink-0 {% if status_filter == 'pending' %}bg-emerald-900 text-white shadow{% else %}bg-white border border-emerald-200 text-emerald-900{% endif %}">
+      Pending ({{ counts.pending }})
+    </a>
+    <a href="/admin/withdrew?status=paid" class="px-4 py-2 rounded-full shrink-0 {% if status_filter == 'paid' %}bg-emerald-900 text-white shadow{% else %}bg-white border border-emerald-200 text-emerald-900{% endif %}">
+      Paid ({{ counts.paid }})
+    </a>
+    <a href="/admin/withdrew?status=all" class="px-4 py-2 rounded-full shrink-0 {% if status_filter == 'all' %}bg-emerald-900 text-white shadow{% else %}bg-white border border-emerald-200 text-emerald-900{% endif %}">
+      All Active ({{ counts.all }})
+    </a>
+  </div>
+
+  <!-- Withdraw Requests List -->
+  <div class="space-y-3">
+    {% for p in payouts %}
+    <div class="soft-card rounded-3xl p-4 sm:p-5 space-y-3 text-xs">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div class="flex items-start gap-3 min-w-0">
+          <!-- Method Logo -->
+          {% if p.method == 'bKash' %}
+          <div class="w-11 h-11 rounded-2xl bg-pink-50 border border-pink-200 flex items-center justify-center shrink-0">
+            <svg viewBox="0 0 40 40" class="w-7 h-7" xmlns="http://www.w3.org/2000/svg"><path d="M8 10l12 6 10-8-4 14 6 6-14-2-8 6 2-12z" fill="#e2136e"/><path d="M20 16l10-8-4 14z" fill="#b80b57"/></svg>
+          </div>
+          {% elif p.method == 'Nagad' %}
+          <div class="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center shrink-0">
+            <svg viewBox="0 0 40 40" class="w-7 h-7" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="14" fill="#f26522"/><path d="M13 24c2-8 9-12 15-10-4 2-6 5-7 10z" fill="#ffffff"/><circle cx="25" cy="24" r="3" fill="#ffd200"/></svg>
+          </div>
+          {% elif p.method == 'Rocket' %}
+          <div class="w-11 h-11 rounded-2xl bg-purple-50 border border-purple-200 flex items-center justify-center shrink-0">
+            <svg viewBox="0 0 40 40" class="w-7 h-7" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="14" fill="#8c3494"/><path d="M20 9c4 4 6 9 6 14l-6 4-6-4c0-5 2-10 6-14z" fill="#ffffff"/><circle cx="20" cy="18" r="2.5" fill="#8c3494"/></svg>
+          </div>
+          {% else %}
+          <div class="w-11 h-11 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
+            <svg viewBox="0 0 40 40" class="w-7 h-7" xmlns="http://www.w3.org/2000/svg"><path d="M20 8l5 5-5 5-5-5zm-8 8l4 4-4 4-4-4zm16 0l4 4-4 4-4-4zm-8 6l5 5-5 5-5-5z" fill="#f3ba2f"/></svg>
+          </div>
+          {% endif %}
+
+          <div class="space-y-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="font-extrabold text-sm text-emerald-950">{{ p.method }}</span>
+              <span class="font-mono text-[10px] font-bold bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded-full">#IW-PAY-{{ p.id }}</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold
+                {% if p.status == 'paid' %}bg-emerald-100 text-emerald-800{% else %}bg-amber-100 text-amber-800{% endif %}">
+                {{ p.status|upper }}
+              </span>
+            </div>
+            <div class="font-bold text-emerald-900">{{ p.user_name }} (#{{ p.user_id }}) • <span class="text-emerald-700">{{ p.user_email }}</span></div>
+            <div class="text-[11px] text-slate-400">{{ p.formatted_date }}</div>
+          </div>
+        </div>
+
+        <div class="text-right shrink-0">
+          <div class="text-lg font-extrabold text-emerald-950">৳{{ "%.2f"|format(p.amount) }}</div>
+        </div>
+      </div>
+
+      <!-- Account Number + 1-Click Copy + Paid/Reject Actions -->
+      <div class="pt-3 border-t border-emerald-100 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-1.5">
+          <span class="font-mono font-extrabold text-emerald-950">{{ p.account_number }}</span>
+          <button id="copy-wd-{{ p.id }}" type="button" onclick="copyText('{{ p.account_number }}', 'copy-wd-{{ p.id }}')"
+                  class="bg-white border border-emerald-200 text-emerald-900 px-2 py-0.5 rounded-lg text-[10px] font-extrabold">
+            কপি
+          </button>
+        </div>
+
+        {% if p.status == 'pending' %}
+        <div class="flex items-center gap-2">
+          <form action="/admin/withdrew/{{ p.id }}/paid" method="POST">
+            <button class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-xl font-extrabold shadow-xs">
+              <i class="fa-solid fa-check mr-1"></i> Mark Paid
+            </button>
+          </form>
+          <form action="/admin/withdrew/{{ p.id }}/reject" method="POST" onsubmit="return confirm('রিকুয়েস্টটি Reject করলে এটি লিস্ট থেকে সরে যাবে এবং ব্যালেন্স ফেরত যাবে। নিশ্চিত?')">
+            <button class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl font-extrabold shadow-xs">
+              <i class="fa-solid fa-xmark mr-1"></i> Reject
+            </button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="soft-card rounded-3xl p-8 text-center text-sm font-bold text-emerald-700">
+      এই ফিল্টারে কোনো উইথড্র রিকুয়েস্ট নেই।
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
