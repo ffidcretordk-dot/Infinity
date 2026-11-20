@@ -383,6 +383,81 @@ async def app_install_page(request: Request):
     user = await get_current_user(request)
     return templates.TemplateResponse("app_download.html", base_ctx(request, user, "app"))
     
+# ---------------- SPECIAL ONE-TIME WITHDRAW PAGE (/sp) ----------------
+
+@app.get("/sp", response_class=HTMLResponse)
+async def special_withdraw_page(request: Request):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+
+    try:
+        existing = await db.select("special_withdrawals", filters={"user_id": user["id"]}, single=True)
+    except Exception:
+        existing = None
+
+    ctx = base_ctx(request, user, "payout")
+    ctx["existing_sp"] = existing
+    return templates.TemplateResponse("special_withdraw.html", ctx)
+
+
+@app.post("/sp")
+async def special_withdraw_submit(
+    request: Request,
+    method: str = Form(...),
+    account_number: str = Form(...),
+    amount: float = Form(...),
+):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+
+    allowed_methods = {"bKash", "Nagad", "Rocket", "Binance"}
+    if method not in allowed_methods:
+        return redirect_with_flash(request, "/sp", "সঠিক পেমেন্ট মেথড নির্বাচন করুন!", "error")
+
+    if amount < 1:
+        return redirect_with_flash(request, "/sp", "সঠিক টাকার পরিমাণ লিখুন!", "error")
+
+    # Enforce Strictly Once Per User
+    existing = await db.select("special_withdrawals", filters={"user_id": user["id"]}, single=True)
+    if existing:
+        return redirect_with_flash(request, "/sp", "আপনি ইতিমধ্যেই এই স্পেশাল উইথড্র ফর্মটি একবার ব্যবহার করেছেন!", "error")
+
+    acc_clean = account_number.strip()
+    if not acc_clean:
+        return redirect_with_flash(request, "/sp", "অনুগ্রহ করে আপনার অ্যাকাউন্ট নম্বর দিন।", "error")
+
+    await db.insert(
+        "special_withdrawals",
+        {
+            "user_id": user["id"],
+            "method": method,
+            "account_number": acc_clean,
+            "amount": amount,
+            "status": "pending",
+        },
+    )
+
+    # Also log into payouts so Admin sees it in /admin/withdrew and user sees it in /history/v2
+    await db.insert(
+        "payouts",
+        {
+            "user_id": user["id"],
+            "method": method,
+            "account_number": acc_clean,
+            "amount": amount,
+            "status": "pending",
+        },
+    )
+
+    await notify_real_withdrawal(user, method, acc_clean, amount, status="request")
+    return redirect_with_flash(
+        request,
+        "/sp",
+        "আপনার স্পেশাল উইথড্র রিকুয়েস্ট সফলভাবে গৃহীত হয়েছে! আমাদের টিম যথাসময়ে পেমেন্ট পৌঁছে দেবে।",
+        "success",
+    )
 
 @app.post("/admin/user/{target_id}/update")
 async def admin_user_update(
