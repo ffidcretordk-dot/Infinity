@@ -1490,18 +1490,31 @@ async def admin_ai_panel(request: Request):
     if not user or not user.get("is_admin"):
         return redirect_with_flash(request, "/i", "অ্যাডমিন অ্যাক্সেস অনুমোদিত নয়!", "error")
 
-    tasks = await db.select("ai_image_tasks", order="id.desc")
-    task_map = {t["id"]: t for t in tasks}
-    submissions = await db.select("ai_image_submissions", order="created_at.desc", limit=50)
+    tasks, pending_subs, all_users = await asyncio.gather(
+        db.select("ai_image_tasks", order="id.desc"),
+        db.select("ai_image_submissions", filters={"status": "pending"}, order="created_at.desc", limit=200),
+        _safe_select("users"),
+    )
 
-    for s in submissions:
-        s["task_title"] = task_map.get(s["ai_task_id"], {}).get("title", f"Chatgpt Img #{s['ai_task_id']}")
+    task_map = {t["id"]: t for t in tasks}
+    user_map = {u["id"]: u for u in all_users}
+
+    for s in pending_subs:
+        t = task_map.get(s["ai_task_id"], {})
+        u = user_map.get(s["user_id"], {})
+        s["task_title"] = t.get("title") or f"Chatgpt Img #{s['ai_task_id']}"
+        s["user_name"] = u.get("name") or f"User #{s['user_id']}"
 
     next_num = (max((t["id"] for t in tasks), default=0)) + 1
     ctx = base_ctx(request, user, "admin")
-    ctx.update({"tasks": tasks, "submissions": submissions, "next_auto_title": f"Chatgpt Img #{next_num}"})
+    ctx.update({
+        "tasks": tasks,
+        "submissions": pending_subs,
+        "pending_count": len(pending_subs),
+        "next_auto_title": f"Chatgpt Img #{next_num}",
+    })
     return templates.TemplateResponse("admin_ai.html", ctx)
-
+    
 
 @app.post("/admin/c/task/add")
 async def admin_ai_add_task(
