@@ -370,6 +370,11 @@ async def admin_users_page(request: Request, page: int = 1, q: str = ""):
     })
     return templates.TemplateResponse("admin_users.html", ctx)
 
+@app.get("/app", response_class=HTMLResponse)
+async def app_install_page(request: Request):
+    user = await get_current_user(request)
+    return templates.TemplateResponse("app_download.html", base_ctx(request, user, "app"))
+    
 
 @app.post("/admin/user/{target_id}/update")
 async def admin_user_update(
