@@ -1199,7 +1199,106 @@ async def menu_page(request: Request):
     ctx["level"] = level_info
     return templates.TemplateResponse("menu.html", ctx)
     
+@app.post("/admin/c/bulk")
+async def admin_ai_bulk_review(
+    request: Request,
+    mode: str = Form("smart_bulk"),          # smart_bulk, approve_selected, reject_selected
+    batch_limit: int = Form(30),             # Default 30 per batch
+    reject_percent: float = Form(1.0),       # Default 1% random reject
+    selected_ids: list[int] = Form(default=[]),
+):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
 
+    pending_subs = await db.select(
+        "ai_image_submissions",
+        filters={"status": "pending"},
+        order="created_at.asc",
+        limit=500,
+    )
+    if not pending_subs:
+        return redirect_with_flash(request, "/admin/c", "প্রসেস করার মতো কোনো Pending ইমেজ সাবমিশন নেই।", "info")
+
+    pending_map = {s["id"]: s for s in pending_subs}
+
+    if selected_ids:
+        target_subs = [pending_map[sid] for sid in selected_ids if sid in pending_map]
+    else:
+        limit_n = max(1, min(int(batch_limit), 500))
+        target_subs = pending_subs[:limit_n]
+
+    if not target_subs:
+        return redirect_with_flash(request, "/admin/c", "কোনো বৈধ Pending সাবমিশন সিলেক্ট করা হয়নি।", "error")
+
+    if mode == "reject_selected":
+        reject_subs = target_subs
+        approve_subs = []
+    elif mode == "approve_selected":
+        approve_subs = target_subs
+        reject_subs = []
+    else:
+        # Smart Bulk: Approve batch with random 1% rejection probability per item
+        rj_pct = max(0.0, min(100.0, float(reject_percent)))
+        approve_subs = []
+        reject_subs = []
+        for s in target_subs:
+            if rj_pct > 0 and (random.random() * 100.0) < rj_pct:
+                reject_subs.append(s)
+            else:
+                approve_subs.append(s)
+
+    approve_ids = [s["id"] for s in approve_subs]
+    reject_ids = [s["id"] for s in reject_subs]
+
+    async with httpx.AsyncClient(timeout=25.0) as client:
+        if approve_ids:
+            await client.patch(
+                f"{db.base_url}/ai_image_submissions",
+                headers=db.headers,
+                params={"id": f"in.({','.join(map(str, approve_ids))})"},
+                json={"status": "approved"},
+            )
+        if reject_ids:
+            await client.patch(
+                f"{db.base_url}/ai_image_submissions",
+                headers=db.headers,
+                params={"id": f"in.({','.join(map(str, reject_ids))})"},
+                json={"status": "rejected"},
+            )
+
+    # Credit all approved users concurrently
+    user_rewards: dict[int, float] = {}
+    for s in approve_subs:
+        uid = s["user_id"]
+        user_rewards[uid] = user_rewards.get(uid, 0.0) + float(s.get("reward") or 0)
+
+    if user_rewards:
+        all_users = await db.select("users")
+        user_lookup = {u["id"]: u for u in all_users}
+
+        async def credit_ai_user(uid: int, add_amt: float):
+            u = user_lookup.get(uid)
+            if not u:
+                return
+            await db.update(
+                "users",
+                {"id": uid},
+                {
+                    "balance": float(u.get("balance") or 0) + add_amt,
+                    "total_earned": float(u.get("total_earned") or 0) + add_amt,
+                },
+            )
+
+        await asyncio.gather(*(credit_ai_user(uid, amt) for uid, amt in user_rewards.items()))
+
+    return redirect_with_flash(
+        request,
+        "/admin/c",
+        f"Bulk সম্পন্ন! {len(approve_ids)}টি Approved ও {len(reject_ids)}টি Random Rejected হয়েছে।",
+        "success",
+            )
+    
 @app.post("/work/typing/{task_id}/submit")
 async def work_typing_submit(
     request: Request,
