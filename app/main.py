@@ -2085,46 +2085,50 @@ async def profile_avatar_upload(request: Request, avatar: UploadFile = File(...)
 
     return redirect_with_flash(request, "/profile", "ছবি আপলোডের জন্য ImgBB API Key সক্রিয় নেই।", "info")
 
-
-# ---------------- ADMIN PANEL ----------------
-
 @app.get("/admin", response_class=HTMLResponse)
 async def admin_panel(request: Request):
     user = await get_current_user(request)
     if not user or not user.get("is_admin"):
         return redirect_with_flash(request, "/i", "অ্যাডমিন অ্যাক্সেস অনুমোদিত নয়!", "error")
 
-    tasks = await db.select("tasks", order="created_at.desc")
-    imgbb_keys = await db.select("imgbb_keys", order="id.asc")
-    pending_subs = await db.select("task_submissions", filters={"status": "pending"})
-    payouts = await db.select("payouts", order="created_at.desc", limit=30)
-    all_users = await db.select("users")
-    global_notice = await get_global_notice()
+    # Run all queries concurrently for ultra-fast loading
+    async def safe_filter_select(table: str, filters: dict | None = None, order: str | None = None, limit: int | None = None):
+        try:
+            return await db.select(table, filters=filters, order=order, limit=limit)
+        except Exception:
+            return []
 
-    try:
-        contacts = await db.select("contact_messages", order="created_at.desc", limit=15)
-    except Exception:
-        contacts = []
+    (
+        all_users,
+        pending_subs,
+        pending_payouts,
+        active_imgbb_keys,
+        global_notice,
+        contacts,
+    ) = await asyncio.gather(
+        safe_filter_select("users"),
+        safe_filter_select("task_submissions", filters={"status": "pending"}),
+        safe_filter_select("payouts", filters={"status": "pending"}),
+        safe_filter_select("imgbb_keys", filters={"is_active": "true"}),
+        get_global_notice(),
+        safe_filter_select("contact_messages", order="created_at.desc", limit=10),
+    )
 
     stats = {
         "users_count": len(all_users),
         "pending_subs": len(pending_subs),
-        "pending_payouts": sum(1 for p in payouts if p.get("status") == "pending"),
-        "active_imgbb": sum(1 for k in imgbb_keys if k.get("is_active")),
+        "pending_payouts": len(pending_payouts),
+        "active_imgbb": len(active_imgbb_keys),
     }
 
     ctx = base_ctx(request, user, "admin")
     ctx.update({
-        "tasks": tasks,
-        "payouts": payouts,
         "contacts": contacts,
         "global_notice": global_notice,
         "stats": stats,
     })
     return templates.TemplateResponse("admin.html", ctx)
     
-# ---------------- ADMIN PANEL: MICRO TASK CONTROL (/admin/task) ----------------
-
 @app.get("/admin/task", response_class=HTMLResponse)
 async def admin_task_panel(request: Request):
     user = await get_current_user(request)
