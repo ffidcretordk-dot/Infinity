@@ -1343,7 +1343,7 @@ async def admin_typing_panel(request: Request):
 
     tasks, pending_subs, all_users = await asyncio.gather(
         db.select("typing_tasks", order="id.desc"),
-        db.select("typing_submissions", filters={"status": "pending"}, order="created_at.desc", limit=200),
+        db.select("typing_submissions", filters={"status": "pending"}, order="created_at.asc,id.asc", limit=200),
         _safe_select("users"),
     )
 
@@ -1367,7 +1367,6 @@ async def admin_typing_panel(request: Request):
     })
     return templates.TemplateResponse("admin_typing.html", ctx)
     
-
 @app.post("/admin/t/task/add")
 async def admin_typing_add_task(
     request: Request,
