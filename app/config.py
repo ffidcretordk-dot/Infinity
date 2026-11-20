@@ -15,3 +15,8 @@ REFERRAL_OWNER_BONUS = 8.0
 
 OFFICIAL_CHANNEL_URL = "https://t.me/InfinityWork_Official"
 SUPPORT_URL = "https://t.me/help_Infinity_work"
+
+TG_BOT_TOKEN = os.getenv("TG_BOT_TOKEN", "")
+TG_PROOF_CHANNEL_ID = os.getenv("TG_PROOF_CHANNEL_ID", "")  # যেমন: @your_proof_channel বা -1001234567890
+CRON_SECRET = os.getenv("CRON_SECRET", "infinity-cron-2026")
+SITE_URL = os.getenv("SITE_URL", "https://www.infinitywork.shop")
