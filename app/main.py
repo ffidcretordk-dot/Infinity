@@ -1023,7 +1023,17 @@ async def admin_reset_page(request: Request, q: str = ""):
     ctx.update({"matched_users": matched, "query": q.strip(), "total_users": len(all_users)})
     return templates.TemplateResponse("admin_reset.html", ctx)
 
+@app.get("/admin/pay", response_class=HTMLResponse)
+async def admin_pay_poster(request: Request):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অ্যাডমিন অ্যাক্সেস অনুমোদিত নয়!", "error")
 
+    bd_now = datetime.now(timezone(timedelta(hours=6)))
+    ctx = base_ctx(request, user, "admin")
+    ctx["bd_time_str"] = bd_now.strftime("%d %b %Y • %I:%M %p")
+    return templates.TemplateResponse("admin_pay.html", ctx)
+    
 @app.post("/admin/reset")
 async def admin_reset_submit(
     request: Request,
