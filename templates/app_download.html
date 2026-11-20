@@ -1,0 +1,232 @@
+{% extends "base_app.html" if user else "base_public.html" %}
+{% block title %}InfinityWork App ডাউনলোড ও ইনস্টল{% endblock %}
+{% block content %}
+<style>
+  @keyframes phoneFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-7px); }
+  }
+  .phone-float { animation: phoneFloat 4s ease-in-out infinite; }
+</style>
+
+<div class="max-w-4xl mx-auto px-3 sm:px-4 pt-3 pb-14 space-y-8">
+  <!-- Top Bar (For Public Visitors) -->
+  {% if not user %}
+  <header class="glass-card rounded-full px-5 py-3 flex items-center justify-between">
+    <a href="/" class="flex items-center gap-2.5">
+      <div class="w-9 h-9 rounded-xl bg-emerald-900 text-white flex items-center justify-center shadow-sm">
+        <i class="fa-solid fa-infinity text-base"></i>
+      </div>
+      <span class="font-extrabold text-lg text-emerald-950">Infinity Work</span>
+    </a>
+    <div class="flex items-center gap-2">
+      <a href="/login" class="px-4 py-2 text-xs font-extrabold text-emerald-900">লগইন</a>
+      <a href="/signup" class="btn-primary-green text-white px-5 py-2 rounded-full text-xs font-extrabold shadow">জয়েন করুন</a>
+    </div>
+  </header>
+  {% endif %}
+
+  <!-- HERO: App Icon + Direct 1-Tap Install Card -->
+  <section class="soft-card rounded-[2.2rem] p-6 sm:p-9 bg-gradient-to-br from-white via-emerald-50/70 to-teal-50/70 relative overflow-hidden">
+    <div class="w-64 h-64 rounded-full bg-emerald-200/35 blur-3xl -top-20 -right-16 absolute pointer-events-none"></div>
+
+    <div class="grid md:grid-cols-12 gap-8 items-center relative z-10">
+      <div class="md:col-span-7 space-y-5 text-center md:text-left">
+        <!-- App Identity Row -->
+        <div class="inline-flex items-center gap-3.5 bg-white border border-emerald-200 p-2.5 pr-5 rounded-3xl shadow-xs">
+          <img src="/pwa-icon/192.png" alt="InfinityWork App Icon" class="w-14 h-14 rounded-2xl shadow-md" />
+          <div class="text-left">
+            <div class="flex items-center gap-1.5">
+              <span class="font-extrabold text-lg text-emerald-950">InfinityWork</span>
+              <i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i>
+            </div>
+            <div class="text-[11px] font-bold text-emerald-700">Official Web App • v2.6 • &lt; 2 MB</div>
+          </div>
+        </div>
+
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-emerald-950 leading-tight">
+          ফোনে ইনস্টল করুন <br/>
+          <span class="text-emerald-700">সুপার ফাস্ট অফিসিয়াল অ্যাপ</span>
+        </h1>
+
+        <p class="text-xs sm:text-sm text-emerald-900/85 leading-relaxed">
+          প্রতিবার ব্রাউজার ওপেন করার ঝামেলা ছাড়াই মাত্র ১ ট্যাপে সরাসরি হোম-স্ক্রিন থেকে কাজ করুন। কম ডাটা খরচ, কাস্টম ওপেনিং স্ক্রিন এবং দ্রুত লোডিং অভিজ্ঞতা পান।
+        </p>
+
+        <!-- Smart Install Button & Status -->
+        <div class="space-y-2.5 pt-1">
+          <button id="app-page-install-btn" onclick="triggerAppInstall()"
+                  class="w-full sm:w-auto bg-gradient-to-r from-emerald-700 to-emerald-950 hover:opacity-95 text-white px-8 py-4 rounded-full font-extrabold text-sm shadow-xl inline-flex items-center justify-center gap-2.5 transition active:scale-95">
+            <i id="app-install-icon" class="fa-solid fa-download"></i>
+            <span id="app-install-text">অ্যাপ ইনস্টল করুন (Free)</span>
+          </button>
+
+          <div id="app-install-status" class="hidden rounded-2xl px-4 py-3 text-xs font-bold bg-emerald-100 border border-emerald-300 text-emerald-950"></div>
+        </div>
+
+        <!-- App Quick Specs -->
+        <div class="grid grid-cols-3 gap-2 pt-2 text-center text-xs max-w-md mx-auto md:mx-0">
+          <div class="bg-white/90 border border-emerald-100 rounded-2xl p-2.5">
+            <div class="font-extrabold text-emerald-950">4.9 ★</div>
+            <div class="text-[10px] text-emerald-700 font-bold">ইউজার রেটিং</div>
+          </div>
+          <div class="bg-white/90 border border-emerald-100 rounded-2xl p-2.5">
+            <div class="font-extrabold text-emerald-950">&lt; 2 MB</div>
+            <div class="text-[10px] text-emerald-700 font-bold">হালকা সাইজ</div>
+          </div>
+          <div class="bg-white/90 border border-emerald-100 rounded-2xl p-2.5">
+            <div class="font-extrabold text-emerald-700">100%</div>
+            <div class="text-[10px] text-emerald-700 font-bold">নিরাপদ অ্যাপ</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Flat Vector Phone Mockup -->
+      <div class="md:col-span-5 flex justify-center">
+        <div class="phone-float w-56 rounded-[2.4rem] bg-emerald-950 p-3 shadow-2xl border-4 border-emerald-800">
+          <div class="bg-gradient-to-b from-emerald-50 to-white rounded-[1.8rem] p-5 text-center space-y-4">
+            <div class="w-12 h-1.5 bg-emerald-200 rounded-full mx-auto"></div>
+            <img src="/pwa-icon/192.png" alt="InfinityWork" class="w-16 h-16 mx-auto rounded-2xl shadow-lg" />
+            <div>
+              <div class="font-extrabold text-sm text-emerald-950">InfinityWork</div>
+              <div class="text-[10px] text-emerald-700 font-bold">কাজ করুন, আয় করুন</div>
+            </div>
+            <div class="space-y-2 text-left text-[10px] font-bold">
+              <div class="bg-white border border-emerald-100 rounded-xl p-2 flex items-center gap-2 text-emerald-900">
+                <i class="fa-solid fa-bolt text-amber-500"></i> ইনস্ট্যান্ট ওপেন
+              </div>
+              <div class="bg-white border border-emerald-100 rounded-xl p-2 flex items-center gap-2 text-emerald-900">
+                <i class="fa-solid fa-shield-check text-emerald-600"></i> জিরো ভাইরাস রিস্ক
+              </div>
+            </div>
+            <div class="bg-emerald-900 text-yellow-300 py-2 rounded-full text-[10px] font-extrabold">
+              Ready to Install ✓
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY INSTALL APP? (4 Cards) -->
+  <section class="space-y-4">
+    <h2 class="text-center text-xl sm:text-2xl font-extrabold text-emerald-950">অ্যাপ ইনস্টল করলে কী কী সুবিধা পাবেন?</h2>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3.5 text-xs">
+      <div class="soft-card rounded-3xl p-5 space-y-2">
+        <div class="w-11 h-11 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-lg"><i class="fa-solid fa-bolt"></i></div>
+        <h3 class="font-extrabold text-sm text-emerald-950">১-ট্যাপে প্রবেশ</h3>
+        <p class="text-emerald-800/85 leading-relaxed">প্রতিবার ওয়েবসাইটের লিংক খুঁজে বের না করেই সরাসরি ফোনের হোম-স্ক্রিন থেকে ওপেন করতে পারবেন।</p>
+      </div>
+      <div class="soft-card rounded-3xl p-5 space-y-2">
+        <div class="w-11 h-11 rounded-2xl bg-sky-100 text-sky-700 flex items-center justify-center text-lg"><i class="fa-solid fa-feather-pointed"></i></div>
+        <h3 class="font-extrabold text-sm text-emerald-950">সুপার ফাস্ট ও হালকা</h3>
+        <p class="text-emerald-800/85 leading-relaxed">ফোনের স্টোরেজ নষ্ট করে না এবং খুব কম ইন্টারনেট ডাটা ব্যবহার করে দ্রুত লোড হয়।</p>
+      </div>
+      <div class="soft-card rounded-3xl p-5 space-y-2">
+        <div class="w-11 h-11 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-lg"><i class="fa-solid fa-mobile-screen"></i></div>
+        <h3 class="font-extrabold text-sm text-emerald-950">ফুল-স্ক্রিন অভিজ্ঞতা</h3>
+        <p class="text-emerald-800/85 leading-relaxed">ব্রাউজারের অ্যাড্রেস বার ছাড়াই একদম নেটিভ মোবাইল অ্যাপের মতো সুন্দর ফুল-স্ক্রিন লুক পাবেন।</p>
+      </div>
+      <div class="soft-card rounded-3xl p-5 space-y-2">
+        <div class="w-11 h-11 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center text-lg"><i class="fa-solid fa-rotate"></i></div>
+        <h3 class="font-extrabold text-sm text-emerald-950">অটো আপডেট</h3>
+        <p class="text-emerald-800/85 leading-relaxed">নতুন কাজ বা ফিচার যোগ হলে অ্যাপ আলাদা করে আপডেট দিতে হবে না — অটোমেটিক পেয়ে যাবেন।</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- MANUAL INSTALL GUIDE (Android Chrome & iPhone Safari) -->
+  <section id="manual-install-guide" class="soft-card rounded-[2rem] p-6 sm:p-8 space-y-5">
+    <div class="text-center space-y-1">
+      <h2 class="text-xl font-extrabold text-emerald-950">বাটনে কাজ না করলে কীভাবে ম্যানুয়ালি ইনস্টল করবেন?</h2>
+      <p class="text-xs text-emerald-700">আপনার ফোনের ব্রাউজার অনুযায়ী নিচের সহজ ধাপ অনুসরণ করুন</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4 text-xs">
+      <!-- Android Chrome -->
+      <div class="bg-emerald-50/80 border border-emerald-200 rounded-3xl p-5 space-y-3">
+        <div class="flex items-center gap-2 font-extrabold text-sm text-emerald-950">
+          <i class="fa-brands fa-android text-emerald-600 text-lg"></i>
+          <span>Android (Google Chrome)</span>
+        </div>
+        <ol class="space-y-2 text-emerald-900 font-medium list-decimal list-inside">
+          <li>ব্রাউজারের ডানদিকে ওপরে থাকা <b>তিন ডট (⋮)</b> মেনুতে ক্লিক করুন।</li>
+          <li><b>"Install app"</b> অথবা <b>"Add to Home screen"</b> অপশনে ট্যাপ করুন।</li>
+          <li>পপআপ থেকে <b>"Install"</b> বাটনে ক্লিক করলেই হোম-স্ক্রিনে অ্যাপ চলে আসবে!</li>
+        </ol>
+      </div>
+
+      <!-- iOS Safari -->
+      <div class="bg-sky-50/80 border border-sky-200 rounded-3xl p-5 space-y-3">
+        <div class="flex items-center gap-2 font-extrabold text-sm text-sky-950">
+          <i class="fa-brands fa-apple text-slate-800 text-lg"></i>
+          <span>iPhone / iPad (Safari Browser)</span>
+        </div>
+        <ol class="space-y-2 text-sky-950 font-medium list-decimal list-inside">
+          <li>Safari ব্রাউজারের নিচে মাঝখানে থাকা <b>Share (<i class="fa-solid fa-arrow-up-from-bracket"></i>)</b> আইকনে ট্যাপ করুন।</li>
+          <li>নিচে স্ক্রল করে <b>"Add to Home Screen"</b> সিলেক্ট করুন।</li>
+          <li>ওপরের <b>"Add"</b> বাটনে ট্যাপ করলেই আপনার আইফোনে অ্যাপ যুক্ত হবে!</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bottom Action Strip -->
+  <section class="soft-card rounded-3xl p-5 flex flex-wrap items-center justify-between gap-3">
+    <div class="text-xs font-bold text-emerald-900">
+      <i class="fa-solid fa-headset text-emerald-700 mr-1.5"></i>ইনস্টল করতে কোনো সমস্যা হলে সাপোর্টে মেসেজ দিন
+    </div>
+    <div class="flex gap-2">
+      <a href="{{ '/i' if user else '/signup' }}" class="bg-emerald-900 text-white px-5 py-2.5 rounded-full text-xs font-extrabold">
+        {{ 'ড্যাশবোর্ডে যান →' if user else 'ফ্রি অ্যাকাউন্ট খুলুন →' }}
+      </a>
+      <a href="{{ support_url }}" target="_blank" class="bg-emerald-50 border border-emerald-200 text-emerald-900 px-4 py-2.5 rounded-full text-xs font-extrabold">
+        সাপোর্ট
+      </a>
+    </div>
+  </section>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  const statusEl = document.getElementById("app-install-status");
+  const btnText = document.getElementById("app-install-text");
+  const btnIcon = document.getElementById("app-install-icon");
+
+  if (isStandalone) {
+    if (btnText) btnText.innerText = "অ্যাপ ইতিমধ্যেই ইনস্টল করা আছে ✓";
+    if (btnIcon) btnIcon.className = "fa-solid fa-circle-check";
+    if (statusEl) {
+      statusEl.classList.remove("hidden");
+      statusEl.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-700 mr-1"></i> আপনি এখন InfinityWork-এর ইনস্টল করা অ্যাপ থেকেই এটি ব্যবহার করছেন!';
+    }
+  }
+});
+
+async function triggerAppInstall() {
+  const statusEl = document.getElementById("app-install-status");
+
+  if (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true) {
+    statusEl.classList.remove("hidden");
+    statusEl.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-700 mr-1"></i> অ্যাপটি ইতিমধ্যেই আপনার ডিভাইসে ইনস্টল করা আছে!';
+    return;
+  }
+
+  if (typeof deferredPrompt !== "undefined" && deferredPrompt) {
+    deferredPrompt.prompt();
+    const choice = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    if (choice && choice.outcome === "accepted") {
+      statusEl.classList.remove("hidden");
+      statusEl.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-700 mr-1"></i> দারুণ! InfinityWork অ্যাপটি আপনার হোম-স্ক্রিনে ইনস্টল হচ্ছে...';
+    }
+  } else {
+    // Smoothly scroll to manual guide if browser hasn't fired prompt or is iOS Safari
+    statusEl.classList.remove("hidden");
+    statusEl.innerHTML = '<i class="fa-solid fa-circle-info text-emerald-700 mr-1"></i> নিচের নির্দেশনা অনুযায়ী ব্রাউজার মেনু (⋮) থেকে <b>"Install app"</b> অথবা <b>"Add to Home screen"</b> সিলেক্ট করুন।';
+    document.getElementById("manual-install-guide").scrollIntoView({ behavior: "smooth" });
+  }
+}
+</script>
+{% endblock %}
