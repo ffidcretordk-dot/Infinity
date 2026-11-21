@@ -2572,50 +2572,20 @@ async def profile_avatar_upload(request: Request, avatar: UploadFile = File(...)
 
     return redirect_with_flash(request, "/profile", "ছবি আপলোডের জন্য ImgBB API Key সক্রিয় নেই।", "info")
 
-@app.get("/admin", response_class=HTMLResponse)
-async def admin_panel(request: Request):
-    user = await get_current_user(request)
-    if not user or not user.get("is_admin"):
-        return redirect_with_flash(request, "/i", "অ্যাডমিন অ্যাক্সেস অনুমোদিত নয়!", "error")
+async def _safe_count(table: str, filters: dict | None = None) -> int:
+    try:
+        return await db.count(table, filters=filters)
+    except Exception:
+        return 0
 
-    # Run all queries concurrently for ultra-fast loading
-    async def safe_filter_select(table: str, filters: dict | None = None, order: str | None = None, limit: int | None = None):
-        try:
-            return await db.select(table, filters=filters, order=order, limit=limit)
-        except Exception:
-            return []
 
-    (
-        all_users,
-        pending_subs,
-        pending_payouts,
-        active_imgbb_keys,
-        global_notice,
-        contacts,
-    ) = await asyncio.gather(
-        safe_filter_select("users"),
-        safe_filter_select("task_submissions", filters={"status": "pending"}),
-        safe_filter_select("payouts", filters={"status": "pending"}),
-        safe_filter_select("imgbb_keys", filters={"is_active": "true"}),
-        get_global_notice(),
-        safe_filter_select("contact_messages", order="created_at.desc", limit=10),
-    )
+async def _safe_select(table: str) -> list[dict]:
+    try:
+        return await db.select(table, order="id.asc")
+    except Exception:
+        return []
 
-    stats = {
-        "users_count": len(all_users),
-        "pending_subs": len(pending_subs),
-        "pending_payouts": len(pending_payouts),
-        "active_imgbb": len(active_imgbb_keys),
-    }
 
-    ctx = base_ctx(request, user, "admin")
-    ctx.update({
-        "contacts": contacts,
-        "global_notice": global_notice,
-        "stats": stats,
-    })
-    return templates.TemplateResponse("admin.html", ctx)
-    
 @app.get("/admin/task", response_class=HTMLResponse)
 async def admin_task_panel(request: Request):
     user = await get_current_user(request)
@@ -2821,6 +2791,50 @@ async def admin_review_submission(request: Request, sub_id: int, action: str):
         return redirect_with_flash(request, "/admin", "টাস্ক রিজেক্ট করা হয়েছে।", "info")
 
 
+
+@app.get("/admin", response_class=HTMLResponse)
+async def admin_panel(request: Request):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অ্যাডমিন অ্যাক্সেস অনুমোদিত নয়!", "error")
+
+    async def safe_contacts():
+        try:
+            return await db.select("contact_messages", order="created_at.desc", limit=10)
+        except Exception:
+            return []
+
+    (
+        users_count,
+        pending_subs,
+        pending_payouts,
+        active_imgbb,
+        global_notice,
+        contacts,
+    ) = await asyncio.gather(
+        _safe_count("users"),
+        _safe_count("task_submissions", filters={"status": "pending"}),
+        _safe_count("payouts", filters={"status": "pending"}),
+        _safe_count("imgbb_keys", filters={"is_active": "true"}),
+        get_global_notice(),
+        safe_contacts(),
+    )
+
+    stats = {
+        "users_count": users_count,
+        "pending_subs": pending_subs,
+        "pending_payouts": pending_payouts,
+        "active_imgbb": active_imgbb,
+    }
+
+    ctx = base_ctx(request, user, "admin")
+    ctx.update({
+        "contacts": contacts,
+        "global_notice": global_notice,
+        "stats": stats,
+    })
+    return templates.TemplateResponse("admin.html", ctx)
+    
 @app.post("/admin/payout/{payout_id}/{action}")
 async def admin_review_payout(request: Request, payout_id: int, action: str):
     user = await get_current_user(request)
