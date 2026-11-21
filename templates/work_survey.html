@@ -1,0 +1,45 @@
+{% extends "base_app.html" %}
+{% block title %}সার্ভে করে আয় - InfinityWork{% endblock %}
+{% block content %}
+<div class="max-w-xl mx-auto space-y-4">
+  <div class="soft-card rounded-3xl p-5 flex items-center justify-between">
+    <div>
+      <h1 class="text-xl font-extrabold text-emerald-950">
+        <i class="fa-solid fa-square-poll-vertical text-teal-700 mr-1.5"></i>সার্ভে করে আয় করুন
+      </h1>
+      <p class="text-xs text-emerald-700 mt-0.5">সহজ প্রশ্নের উত্তর দিয়ে জমা দিন — অ্যাপ্রুভ হলেই পেমেন্ট</p>
+    </div>
+    <span class="bg-teal-100 text-teal-900 px-3 py-1 rounded-full text-xs font-extrabold">{{ surveys|length }} টি বাকি</span>
+  </div>
+
+  <div class="space-y-3">
+    {% for s in surveys %}
+    <div class="soft-card rounded-3xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-teal-400 transition">
+      <div class="space-y-1.5">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="bg-teal-100 text-teal-900 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold">Sponsor: {{ s.sponsor }}</span>
+          {% if s.was_rejected %}
+          <span class="bg-red-100 text-red-700 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold">আগে রিজেক্ট হয়েছিল • আবার দিন</span>
+          {% endif %}
+        </div>
+        <h2 class="font-extrabold text-base text-emerald-950">{{ s.title }}</h2>
+        <p class="text-xs text-emerald-700">সহজ টিক/সিলেক্ট স্টাইল প্রশ্ন</p>
+      </div>
+
+      <div class="flex items-center justify-between sm:justify-end gap-3 shrink-0">
+        <div class="text-xl font-extrabold text-emerald-700">৳{{ "%.0f"|format(s.reward) }}</div>
+        <a href="/work/survey/{{ s.id }}" class="bg-emerald-900 hover:bg-emerald-800 text-white px-5 py-2.5 rounded-full text-xs font-extrabold shadow">
+          শুরু করুন →
+        </a>
+      </div>
+    </div>
+    {% else %}
+    <div class="soft-card rounded-3xl p-8 text-center space-y-2">
+      <div class="text-3xl text-emerald-600"><i class="fa-solid fa-circle-check"></i></div>
+      <p class="text-sm font-extrabold text-emerald-950">আপনি সব সার্ভে সম্পন্ন করেছেন!</p>
+      <p class="text-xs text-emerald-700">অ্যাডমিন ভেরিফিকেশনের পর ব্যালেন্সে টাকা যোগ হবে।</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
