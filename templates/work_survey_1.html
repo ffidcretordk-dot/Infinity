@@ -29,7 +29,7 @@
       <i class="fa-solid fa-arrow-left"></i> সব সার্ভে
     </a>
     <span class="inline-flex items-center gap-1.5 bg-emerald-900 text-yellow-300 px-4 py-2 rounded-full text-xs font-extrabold shadow">
-      <i class="fa-solid fa-coins"></i> রিওয়ার্ড: ৳17.00
+      <i class="fa-solid fa-coins"></i> রিওয়ার্ড: ৳10.00
     </span>
   </div>
 
@@ -57,19 +57,19 @@
           <rect x="42" y="58" width="36" height="8" rx="4" fill="#a7f3d0" />
           <rect x="42" y="74" width="46" height="8" rx="4" fill="#a7f3d0" />
           <circle cx="92" cy="92" r="18" fill="#064e3b" />
-          <text x="92" y="97" text-anchor="middle" fill="#fde047" font-size="13" font-weight="800" font-family="sans-serif">৳17</text>
+          <text x="92" y="97" text-anchor="middle" fill="#fde047" font-size="13" font-weight="800" font-family="sans-serif">৳10</text>
         </svg>
       </div>
     </div>
 
-    <!-- Live Sticky Completion Tracker -->
+    <!-- Live Progress Tracker -->
     <div class="mt-5 pt-4 border-t border-emerald-200/70 space-y-1.5">
       <div class="flex items-center justify-between text-[11px] font-extrabold text-emerald-900">
-        <span><i class="fa-solid fa-tasks text-emerald-700 mr-1"></i>সার্ভে অগ্রগতি (<span id="sv1-answered">2</span>/12 প্রশ্ন সম্পন্ন)</span>
-        <span id="sv1-pct" class="text-emerald-700">17%</span>
+        <span><i class="fa-solid fa-tasks text-emerald-700 mr-1"></i>সার্ভে অগ্রগতি (<span id="sv1-answered">2</span>/16 প্রশ্ন সম্পন্ন)</span>
+        <span id="sv1-pct" class="text-emerald-700">13%</span>
       </div>
       <div class="w-full h-2.5 bg-emerald-100 rounded-full overflow-hidden">
-        <div id="sv1-bar" class="h-full bg-gradient-to-r from-emerald-500 to-emerald-800 rounded-full transition-all duration-300" style="width: 17%"></div>
+        <div id="sv1-bar" class="h-full bg-gradient-to-r from-emerald-500 to-emerald-800 rounded-full transition-all duration-300" style="width: 13%"></div>
       </div>
     </div>
   </section>
@@ -105,8 +105,41 @@
         </div>
       </div>
 
+      <!-- Gender & Relationship Status -->
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label class="font-extrabold text-emerald-950 block mb-2">৩. লিঙ্গ (Gender) *</label>
+          <div class="flex flex-wrap gap-2">
+            {% for opt in ['পুরুষ', 'মহিলা', 'অন্যান্য'] %}
+            <label class="sv-pill cursor-pointer">
+              <input type="radio" name="Gender" value="{{ opt }}" required class="hidden" onchange="updateSurveyProgress()" />
+              <div class="sv-chip inline-flex items-center gap-2 px-3.5 py-2.5 rounded-2xl border border-emerald-200 bg-white font-bold text-emerald-950">
+                <span class="sv-dot w-4 h-4 rounded-full border border-emerald-300 flex items-center justify-center text-[9px] shrink-0"><i class="fa-solid fa-check opacity-0"></i></span>
+                <span>{{ opt }}</span>
+              </div>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div>
+          <label class="font-extrabold text-emerald-950 block mb-2">৪. বৈবাহিক অবস্থা (Relationship Status) *</label>
+          <div class="flex flex-wrap gap-2">
+            {% for opt in ['অবিবাহিত (Single)', 'বিবাহিত (Married)', 'বলতে চাই না'] %}
+            <label class="sv-pill cursor-pointer">
+              <input type="radio" name="Relationship Status" value="{{ opt }}" required class="hidden" onchange="updateSurveyProgress()" />
+              <div class="sv-chip inline-flex items-center gap-2 px-3.5 py-2.5 rounded-2xl border border-emerald-200 bg-white font-bold text-emerald-950">
+                <span class="sv-dot w-4 h-4 rounded-full border border-emerald-300 flex items-center justify-center text-[9px] shrink-0"><i class="fa-solid fa-check opacity-0"></i></span>
+                <span>{{ opt }}</span>
+              </div>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
       <div>
-        <label class="font-extrabold text-emerald-950 block mb-2">৩. আপনার বয়স *</label>
+        <label class="font-extrabold text-emerald-950 block mb-2">৫. আপনার বয়স *</label>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {% for opt in ['১৮-২২ বছর', '২৩-২৭ বছর', '২৮-৩৫ বছর', '৩৬+ বছর'] %}
           <label class="sv-pill cursor-pointer">
@@ -121,7 +154,7 @@
       </div>
 
       <div>
-        <label class="font-extrabold text-emerald-950 block mb-2">৪. শিক্ষাগত যোগ্যতা *</label>
+        <label class="font-extrabold text-emerald-950 block mb-2">৬. শিক্ষাগত যোগ্যতা *</label>
         <div class="flex flex-wrap gap-2">
           {% for opt in ['SSC / সমমান', 'HSC / ডিপ্লোমা', 'অনার্স / ডিগ্রি', 'মাস্টার্স', 'অন্যান্য'] %}
           <label class="sv-pill cursor-pointer">
@@ -136,7 +169,7 @@
       </div>
 
       <div>
-        <label class="font-extrabold text-emerald-950 block mb-2">৫. আপনার বর্তমান পেশা *</label>
+        <label class="font-extrabold text-emerald-950 block mb-2">৭. আপনার বর্তমান পেশা *</label>
         <div class="flex flex-wrap gap-2">
           {% for opt in ['শিক্ষার্থী', 'চাকরিজীবী', 'ফ্রিল্যান্সার', 'ব্যবসায়ী', 'গৃহিণী', 'কাজ খুঁজছি'] %}
           <label class="sv-pill cursor-pointer">
@@ -162,7 +195,7 @@
       </div>
 
       <div>
-        <label class="font-extrabold text-emerald-950 block mb-2">৬. কতদিন থেকে আমাদের সাইটে কাজ করছেন? *</label>
+        <label class="font-extrabold text-emerald-950 block mb-2">৮. কতদিন থেকে আমাদের সাইটে কাজ করছেন? *</label>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {% for opt in ['আজই নতুন', '১ সপ্তাহ', '২-৪ সপ্তাহ', '১ মাসের বেশি'] %}
           <label class="sv-pill cursor-pointer">
@@ -177,7 +210,7 @@
       </div>
 
       <div>
-        <label class="font-extrabold text-emerald-950 block mb-2">৭. আপনার কি Telegram অ্যাকাউন্ট আছে? *</label>
+        <label class="font-extrabold text-emerald-950 block mb-2">৯. আপনার কি Telegram অ্যাকাউন্ট আছে? *</label>
         <div class="grid grid-cols-2 gap-2.5">
           {% for opt in ['হ্যাঁ, আছে', 'না, নেই'] %}
           <label class="sv-pill cursor-pointer">
@@ -192,7 +225,7 @@
       </div>
 
       <div>
-        <label class="font-extrabold text-emerald-950 block mb-2">৮. আমাদের উইথড্র মিনিমাম অ্যামাউন্ট কত করা দরকার? *</label>
+        <label class="font-extrabold text-emerald-950 block mb-2">১০. আমাদের উইথড্র মিনিমাম অ্যামাউন্ট কত করা দরকার? *</label>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {% for opt in ['১০০৳', '২০০৳', '৩০০৳', '৩৫০৳ (ঠিক আছে)'] %}
           <label class="sv-pill cursor-pointer">
@@ -207,7 +240,7 @@
       </div>
 
       <div>
-        <label class="font-extrabold text-emerald-950 block mb-2">৯. আপনি আরও কী ধরনের কাজ করতে আগ্রহী? (একাধিক মার্ক করুন)</label>
+        <label class="font-extrabold text-emerald-950 block mb-2">১১. আপনি আরও কী ধরনের কাজ করতে আগ্রহী? (একাধিক মার্ক করুন)</label>
         <div class="flex flex-wrap gap-2">
           {% for opt in ['Micro Task', 'Typing', 'AI Image', 'Cube Game', 'Survey', 'Video Watch'] %}
           <label class="sv-pill cursor-pointer">
@@ -222,7 +255,7 @@
       </div>
 
       <div>
-        <label class="font-extrabold text-emerald-950 block mb-2">১০. আমাদের সাইটের সবকিছু কোথায় কী আছে বুঝতে পারছেন? *</label>
+        <label class="font-extrabold text-emerald-950 block mb-2">১২. আমাদের সাইটের সবকিছু কোথায় কী আছে বুঝতে পারছেন? *</label>
         <div class="grid sm:grid-cols-3 gap-2">
           {% for opt in ['হ্যাঁ, একদম সহজ', 'মোটামুটি বুঝতে পারি', 'কিছুটা কঠিন লাগে'] %}
           <label class="sv-pill cursor-pointer">
@@ -236,8 +269,39 @@
         </div>
       </div>
 
+      <!-- 2 Additional Site-Related Questions -->
       <div>
-        <label class="font-extrabold text-emerald-950 block mb-2">১১. আপনি কি এর আগে উইথড্র দিয়েছেন? *</label>
+        <label class="font-extrabold text-emerald-950 block mb-2">১৩. সাইটের ডিজাইন ও স্পিড আপনার কাছে কেমন লেগেছে? *</label>
+        <div class="grid sm:grid-cols-3 gap-2">
+          {% for opt in ['খুবই সুন্দর ও ফাস্ট', 'মোটামুটি ভালো', 'আরও উন্নত করা দরকার'] %}
+          <label class="sv-pill cursor-pointer">
+            <input type="radio" name="সাইটের ডিজাইন ও স্পিড" value="{{ opt }}" required class="hidden" onchange="updateSurveyProgress()" />
+            <div class="sv-chip flex items-center gap-2 px-3.5 py-2.5 rounded-2xl border border-emerald-200 bg-white font-bold text-emerald-950">
+              <span class="sv-dot w-4 h-4 rounded-full border border-emerald-300 flex items-center justify-center text-[9px] shrink-0"><i class="fa-solid fa-check opacity-0"></i></span>
+              <span>{{ opt }}</span>
+            </div>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div>
+        <label class="font-extrabold text-emerald-950 block mb-2">১৪. আপনি কি আপনার বন্ধুদের কাছে InfinityWork-কে রেকমেন্ড করবেন? *</label>
+        <div class="grid sm:grid-cols-3 gap-2">
+          {% for opt in ['অবশ্যই হ্যাঁ', 'চেষ্টা করবো', 'এখনো নিশ্চিত নই'] %}
+          <label class="sv-pill cursor-pointer">
+            <input type="radio" name="বন্ধুদের রেকমেন্ড" value="{{ opt }}" required class="hidden" onchange="updateSurveyProgress()" />
+            <div class="sv-chip flex items-center gap-2 px-3.5 py-2.5 rounded-2xl border border-emerald-200 bg-white font-bold text-emerald-950">
+              <span class="sv-dot w-4 h-4 rounded-full border border-emerald-300 flex items-center justify-center text-[9px] shrink-0"><i class="fa-solid fa-check opacity-0"></i></span>
+              <span>{{ opt }}</span>
+            </div>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div>
+        <label class="font-extrabold text-emerald-950 block mb-2">১৫. আপনি কি এর আগে উইথড্র দিয়েছেন? *</label>
         <div class="grid grid-cols-2 gap-2.5">
           {% for opt in ['হ্যাঁ, দিয়েছি', 'না, এখনো দিইনি'] %}
           <label class="sv-pill cursor-pointer">
@@ -252,7 +316,7 @@
       </div>
 
       <div>
-        <label class="font-extrabold text-emerald-950 block mb-2">১২. আপনার কী কী পেমেন্ট অ্যাকাউন্ট আছে? (একাধিক মার্ক করুন)</label>
+        <label class="font-extrabold text-emerald-950 block mb-2">১৬. আপনার কী কী পেমেন্ট অ্যাকাউন্ট আছে? (একাধিক মার্ক করুন)</label>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {% for opt in ['bKash', 'Nagad', 'Rocket', 'Binance'] %}
           <label class="sv-pill cursor-pointer">
@@ -267,22 +331,27 @@
       </div>
     </section>
 
-    <!-- STEP 3: OPTIONAL DETAILS & SUBMIT -->
+    <!-- STEP 3: FEEDBACK COMMENT & OPTIONAL DETAILS -->
     <section class="soft-card rounded-3xl p-5 sm:p-6 space-y-4">
       <div class="flex items-center justify-between pb-2 border-b border-emerald-100">
         <div class="flex items-center gap-2.5">
           <span class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 font-extrabold flex items-center justify-center text-xs">০৩</span>
           <div>
-            <h2 class="font-extrabold text-sm text-emerald-950">ঐচ্ছিক তথ্য (Optional)</h2>
-            <p class="text-[11px] text-emerald-700">না দিতে চাইলে খালি রাখতে পারেন</p>
+            <h2 class="font-extrabold text-sm text-emerald-950">মতামত ও ঐচ্ছিক তথ্য</h2>
+            <p class="text-[11px] text-emerald-700">আপনার পরামর্শ আমাদের এগিয়ে যেতে সাহায্য করবে</p>
           </div>
         </div>
-        <span class="bg-emerald-50 text-emerald-800 px-2.5 py-0.5 rounded-full text-[10px] font-bold">Optional</span>
+      </div>
+
+      <div>
+        <label class="font-extrabold text-emerald-950 block mb-1.5">সাইট নিয়ে আপনার কোনো মতামত / কমেন্ট থাকলে লিখুন</label>
+        <textarea name="মতামত / কমেন্ট" rows="3" placeholder="যেমন: সাইটটি আরও ভালো করার জন্য আপনার যেকোনো পরামর্শ লিখুন..."
+                  class="w-full px-4 py-3 rounded-2xl border border-emerald-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
       </div>
 
       <div class="grid sm:grid-cols-2 gap-3.5">
         <div>
-          <label class="font-bold text-emerald-800 block mb-1.5">আপনার ঠিকানা</label>
+          <label class="font-bold text-emerald-800 block mb-1.5">আপনার ঠিকানা (Optional)</label>
           <div class="relative">
             <i class="fa-solid fa-location-dot absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs"></i>
             <input type="text" name="ঠিকানা (Optional)" placeholder="যেমন: মিরপুর, ঢাকা"
@@ -290,7 +359,7 @@
           </div>
         </div>
         <div>
-          <label class="font-bold text-emerald-800 block mb-1.5">আপনার ফোন নম্বর</label>
+          <label class="font-bold text-emerald-800 block mb-1.5">আপনার ফোন নম্বর (Optional)</label>
           <div class="relative">
             <i class="fa-solid fa-phone absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs"></i>
             <input type="text" name="ফোন নম্বর (Optional)" placeholder="01XXXXXXXXX"
@@ -302,7 +371,7 @@
       <button id="sv1-submit-btn" type="submit"
               class="w-full bg-gradient-to-r from-emerald-700 to-emerald-950 hover:opacity-95 text-white py-4 rounded-full font-extrabold text-sm shadow-xl flex items-center justify-center gap-2 transition active:scale-98 disabled:opacity-60">
         <i id="sv1-btn-icon" class="fa-solid fa-paper-plane"></i>
-        <span id="sv1-btn-text">সার্ভে সাবমিট করুন (৳17.00 রিওয়ার্ড)</span>
+        <span id="sv1-btn-text">সার্ভে সাবমিট করুন (৳10.00 রিওয়ার্ড)</span>
       </button>
     </section>
   </form>
@@ -312,9 +381,10 @@
 function updateSurveyProgress() {
   const form = document.getElementById("sv1-form");
   const groups = [
-    "আপনার নাম", "ইমেইল", "বয়স", "শিক্ষাগত যোগ্যতা", "পেশা",
-    "কাজের সময়কাল", "Telegram আছে", "উইথড্র মতামত", "আগ্রহী কাজ",
-    "সাইট বোঝা", "আগে উইথড্র", "পেমেন্ট অ্যাকাউন্ট"
+    "আপনার নাম", "ইমেইল", "Gender", "Relationship Status", "বয়স",
+    "শিক্ষাগত যোগ্যতা", "পেশা", "কাজের সময়কাল", "Telegram আছে",
+    "উইথড্র মতামত", "আগ্রহী কাজ", "সাইট বোঝা",
+    "সাইটের ডিজাইন ও স্পিড", "বন্ধুদের রেকমেন্ড", "আগে উইথড্র", "পেমেন্ট অ্যাকাউন্ট"
   ];
   let done = 0;
   groups.forEach((name) => {
