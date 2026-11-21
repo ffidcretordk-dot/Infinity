@@ -1986,7 +1986,7 @@ async def payout_page(request: Request):
 # ---------------- SURVEY SYSTEM (/work/survey & /admin/s) ----------------
 
 SURVEY_META = {
-    1: {"id": 1, "title": "Survey #1: InfinityWork User Experience", "sponsor": "InfinityWork", "reward": 17.00},
+    1: {"id": 1, "title": "Survey #1: InfinityWork User Experience", "sponsor": "InfinityWork", "reward": 10.00},
     2: {"id": 2, "title": "Survey #2: LankaCare Hospital Healthcare", "sponsor": "LankaCare Health (Sri Lanka)", "reward": 10.00},
 }
 
