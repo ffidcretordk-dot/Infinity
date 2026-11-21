@@ -830,6 +830,238 @@ async def admin_status_page(request: Request):
 
 # ---------------- ADMIN PANEL: WITHDRAW MANAGEMENT (/admin/withdrew) ----------------
 
+
+# ---------------- PREMIUM TASKS & PRO MEMBERSHIP (/premium, /pro, /admin/pro) ----------------
+
+PRO_PACKAGES = {
+    "starter": {
+        "key": "starter",
+        "name": "Starter Pro",
+        "price": 170.0,
+        "days": 7,
+        "daily_claim": 20.0,
+        "min_withdraw": 300.0,
+    },
+    "mid": {
+        "key": "mid",
+        "name": "Mid Pro",
+        "price": 300.0,
+        "days": 7,
+        "daily_claim": 35.0,
+        "min_withdraw": 50.0,
+    },
+    "high": {
+        "key": "high",
+        "name": "High Pro",
+        "price": 600.0,
+        "days": 14,
+        "daily_claim": 45.0,
+        "min_withdraw": 50.0,
+    },
+}
+
+PREMIUM_TASKS_CATALOG = [
+    {"title": "International Android App UX & Speed Test", "category": "App Testing", "rate": 85.0, "time": "৫-৭ মিনিট", "icon": "fa-mobile-screen-button"},
+    {"title": "E-Commerce Product Description Quality Check", "category": "Data Audit", "rate": 65.0, "time": "৪ মিনিট", "icon": "fa-cart-shopping"},
+    {"title": "YouTube Long Video Watch & Retention Audit", "category": "Video Audit", "rate": 55.0, "time": "৬ মিনিট", "icon": "fa-youtube"},
+    {"title": "AI Prompt Output Accuracy & Clarity Rating", "category": "AI Rating", "rate": 75.0, "time": "৫ মিনিট", "icon": "fa-robot"},
+    {"title": "Google Business Listing Info Verification", "category": "Verification", "rate": 95.0, "time": "৮ মিনিট", "icon": "fa-map-location-dot"},
+    {"title": "English-to-Bengali Short Audio Proofreading", "category": "Content Check", "rate": 110.0, "time": "১০ মিনিট", "icon": "fa-headphones"},
+    {"title": "Brand Logo & Packaging Feedback Poll", "category": "Brand Review", "rate": 50.0, "time": "৩ মিনিট", "icon": "fa-palette"},
+    {"title": "Website Broken Link & Mobile Layout Report", "category": "Web QA", "rate": 120.0, "time": "১০ মিনিট", "icon": "fa-globe"},
+]
+
+
+def get_active_pro_info(user: dict) -> dict | None:
+    plan_key = user.get("pro_plan")
+    exp_str = user.get("pro_expires_at")
+    if not plan_key or plan_key not in PRO_PACKAGES or not exp_str:
+        return None
+    try:
+        clean = exp_str.replace("Z", "+00:00")
+        exp_dt = datetime.fromisoformat(clean)
+        if exp_dt.tzinfo is None:
+            exp_dt = exp_dt.replace(tzinfo=timezone.utc)
+        now_utc = datetime.now(timezone.utc)
+        if exp_dt > now_utc:
+            days_left = max(1, (exp_dt - now_utc).days + 1)
+            return {**PRO_PACKAGES[plan_key], "expires_at": exp_str[:10], "days_left": days_left}
+    except Exception:
+        pass
+    return None
+
+
+@app.get("/premium", response_class=HTMLResponse)
+@app.get("/work/premium", response_class=HTMLResponse)
+async def premium_tasks_page(request: Request):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+
+    active_pro = get_active_pro_info(user)
+    ctx = base_ctx(request, user, "work")
+    ctx.update({"premium_tasks": PREMIUM_TASKS_CATALOG, "active_pro": active_pro})
+    return templates.TemplateResponse("premium.html", ctx)
+
+
+@app.get("/pro", response_class=HTMLResponse)
+async def pro_packages_page(request: Request):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+
+    active_pro = get_active_pro_info(user)
+    try:
+        my_orders = await db.select("pro_orders", filters={"user_id": user["id"]}, order="created_at.desc")
+    except Exception:
+        my_orders = []
+
+    today = get_bd_today_str()
+    claimed_today = user.get("pro_last_claim_date") == today
+
+    ctx = base_ctx(request, user, "pro")
+    ctx.update({
+        "active_pro": active_pro,
+        "my_orders": my_orders,
+        "claimed_today": claimed_today,
+        "bkash_number": "01618897806",
+    })
+    return templates.TemplateResponse("pro.html", ctx)
+
+
+@app.post("/pro/checkout")
+async def pro_checkout_submit(
+    request: Request,
+    package_key: str = Form(...),
+    trx_id: str = Form(...),
+):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+
+    if package_key not in PRO_PACKAGES:
+        return redirect_with_flash(request, "/pro", "সঠিক প্যাকেজ নির্বাচন করুন!", "error")
+
+    clean_trx = trx_id.strip().upper()
+    if len(clean_trx) < 5:
+        return redirect_with_flash(request, "/pro", "অনুগ্রহ করে সঠিক bKash TrxID দিন!", "error")
+
+    # Enforce Unique TrxID ("Ak trx id duibarnibe na")
+    try:
+        dup = await db.select("pro_orders", filters={"trx_id": clean_trx}, single=True)
+        if dup:
+            return redirect_with_flash(request, "/pro", "এই bKash TrxID ইতিমধ্যেই ব্যবহার করা হয়েছে! একই TrxID দুবার দেওয়া যাবে না।", "error")
+    except Exception:
+        pass
+
+    pkg = PRO_PACKAGES[package_key]
+    try:
+        await db.insert(
+            "pro_orders",
+            {
+                "user_id": user["id"],
+                "package_key": pkg["key"],
+                "package_name": pkg["name"],
+                "amount": pkg["price"],
+                "duration_days": pkg["days"],
+                "trx_id": clean_trx,
+                "status": "pending",
+            },
+        )
+    except Exception:
+        return redirect_with_flash(request, "/pro", "এই TrxID ইতিমধ্যেই সাবমিট করা আছে!", "error")
+
+    return redirect_with_flash(
+        request,
+        "/pro",
+        f"{pkg['name']} পেমেন্ট রিকুয়েস্ট (TrxID: {clean_trx}) জমা হয়েছে! ভেরিফিকেশনের পর প্যাকেজ অ্যাক্টিভ হবে।",
+        "success",
+    )
+
+
+@app.post("/pro/daily-claim")
+async def pro_daily_claim(request: Request):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে লগইন করুন।", "error")
+
+    active_pro = get_active_pro_info(user)
+    if not active_pro:
+        return redirect_with_flash(request, "/pro", "ডেইলি ক্লেইম করতে অ্যাক্টিভ Pro প্যাকেজ থাকতে হবে!", "error")
+
+    today = get_bd_today_str()
+    if user.get("pro_last_claim_date") == today:
+        return redirect_with_flash(request, "/pro", "আপনি আজকের ডেইলি ফ্রি ক্লেইম ইতিমধ্যেই নিয়ে নিয়েছেন!", "info")
+
+    bonus = float(active_pro["daily_claim"])
+    await db.update(
+        "users",
+        {"id": user["id"]},
+        {
+            "balance": float(user["balance"]) + bonus,
+            "total_earned": float(user["total_earned"]) + bonus,
+            "pro_last_claim_date": today,
+        },
+    )
+    await db.insert(
+        "work_logs",
+        {
+            "user_id": user["id"],
+            "work_type": "Pro Daily Claim",
+            "details": f"{active_pro['name']} ডেইলি ফ্রি ক্লেইম",
+            "reward": bonus,
+        },
+    )
+    return redirect_with_flash(request, "/pro", f"অভিনন্দন! আজকের Pro ডেইলি বোনাস ৳{bonus:.0f} ব্যালেন্সে যোগ হয়েছে।", "success")
+
+
+@app.get("/admin/pro", response_class=HTMLResponse)
+async def admin_pro_panel(request: Request):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অ্যাডমিন অ্যাক্সেস অনুমোদিত নয়!", "error")
+
+    orders, all_users = await asyncio.gather(
+        db.select("pro_orders", order="created_at.desc", limit=100),
+        _safe_select("users"),
+    )
+    user_map = {u["id"]: u for u in all_users}
+    for o in orders:
+        u = user_map.get(o["user_id"], {})
+        o["user_name"] = u.get("name") or f"User #{o['user_id']}"
+        o["user_email"] = u.get("email") or ""
+
+    ctx = base_ctx(request, user, "admin")
+    ctx["orders"] = orders
+    return templates.TemplateResponse("admin_pro.html", ctx)
+
+
+@app.post("/admin/pro/{order_id}/{action}")
+async def admin_pro_action(request: Request, order_id: int, action: str):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
+
+    order = await db.select("pro_orders", filters={"id": order_id}, single=True)
+    if not order or order["status"] != "pending":
+        return redirect_with_flash(request, "/admin/pro", "অর্ডারটি আগেই প্রসেস করা আছে।", "info")
+
+    if action == "approve":
+        await db.update("pro_orders", {"id": order_id}, {"status": "approved"})
+        exp_dt = datetime.now(timezone.utc) + timedelta(days=int(order["duration_days"]))
+        await db.update(
+            "users",
+            {"id": order["user_id"]},
+            {
+                "pro_plan": order["package_key"],
+                "pro_expires_at": exp_dt.isoformat(),
+            },
+        )
+        return redirect_with_flash(request, "/admin/pro", f"{order['package_name']} অ্যাপ্রুভ ও অ্যাক্টিভ হয়েছে!", "success")
+    else:
+        await db.update("pro_orders", {"id": order_id}, {"status": "rejected"})
+        return redirect_with_flash(request, "/admin/pro", "Pro অর্ডার রিজেক্ট করা হয়েছে।", "info")
+        
 @app.get("/admin/withdrew", response_class=HTMLResponse)
 @app.get("/admin/withdraw", response_class=HTMLResponse)
 async def admin_withdraw_page(request: Request, status: str = "pending"):
