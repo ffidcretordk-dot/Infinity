@@ -1,0 +1,211 @@
+{% extends "base_app.html" %}
+{% block title %}Pro Packages - InfinityWork{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6 pb-8">
+  <!-- FIRST WARNING (GREEN HONEST & TRUSTED MESSAGE) -->
+  <section class="rounded-[2rem] bg-gradient-to-br from-emerald-50 via-green-50 to-white border-2 border-emerald-400 p-5 sm:p-6 shadow-md space-y-2.5">
+    <div class="flex items-center gap-2.5 text-emerald-900 font-extrabold text-sm sm:text-base">
+      <span class="w-9 h-9 rounded-xl bg-emerald-700 text-white flex items-center justify-center shrink-0">
+        <i class="fa-solid fa-shield-heart"></i>
+      </span>
+      <span>প্রো প্যাকেজ নেওয়ার আগে আমাদের আন্তরিক পরামর্শ</span>
+    </div>
+    <p class="text-xs sm:text-sm text-emerald-950 leading-relaxed font-medium">
+      <b>এটি না নিলেও আপনি আমাদের সাইটে সম্পূর্ণ ফ্রিতে কাজ করতে পারবেন এবং ফ্রিতেই উইথড্র পাবেন!</b> Pro প্যাকেজগুলো নিলে শুধুমাত্র বাড়তি কিছু সুবিধা (যেমন রেফার ছাড়া উইথড্র, ডেইলি ফ্রি ক্লেইম ও প্রিমিয়াম টাস্ক) পাবেন।
+      <span class="text-emerald-800 font-extrabold">আমরা চাই আপনি আগে ফ্রিতে কাজ করে টাকা তুলুন, সাইটটি বিশ্বাস হলে তারপর মন চাইলে এটি নেবেন।</span>
+    </p>
+  </section>
+
+  <!-- ACTIVE PRO STATUS + DAILY FREE CLAIM CARD (If User Has Active Pro) -->
+  {% if active_pro %}
+  <section class="rounded-3xl bg-gradient-to-br from-emerald-800 to-emerald-950 text-white p-6 shadow-xl flex flex-wrap items-center justify-between gap-4">
+    <div class="space-y-1">
+      <span class="bg-yellow-300 text-emerald-950 px-3 py-0.5 rounded-full text-[10px] font-extrabold uppercase">Active Membership ✓</span>
+      <h2 class="text-xl font-extrabold">{{ active_pro.name }} চালু আছে</h2>
+      <p class="text-xs text-emerald-200">মেয়াদ শেষ: {{ active_pro.expires_at }} (বাকি {{ active_pro.days_left }} দিন) • মিনিমাম উইথড্র: ৳{{ "%.0f"|format(active_pro.min_withdraw) }} (রেফার ছাড়া)</p>
+    </div>
+
+    <form action="/pro/daily-claim" method="POST">
+      <button type="submit" {% if claimed_today %}disabled{% endif %}
+              class="px-5 py-3 rounded-full font-extrabold text-xs shadow-lg transition
+              {% if claimed_today %}bg-white/20 text-emerald-200 cursor-not-allowed{% else %}bg-yellow-300 hover:bg-yellow-200 text-emerald-950{% endif %}">
+        {% if claimed_today %}
+        <i class="fa-solid fa-check mr-1"></i> আজকের ৳{{ "%.0f"|format(active_pro.daily_claim) }} নেওয়া হয়েছে
+        {% else %}
+        <i class="fa-solid fa-gift mr-1"></i> ডেইলি ৳{{ "%.0f"|format(active_pro.daily_claim) }} ক্লেইম করুন
+        {% endif %}
+      </button>
+    </form>
+  </section>
+  {% endif %}
+
+  <!-- 3 PRO PACKAGES -->
+  <section class="grid md:grid-cols-3 gap-4 items-stretch">
+    <!-- 1. Starter 170৳ -->
+    <div class="soft-card rounded-[2rem] p-6 flex flex-col justify-between space-y-5">
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <span class="bg-emerald-100 text-emerald-900 px-3 py-1 rounded-full text-[11px] font-extrabold">Starter</span>
+          <span class="text-xs font-extrabold text-emerald-700">মেয়াদ: ৭ দিন</span>
+        </div>
+        <div>
+          <div class="text-3xl font-extrabold text-emerald-950">৳170</div>
+          <div class="text-[11px] text-emerald-700 font-semibold">এককালীন পেমেন্ট • ৭ দিনের জন্য</div>
+        </div>
+        <ul class="space-y-2 text-xs text-emerald-900 font-semibold">
+          <li><i class="fa-solid fa-circle-check text-emerald-600 mr-1.5"></i>টাকা তুলতে কোনো রেফার লাগবে না</li>
+          <li><i class="fa-solid fa-circle-check text-emerald-600 mr-1.5"></i>৩০০৳ হলেই উইথড্র করা যাবে</li>
+          <li><i class="fa-solid fa-circle-check text-emerald-600 mr-1.5"></i>Premium Task অ্যাক্সেস</li>
+          <li><i class="fa-solid fa-circle-check text-emerald-600 mr-1.5"></i>Live Support অগ্রাধিকার</li>
+          <li><i class="fa-solid fa-circle-check text-emerald-600 mr-1.5"></i>Daily Claim Free (৳20/দিন)</li>
+        </ul>
+      </div>
+
+      <button type="button" onclick="openProCheckout('starter', 'Starter Pro', 170, 7)"
+              class="w-full bg-emerald-900 hover:bg-emerald-800 text-white py-3.5 rounded-full font-extrabold text-xs shadow transition">
+        Starter নিন (৳170) →
+      </button>
+    </div>
+
+    <!-- 2. Mid 300৳ (Highlighted) -->
+    <div class="rounded-[2rem] p-6 flex flex-col justify-between space-y-5 bg-gradient-to-b from-emerald-900 to-emerald-950 text-white shadow-2xl border-2 border-yellow-300/80 relative">
+      <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-300 text-emerald-950 px-4 py-0.5 rounded-full text-[10px] font-extrabold uppercase shadow">Most Popular</span>
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <span class="bg-white/15 text-yellow-300 px-3 py-1 rounded-full text-[11px] font-extrabold">Mid Pro</span>
+          <span class="text-xs font-extrabold text-emerald-200">মেয়াদ: ৭ দিন</span>
+        </div>
+        <div>
+          <div class="text-3xl font-extrabold text-yellow-300">৳300</div>
+          <div class="text-[11px] text-emerald-200 font-semibold">সেরা ভ্যালু • ৭ দিনের জন্য</div>
+        </div>
+        <ul class="space-y-2 text-xs text-emerald-100 font-semibold">
+          <li><i class="fa-solid fa-circle-check text-yellow-300 mr-1.5"></i>কোনো রেফার লাগবে না</li>
+          <li><i class="fa-solid fa-circle-check text-yellow-300 mr-1.5"></i>মাত্র <b>৫০৳</b> হলেই উইথড্র!</li>
+          <li><i class="fa-solid fa-circle-check text-yellow-300 mr-1.5"></i>Premium Task অ্যাক্সেস</li>
+          <li><i class="fa-solid fa-circle-check text-yellow-300 mr-1.5"></i>Live Support অগ্রাধিকার</li>
+          <li><i class="fa-solid fa-circle-check text-yellow-300 mr-1.5"></i>Daily Claim Free <b>৳35/দিন</b></li>
+        </ul>
+      </div>
+
+      <button type="button" onclick="openProCheckout('mid', 'Mid Pro', 300, 7)"
+              class="w-full bg-yellow-300 hover:bg-yellow-200 text-emerald-950 py-3.5 rounded-full font-extrabold text-xs shadow-lg transition">
+        Mid Pro নিন (৳300) →
+      </button>
+    </div>
+
+    <!-- 3. High 600৳ -->
+    <div class="soft-card rounded-[2rem] p-6 flex flex-col justify-between space-y-5 border-amber-300 bg-gradient-to-b from-amber-50/40 to-white">
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <span class="bg-amber-100 text-amber-950 px-3 py-1 rounded-full text-[11px] font-extrabold"><i class="fa-solid fa-crown text-amber-500 mr-1"></i>High VIP</span>
+          <span class="text-xs font-extrabold text-amber-800">মেয়াদ: ১৪ দিন</span>
+        </div>
+        <div>
+          <div class="text-3xl font-extrabold text-emerald-950">৳600</div>
+          <div class="text-[11px] text-emerald-700 font-semibold">সবচেয়ে বেশি সুবিধা • ১৪ দিন</div>
+        </div>
+        <ul class="space-y-2 text-xs text-emerald-900 font-semibold">
+          <li><i class="fa-solid fa-circle-check text-amber-500 mr-1.5"></i>ওপরের সব সুবিধা অন্তর্ভুক্ত</li>
+          <li><i class="fa-solid fa-circle-check text-amber-500 mr-1.5"></i>মাত্র <b>৫০৳</b>-তে রেফার ছাড়া উইথড্র</li>
+          <li><i class="fa-solid fa-circle-check text-amber-500 mr-1.5"></i>Daily Claim Free <b>৳45/দিন</b></li>
+          <li><i class="fa-solid fa-circle-check text-amber-500 mr-1.5"></i>ফাস্ট টাস্ক ও পেমেন্ট প্রায়োরিটি</li>
+          <li><i class="fa-solid fa-circle-check text-amber-500 mr-1.5"></i>দীর্ঘ মেয়াদ: <b>১৪ দিন</b></li>
+        </ul>
+      </div>
+
+      <button type="button" onclick="openProCheckout('high', 'High Pro', 600, 14)"
+              class="w-full bg-emerald-900 hover:bg-emerald-800 text-white py-3.5 rounded-full font-extrabold text-xs shadow transition">
+        High Pro নিন (৳600) →
+      </button>
+    </div>
+  </section>
+
+  <!-- User's Pro Orders History -->
+  {% if my_orders %}
+  <section class="soft-card rounded-3xl p-5 space-y-3">
+    <h3 class="font-extrabold text-sm text-emerald-950">আপনার Pro প্যাকেজ অর্ডারসমূহ</h3>
+    <div class="divide-y divide-emerald-100 text-xs">
+      {% for o in my_orders %}
+      <div class="py-2.5 flex items-center justify-between gap-2">
+        <div>
+          <div class="font-extrabold text-emerald-950">{{ o.package_name }} (৳{{ "%.0f"|format(o.amount) }})</div>
+          <div class="font-mono text-[11px] text-emerald-700">TrxID: {{ o.trx_id }}</div>
+        </div>
+        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold
+          {% if o.status == 'approved' %}bg-emerald-100 text-emerald-800
+          {% elif o.status == 'rejected' %}bg-red-100 text-red-700
+          {% else %}bg-amber-100 text-amber-800{% endif %}">
+          {{ o.status|upper }}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</div>
+
+<!-- ONLY bKash CHECKOUT POPUP MODAL -->
+<div id="pro-checkout-modal" onclick="closeProCheckout()" class="hidden fixed inset-0 z-50 bg-emerald-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+  <div onclick="event.stopPropagation()" class="bg-white rounded-[2rem] max-w-md w-full overflow-hidden shadow-2xl border border-emerald-100">
+    <!-- Top bKash Header -->
+    <div class="bg-gradient-to-r from-[#e2136e] to-[#b80b57] text-white p-5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center">
+          <svg viewBox="0 0 40 40" class="w-7 h-7" xmlns="http://www.w3.org/2000/svg"><path d="M8 10l12 6 10-8-4 14 6 6-14-2-8 6 2-12z" fill="#e2136e"/></svg>
+        </div>
+        <div>
+          <div class="text-[10px] font-bold uppercase tracking-wider opacity-90">Only bKash Payment</div>
+          <h3 id="chk-pkg-title" class="text-lg font-extrabold">Starter Pro — ৳170</h3>
+        </div>
+      </div>
+      <button onclick="closeProCheckout()" class="w-8 h-8 rounded-full bg-white/20 text-white font-bold">✕</button>
+    </div>
+
+    <div class="p-6 space-y-4 text-xs">
+      <!-- bKash Number Box -->
+      <div class="bg-pink-50 border border-pink-200 rounded-2xl p-4 space-y-2">
+        <div class="font-extrabold text-pink-900">১. নিচের bKash নম্বরে <span id="chk-amt-text">৳170</span> Send Money করুন:</div>
+        <div class="flex items-center justify-between bg-white border border-pink-200 rounded-xl px-3.5 py-2.5">
+          <span class="font-mono text-base font-extrabold text-pink-700">{{ bkash_number }}</span>
+          <button id="copy-bkash-btn" type="button" onclick="copyText('{{ bkash_number }}', 'copy-bkash-btn')"
+                  class="bg-[#e2136e] text-white px-3 py-1.5 rounded-lg text-[11px] font-extrabold">
+            নম্বর কপি
+          </button>
+        </div>
+        <p class="text-[11px] text-pink-800 font-medium">Send Money সম্পন্ন হলে নিচে আপনার bKash Transaction ID (TrxID) দিন।</p>
+      </div>
+
+      <!-- TrxID Submit Form -->
+      <form action="/pro/checkout" method="POST" autocomplete="off" class="space-y-3">
+        <input type="hidden" name="package_key" id="chk-pkg-key" value="starter" />
+
+        <div>
+          <label class="font-extrabold text-emerald-950 block mb-1">২. bKash TrxID লিখুন *</label>
+          <input type="text" name="trx_id" required minlength="5" autocomplete="off"
+                 placeholder="যেমন: BKA8F3X92M"
+                 class="w-full px-4 py-3 rounded-2xl border border-emerald-200 bg-white text-sm font-mono font-bold uppercase focus:outline-none focus:ring-2 focus:ring-pink-500" />
+          <span class="text-[10px] text-red-600 font-bold mt-1 block">সতর্কতা: একটি TrxID দুবার ব্যবহার করা যাবে না।</span>
+        </div>
+
+        <button type="submit" class="w-full bg-[#e2136e] hover:bg-[#c50f5f] text-white py-3.5 rounded-full font-extrabold text-sm shadow-lg transition">
+          <i class="fa-solid fa-circle-check mr-1"></i> পেমেন্ট সাবমিট করুন
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function openProCheckout(key, name, price, days) {
+  document.getElementById("chk-pkg-key").value = key;
+  document.getElementById("chk-pkg-title").innerText = `${name} — ৳${price} (${days} দিন)`;
+  document.getElementById("chk-amt-text").innerText = `৳${price}`;
+  document.getElementById("pro-checkout-modal").classList.remove("hidden");
+}
+
+function closeProCheckout() {
+  document.getElementById("pro-checkout-modal").classList.add("hidden");
+}
+</script>
+{% endblock %}
