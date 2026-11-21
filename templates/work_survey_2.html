@@ -1,0 +1,95 @@
+{% extends "base_app.html" %}
+{% block title %}Survey 2 - LankaCare Hospital{% endblock %}
+{% block content %}
+<style>
+  .opt-pill input:checked + span {
+    background: #0f766e;
+    color: #ffffff;
+    border-color: #0f766e;
+    box-shadow: 0 4px 12px rgba(15, 118, 110, 0.22);
+  }
+</style>
+
+<div class="max-w-xl mx-auto space-y-4">
+  <div class="flex items-center justify-between">
+    <a href="/work/survey" class="bg-white border border-emerald-200 px-4 py-2 rounded-full text-xs font-bold text-emerald-900">← সব সার্ভে</a>
+    <span class="bg-teal-800 text-yellow-300 px-4 py-1.5 rounded-full text-xs font-extrabold">রিওয়ার্ড: ৳10.00</span>
+  </div>
+
+  <!-- Sri Lanka Hospital Intro Card -->
+  <div class="rounded-3xl bg-gradient-to-br from-teal-700 to-emerald-950 text-white p-6 shadow-xl space-y-2">
+    <span class="bg-white/20 text-white px-3 py-0.5 rounded-full text-[10px] font-extrabold uppercase">
+      <i class="fa-solid fa-hospital mr-1"></i> LankaCare Health Group (Sri Lanka)
+    </span>
+    <h1 class="text-xl font-extrabold">{{ survey.title }}</h1>
+    <p class="text-xs text-teal-100 leading-relaxed">
+      এই শর্ট সার্ভেটি স্পন্সর করেছে শ্রীলঙ্কার একটি আধুনিক হসপিটাল ও হেলথকেয়ার কোম্পানি <b>LankaCare Health Group</b>। তাদের ডিজিটাল স্বাস্থ্যসেবা ও রোগীদের অভিজ্ঞতা উন্নত করতে নিচের সহজ প্রশ্নগুলোর উত্তর দিন।
+    </p>
+  </div>
+
+  <form action="/work/survey/2/submit" method="POST" class="soft-card rounded-3xl p-5 sm:p-6 space-y-5 text-xs">
+    <div>
+      <label class="font-extrabold text-emerald-950 block mb-2">১. আপনার বয়সসীমা? *</label>
+      <div class="flex flex-wrap gap-2">
+        {% for opt in ['১৮-২৫ বছর', '২৬-৩৫ বছর', '৩৬-৫০ বছর', '৫০+ বছর'] %}
+        <label class="opt-pill cursor-pointer"><input type="radio" name="বয়সসীমা" value="{{ opt }}" required class="hidden" /><span class="inline-block px-3.5 py-2 rounded-full border border-emerald-200 bg-white font-bold transition">{{ opt }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <label class="font-extrabold text-emerald-950 block mb-2">২. আপনি কি কখনো অনলাইনে ডাক্তারের পরামর্শ (Telemedicine) নিয়েছেন? *</label>
+      <div class="flex flex-wrap gap-2">
+        {% for opt in ['হ্যাঁ, নিয়েছি', 'না, এখনো নিইনি', 'ভবিষ্যতে নিতে আগ্রহী'] %}
+        <label class="opt-pill cursor-pointer"><input type="radio" name="Telemedicine অভিজ্ঞতা" value="{{ opt }}" required class="hidden" /><span class="inline-block px-3.5 py-2 rounded-full border border-emerald-200 bg-white font-bold transition">{{ opt }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <label class="font-extrabold text-emerald-950 block mb-2">৩. হসপিটাল বেছে নেওয়ার সময় আপনি কোন বিষয়টি সবচেয়ে বেশি দেখেন? (মার্ক করুন)</label>
+      <div class="flex flex-wrap gap-2">
+        {% for opt in ['অভিজ্ঞ ডাক্তার', 'সাশ্রয়ী খরচ', 'দ্রুত ও আধুনিক সেবা', 'পরিষ্কার-পরিচ্ছন্নতা'] %}
+        <label class="opt-pill cursor-pointer"><input type="checkbox" name="গুরুত্বপূর্ণ বিষয়" value="{{ opt }}" class="hidden" /><span class="inline-block px-3.5 py-2 rounded-full border border-emerald-200 bg-white font-bold transition">{{ opt }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <label class="font-extrabold text-emerald-950 block mb-2">৪. অ্যাপের মাধ্যমে ডাক্তারের সিরিয়াল ও রিপোর্ট পাওয়া আপনার কাছে কেমন? *</label>
+      <div class="flex flex-wrap gap-2">
+        {% for opt in ['খুবই সময়-সাশ্রয়ী', 'মোটামুটি ভালো', 'সরাসরি যাওয়া পছন্দ'] %}
+        <label class="opt-pill cursor-pointer"><input type="radio" name="অনলাইন রিপোর্ট" value="{{ opt }}" required class="hidden" /><span class="inline-block px-3.5 py-2 rounded-full border border-emerald-200 bg-white font-bold transition">{{ opt }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <label class="font-extrabold text-emerald-950 block mb-2">৫. আন্তর্জাতিক হসপিটালে (শ্রীলঙ্কা/এশিয়া) চিকিৎসা নিলে কোন সুবিধাটি জরুরি? *</label>
+      <div class="flex flex-wrap gap-2">
+        {% for opt in ['ভিসা ও ট্রাভেল হেল্প', 'সাশ্রয়ী প্যাকেজ', 'দোভাষী সাপোর্ট', 'দ্রুত অ্যাপয়েন্টমেন্ট'] %}
+        <label class="opt-pill cursor-pointer"><input type="radio" name="আন্তর্জাতিক সুবিধা" value="{{ opt }}" required class="hidden" /><span class="inline-block px-3.5 py-2 rounded-full border border-emerald-200 bg-white font-bold transition">{{ opt }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <label class="font-extrabold text-emerald-950 block mb-2">৬. স্বাস্থ্য বিষয়ক টিপস কোন মাধ্যমে দেখতে পছন্দ করেন? *</label>
+      <div class="flex flex-wrap gap-2">
+        {% for opt in ['YouTube', 'Facebook', 'Telegram', 'অ্যাপ / ওয়েবসাইট'] %}
+        <label class="opt-pill cursor-pointer"><input type="radio" name="পছন্দের মাধ্যম" value="{{ opt }}" required class="hidden" /><span class="inline-block px-3.5 py-2 rounded-full border border-emerald-200 bg-white font-bold transition">{{ opt }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <label class="font-bold text-emerald-800 block mb-1">৭. হসপিটাল সার্ভিস নিয়ে সংক্ষিপ্ত মতামত (Optional)</label>
+      <input type="text" name="মতামত (Optional)" placeholder="যেকোনো পরামর্শ থাকলে লিখুন..." class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white text-sm" />
+    </div>
+
+    <button type="submit" class="w-full bg-gradient-to-r from-teal-700 to-emerald-950 text-white py-4 rounded-full font-extrabold text-sm shadow-lg">
+      <i class="fa-solid fa-paper-plane mr-1"></i> সার্ভে সাবমিট করুন (৳10.00)
+    </button>
+  </form>
+</div>
+{% endblock %}
