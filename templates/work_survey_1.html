@@ -1,0 +1,148 @@
+{% extends "base_app.html" %}
+{% block title %}Survey 1 - InfinityWork{% endblock %}
+{% block content %}
+<style>
+  .opt-pill input:checked + span {
+    background: #064e3b;
+    color: #ffffff;
+    border-color: #064e3b;
+    box-shadow: 0 4px 12px rgba(6, 78, 59, 0.2);
+  }
+</style>
+
+<div class="max-w-xl mx-auto space-y-4">
+  <div class="flex items-center justify-between">
+    <a href="/work/survey" class="bg-white border border-emerald-200 px-4 py-2 rounded-full text-xs font-bold text-emerald-900">← সব সার্ভে</a>
+    <span class="bg-emerald-900 text-yellow-300 px-4 py-1.5 rounded-full text-xs font-extrabold">রিওয়ার্ড: ৳17.00</span>
+  </div>
+
+  <!-- Intro Card -->
+  <div class="rounded-3xl bg-gradient-to-br from-emerald-800 to-emerald-950 text-white p-6 shadow-xl space-y-2">
+    <span class="bg-yellow-300 text-emerald-950 px-3 py-0.5 rounded-full text-[10px] font-extrabold uppercase">Sponsored by InfinityWork</span>
+    <h1 class="text-xl font-extrabold">{{ survey.title }}</h1>
+    <p class="text-xs text-emerald-100 leading-relaxed">
+      এই সার্ভেটি স্পন্সর করেছে <b>Infinity Work</b>, মানে আমরাই। আমাদের সাইটে একদম ফ্রিতে কাজ করে টাকা তুলতে পারবেন। আমাদের সেবার মানোন্নয়নের জন্য আপনার মূল্যবান সময় ও তথ্য দিয়ে সহযোগিতা করুন।
+    </p>
+  </div>
+
+  <!-- Questions Form (Mark / Select Pill Style) -->
+  <form action="/work/survey/1/submit" method="POST" class="soft-card rounded-3xl p-5 sm:p-6 space-y-5 text-xs">
+    <div class="grid sm:grid-cols-2 gap-3">
+      <div>
+        <label class="font-extrabold text-emerald-950 block mb-1">১. আপনার নাম *</label>
+        <input type="text" name="আপনার নাম" value="{{ user.name }}" required class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white text-sm" />
+      </div>
+      <div>
+        <label class="font-extrabold text-emerald-950 block mb-1">২. আপনার ইমেইল *</label>
+        <input type="email" name="ইমেইল" value="{{ user.email }}" required class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white text-sm" />
+      </div>
+    </div>
+
+    <div>
+      <label class="font-extrabold text-emerald-950 block mb-2">৩. আপনার বয়স *</label>
+      <div class="flex flex-wrap gap-2">
+        {% for opt in ['১৮-২২ বছর', '২৩-২৭ বছর', '২৮-৩৫ বছর', '৩৬+ বছর'] %}
+        <label class="opt-pill cursor-pointer"><input type="radio" name="বয়স" value="{{ opt }}" required class="hidden" /><span class="inline-block px-3.5 py-2 rounded-full border border-emerald-200 bg-white font-bold transition">{{ opt }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <label class="font-extrabold text-emerald-950 block mb-2">৪. শিক্ষাগত যোগ্যতা *</label>
+      <div class="flex flex-wrap gap-2">
+        {% for opt in ['SSC / সমমান', 'HSC / ডিপ্লোমা', 'অনার্স / ডিগ্রি', 'মাস্টার্স', 'অন্যান্য'] %}
+        <label class="opt-pill cursor-pointer"><input type="radio" name="শিক্ষাগত যোগ্যতা" value="{{ opt }}" required class="hidden" /><span class="inline-block px-3.5 py-2 rounded-full border border-emerald-200 bg-white font-bold transition">{{ opt }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <label class="font-extrabold text-emerald-950 block mb-2">৫. আপনার পেশা *</label>
+      <div class="flex flex-wrap gap-2">
+        {% for opt in ['শিক্ষার্থী', 'চাকরিজীবী', 'ফ্রিল্যান্সার', 'ব্যবসায়ী', 'গৃহিণী', 'কাজ খুঁজছি'] %}
+        <label class="opt-pill cursor-pointer"><input type="radio" name="পেশা" value="{{ opt }}" required class="hidden" /><span class="inline-block px-3.5 py-2 rounded-full border border-emerald-200 bg-white font-bold transition">{{ opt }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <label class="font-extrabold text-emerald-950 block mb-2">৬. কতদিন থেকে সাইটে কাজ করছেন? *</label>
+      <div class="flex flex-wrap gap-2">
+        {% for opt in ['আজই নতুন', '১ সপ্তাহ', '২-৪ সপ্তাহ', '১ মাসের বেশি'] %}
+        <label class="opt-pill cursor-pointer"><input type="radio" name="কাজের সময়কাল" value="{{ opt }}" required class="hidden" /><span class="inline-block px-3.5 py-2 rounded-full border border-emerald-200 bg-white font-bold transition">{{ opt }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <label class="font-extrabold text-emerald-950 block mb-2">৭. আপনার কি Telegram আছে? *</label>
+      <div class="flex flex-wrap gap-2">
+        {% for opt in ['হ্যাঁ, আছে', 'না, নেই'] %}
+        <label class="opt-pill cursor-pointer"><input type="radio" name="Telegram আছে" value="{{ opt }}" required class="hidden" /><span class="inline-block px-4 py-2 rounded-full border border-emerald-200 bg-white font-bold transition">{{ opt }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <label class="font-extrabold text-emerald-950 block mb-2">৮. আমাদের উইথড্র অ্যামাউন্ট কত করা দরকার? *</label>
+      <div class="flex flex-wrap gap-2">
+        {% for opt in ['১০০৳', '২০০৳', '৩০০৳', '৩৫০৳ (ঠিক আছে)'] %}
+        <label class="opt-pill cursor-pointer"><input type="radio" name="উইথড্র মতামত" value="{{ opt }}" required class="hidden" /><span class="inline-block px-3.5 py-2 rounded-full border border-emerald-200 bg-white font-bold transition">{{ opt }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <label class="font-extrabold text-emerald-950 block mb-2">৯. আপনি আরও কী কাজ করতে আগ্রহী? (একাধিক মার্ক করুন)</label>
+      <div class="flex flex-wrap gap-2">
+        {% for opt in ['Micro Task', 'Typing', 'AI Image', 'Cube Game', 'Survey', 'Video Watch'] %}
+        <label class="opt-pill cursor-pointer"><input type="checkbox" name="আগ্রহী কাজ" value="{{ opt }}" class="hidden" /><span class="inline-block px-3.5 py-2 rounded-full border border-emerald-200 bg-white font-bold transition">{{ opt }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <label class="font-extrabold text-emerald-950 block mb-2">১০. আমাদের সাইটের সব কিছু কোথায় কী আছে বুঝতে পারছেন? *</label>
+      <div class="flex flex-wrap gap-2">
+        {% for opt in ['হ্যাঁ, একদম সহজ', 'মোটামুটি বুঝতে পারি', 'কিছুটা কঠিন লাগে'] %}
+        <label class="opt-pill cursor-pointer"><input type="radio" name="সাইট বোঝা" value="{{ opt }}" required class="hidden" /><span class="inline-block px-3.5 py-2 rounded-full border border-emerald-200 bg-white font-bold transition">{{ opt }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <label class="font-extrabold text-emerald-950 block mb-2">১১. আপনি কি এর আগে উইথড্র দিয়েছেন? *</label>
+      <div class="flex flex-wrap gap-2">
+        {% for opt in ['হ্যাঁ, দিয়েছি', 'না, এখনো দিইনি'] %}
+        <label class="opt-pill cursor-pointer"><input type="radio" name="আগে উইথড্র" value="{{ opt }}" required class="hidden" /><span class="inline-block px-4 py-2 rounded-full border border-emerald-200 bg-white font-bold transition">{{ opt }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <label class="font-extrabold text-emerald-950 block mb-2">১২. আপনার কী কী অ্যাকাউন্ট আছে? (একাধিক মার্ক করুন)</label>
+      <div class="flex flex-wrap gap-2">
+        {% for opt in ['bKash', 'Nagad', 'Rocket', 'Binance'] %}
+        <label class="opt-pill cursor-pointer"><input type="checkbox" name="পেমেন্ট অ্যাকাউন্ট" value="{{ opt }}" class="hidden" /><span class="inline-block px-4 py-2 rounded-full border border-emerald-200 bg-white font-bold transition">{{ opt }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Optional Fields -->
+    <div class="pt-2 border-t border-emerald-100 grid sm:grid-cols-2 gap-3">
+      <div>
+        <label class="font-bold text-emerald-800 block mb-1">আপনার ঠিকানা (Optional)</label>
+        <input type="text" name="ঠিকানা (Optional)" placeholder="জেলা / শহর" class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white text-sm" />
+      </div>
+      <div>
+        <label class="font-bold text-emerald-800 block mb-1">আপনার ফোন নম্বর (Optional)</label>
+        <input type="text" name="ফোন নম্বর (Optional)" placeholder="01XXXXXXXXX" class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white text-sm" />
+      </div>
+    </div>
+
+    <button type="submit" class="w-full bg-gradient-to-r from-emerald-700 to-emerald-950 text-white py-4 rounded-full font-extrabold text-sm shadow-lg">
+      <i class="fa-solid fa-paper-plane mr-1"></i> সার্ভে সাবমিট করুন (৳17.00)
+    </button>
+  </form>
+</div>
+{% endblock %}
