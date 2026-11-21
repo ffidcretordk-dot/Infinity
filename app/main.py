@@ -1983,7 +1983,157 @@ async def payout_page(request: Request):
     ctx["referral_count"] = len(referrals)
     return templates.TemplateResponse("payout.html", ctx)
 
+# ---------------- SURVEY SYSTEM (/work/survey & /admin/s) ----------------
 
+SURVEY_META = {
+    1: {"id": 1, "title": "Survey #1: InfinityWork User Experience", "sponsor": "InfinityWork", "reward": 17.00},
+    2: {"id": 2, "title": "Survey #2: LankaCare Hospital Healthcare", "sponsor": "LankaCare Health (Sri Lanka)", "reward": 10.00},
+}
+
+
+@app.get("/work/survey", response_class=HTMLResponse)
+async def work_survey_list(request: Request):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+
+    try:
+        subs = await db.select("survey_submissions", filters={"user_id": user["id"]})
+    except Exception:
+        subs = []
+
+    status_map = {}
+    for s in subs:
+        sid = s["survey_id"]
+        if status_map.get(sid) not in ("pending", "approved"):
+            status_map[sid] = s.get("status")
+
+    surveys = []
+    for sid, meta in SURVEY_META.items():
+        st = status_map.get(sid)
+        if st not in ("pending", "approved"):
+            surveys.append({**meta, "was_rejected": st == "rejected"})
+
+    ctx = base_ctx(request, user, "work")
+    ctx["surveys"] = surveys
+    return templates.TemplateResponse("work_survey.html", ctx)
+
+
+@app.get("/work/survey/{survey_id}", response_class=HTMLResponse)
+async def work_survey_form(request: Request, survey_id: int):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+
+    if survey_id not in SURVEY_META:
+        return redirect_with_flash(request, "/work/survey", "সার্ভেটি পাওয়া যায়নি!", "error")
+
+    try:
+        subs = await db.select("survey_submissions", filters={"user_id": user["id"]})
+        if any(s["survey_id"] == survey_id and s.get("status") in ("pending", "approved") for s in subs):
+            return redirect_with_flash(request, "/work/survey", "আপনি এই সার্ভেটি ইতিমধ্যেই জমা দিয়েছেন!", "info")
+    except Exception:
+        pass
+
+    ctx = base_ctx(request, user, "work")
+    ctx["survey"] = SURVEY_META[survey_id]
+    tpl = "work_survey_1.html" if survey_id == 1 else "work_survey_2.html"
+    return templates.TemplateResponse(tpl, ctx)
+
+
+@app.post("/work/survey/{survey_id}/submit")
+async def work_survey_submit(request: Request, survey_id: int):
+    user = await get_current_user(request)
+    if not user:
+        return redirect_with_flash(request, "/login", "অনুগ্রহ করে প্রথমে লগইন করুন।", "error")
+
+    if survey_id not in SURVEY_META:
+        return redirect_with_flash(request, "/work/survey", "সার্ভেটি পাওয়া যায়নি!", "error")
+
+    try:
+        subs = await db.select("survey_submissions", filters={"user_id": user["id"]})
+        if any(s["survey_id"] == survey_id and s.get("status") in ("pending", "approved") for s in subs):
+            return redirect_with_flash(request, "/work/survey", "এই সার্ভেটি আগেই জমা দেওয়া আছে!", "info")
+    except Exception:
+        pass
+
+    form_data = await request.form()
+    answers: dict[str, str] = {}
+    for key in form_data.keys():
+        vals = form_data.getlist(key)
+        clean_vals = [str(v).strip() for v in vals if str(v).strip()]
+        if clean_vals:
+            answers[key] = ", ".join(clean_vals)
+
+    meta = SURVEY_META[survey_id]
+    await db.insert(
+        "survey_submissions",
+        {
+            "user_id": user["id"],
+            "survey_id": survey_id,
+            "survey_title": meta["title"],
+            "answers": answers,
+            "status": "pending",
+            "reward": meta["reward"],
+        },
+    )
+    return redirect_with_flash(
+        request,
+        "/work/survey",
+        f"{meta['title']} জমা হয়েছে! অ্যাডমিন অ্যাপ্রুভ করলে ৳{meta['reward']:.0f} ব্যালেন্সে যোগ হবে।",
+        "success",
+    )
+
+
+@app.get("/admin/s", response_class=HTMLResponse)
+async def admin_survey_panel(request: Request):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অ্যাডমিন অ্যাক্সেস অনুমোদিত নয়!", "error")
+
+    pending_subs, all_users = await asyncio.gather(
+        db.select("survey_submissions", filters={"status": "pending"}, order="created_at.asc,id.asc", limit=200),
+        _safe_select("users"),
+    )
+    user_map = {u["id"]: u for u in all_users}
+    for s in pending_subs:
+        u = user_map.get(s["user_id"], {})
+        s["user_name"] = u.get("name") or f"User #{s['user_id']}"
+        s["user_email"] = u.get("email") or ""
+
+    ctx = base_ctx(request, user, "admin")
+    ctx["submissions"] = pending_subs
+    return templates.TemplateResponse("admin_survey.html", ctx)
+
+
+@app.post("/admin/s/{sub_id}/{action}")
+async def admin_survey_review(request: Request, sub_id: int, action: str):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        return redirect_with_flash(request, "/i", "অনুমোদিত নয়!", "error")
+
+    sub = await db.select("survey_submissions", filters={"id": sub_id}, single=True)
+    if not sub or sub["status"] != "pending":
+        return redirect_with_flash(request, "/admin/s", "সাবমিশনটি আগেই প্রসেস করা আছে।", "info")
+
+    if action == "approve":
+        await db.update("survey_submissions", {"id": sub_id}, {"status": "approved"})
+        target_user = await db.select("users", filters={"id": sub["user_id"]}, single=True)
+        if target_user:
+            reward = float(sub["reward"])
+            await db.update(
+                "users",
+                {"id": target_user["id"]},
+                {
+                    "balance": float(target_user["balance"]) + reward,
+                    "total_earned": float(target_user["total_earned"]) + reward,
+                },
+            )
+        return redirect_with_flash(request, "/admin/s", f"সার্ভে অ্যাপ্রুভ হয়েছে ও ৳{sub['reward']} যোগ হয়েছে!", "success")
+    else:
+        await db.update("survey_submissions", {"id": sub_id}, {"status": "rejected"})
+        return redirect_with_flash(request, "/admin/s", "সার্ভে রিজেক্ট করা হয়েছে।", "info")
+        
 
 
 COMING_SOON_TASKS = {
@@ -2011,12 +2161,6 @@ COMING_SOON_TASKS = {
         "color": "text-rose-600 bg-rose-100",
         "desc": "ফলোয়ারযুক্ত বা পুরোনো TikTok অ্যাকাউন্ট নিরাপদ ডিলের মাধ্যমে বিক্রি করুন।",
     },
-    "survey": {
-        "title": "Daily Survey",
-        "icon": "fa-solid fa-square-poll-vertical",
-        "color": "text-teal-700 bg-teal-100",
-        "desc": "প্রতিদিন সহজ আন্তর্জাতিক সার্ভের উত্তর দিয়ে বাড়তি আয় করার সিস্টেম চালু হচ্ছে।",
-    },
 }
 
 
@@ -2032,7 +2176,10 @@ async def work_coming_soon(request: Request, slug: str):
     ctx = base_ctx(request, user, "work")
     ctx["task_info"] = COMING_SOON_TASKS[slug]
     return templates.TemplateResponse("coming_soon.html", ctx)
-    
+
+
+
+
 @app.get("/history", response_class=HTMLResponse)
 async def history_page(request: Request, status: str = "all"):
     user = await get_current_user(request)
